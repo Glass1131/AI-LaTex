@@ -58,12 +58,20 @@
     .markdown-body h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #f1f5f9; }
     .markdown-body h2 { font-size: 1.25rem; font-weight: 700; margin: 0.8rem 0 0.4rem; color: #f1f5f9; }
     .markdown-body h3 { font-size: 1.1rem; font-weight: 600; margin: 0.6rem 0 0.3rem; color: #f1f5f9; }
-    .markdown-body p { margin-bottom: 0.75rem; line-height: 1.65; color: #cbd5e1; }
+    .markdown-body p { margin-bottom: 0.75rem; line-height: 1.7; color: #cbd5e1; }
     .markdown-body ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; color: #cbd5e1; }
     .markdown-body ol { list-style: decimal; margin-left: 1.5rem; margin-bottom: 0.75rem; color: #cbd5e1; }
+    .markdown-body li { margin-bottom: 0.35rem; }
     .markdown-body code { background: #1e293b; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: #38bdf8; }
     .markdown-body pre { background: #090d16; padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1rem; }
     .markdown-body blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; color: #94a3b8; font-style: italic; }
+    
+    .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.75rem 0;
+      margin: 0.75rem 0 !important;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
@@ -78,9 +86,9 @@
         <div>
           <h1 class="text-base font-bold leading-tight flex items-center gap-2 text-slate-100">
             AI 수식 복구기 & 뷰어
-            <span class="text-[11px] font-medium bg-sky-950 text-sky-400 border border-sky-800/80 px-2 py-0.5 rounded-full">HWP 지원</span>
+            <span class="text-[11px] font-medium bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full">v2.0 Bare-LaTeX 감지</span>
           </h1>
-          <p class="text-xs text-slate-400 hidden sm:block">AI가 망가뜨린 LaTeX 자동 치환 + 한글(HWP) 수식 스크립트 원클릭 변환</p>
+          <p class="text-xs text-slate-400 hidden sm:block">$ 기호 빠진 AI 수식 자동 래핑 + KaTeX 렌더링 + HWP 변환</p>
         </div>
       </div>
 
@@ -88,14 +96,14 @@
       <div class="flex items-center flex-wrap gap-2">
         <button id="btnLoadSample" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-          예시 불러오기
+          실제 오류 예시 불러오기
         </button>
 
         <button id="btnClear" class="text-xs bg-slate-800 hover:bg-red-950 hover:text-red-300 text-slate-400 border border-slate-700 hover:border-red-800/60 px-2.5 py-1.5 rounded-lg transition-colors">
           비우기
         </button>
 
-        <!-- 한글(HWP) 수식 복사 버튼 (메인 강조) -->
+        <!-- 한글(HWP) 수식 복사 버튼 -->
         <button id="btnCopyHwp" class="text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-600/30 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 active:scale-95">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           한글(HWP) 수식 복사
@@ -103,13 +111,13 @@
 
         <button id="btnCopyClean" class="text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 active:scale-95">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
-          정제본 LaTeX 복사
+          정제본 복사
         </button>
       </div>
     </div>
   </header>
 
-  <!-- 메인 작업 영역 (좌우 2분할, 모바일 상하 스택) -->
+  <!-- 메인 작업 영역 -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
 
     <!-- 좌측: 입력 에디터 -->
@@ -117,7 +125,7 @@
       <div class="bg-slate-800/80 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs text-slate-300">
         <span class="font-medium flex items-center gap-1.5 text-slate-200">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          AI 원문 텍스트 입력창
+          AI 원문 입력
         </span>
         <div class="flex items-center gap-3 text-slate-400">
           <span id="charCount">0자</span>
@@ -125,18 +133,18 @@
           <span id="formulaCount" class="text-emerald-400 font-medium">수식 0개</span>
         </div>
       </div>
-      <div class="relative flex-1 min-h-[350px] lg:min-h-[500px]">
+      <div class="relative flex-1 min-h-[350px] lg:min-h-[520px]">
         <textarea id="rawInput" 
-          placeholder="깨진 LaTeX 수식이나 ChatGPT, Claude 등 AI 답변을 그대로 붙여넣으세요...&#10;&#10;자동 지원:&#10;• \(...\), \[...\] -> $, $$ 자동 통일&#10;• \\frac 과도한 이스케이프 보정 및 frac 슬래시 누락 복구&#10;• 밑줄(_) 마크다운 충돌 방지&#10;• 닫히지 않은 중괄호 {} 자동 보정" 
+          placeholder="AI 답변을 붙여넣으세요. $ 기호 없이 방치된 \alpha, \beta, \implies, t \neq 0, \vert{}x\vert{} 등도 자동으로 감지해 완벽히 수식으로 렌더링합니다." 
           class="w-full h-full p-4 bg-slate-900/60 text-slate-200 text-sm font-mono leading-relaxed outline-none resize-none focus:ring-1 focus:ring-emerald-500/50"></textarea>
       </div>
       <div class="px-4 py-2 bg-slate-950/60 border-t border-slate-800/60 text-[11px] text-slate-500 flex items-center justify-between">
-        <span>실시간 자동 감지 및 에러 복구 파이프라인 작동 중</span>
+        <span>$ 기호 누락 수식 자동 감지 및 래핑 활성화됨</span>
         <span class="hidden sm:inline">단축키: Ctrl + Enter (HWP 수식 복사)</span>
       </div>
     </section>
 
-    <!-- 우측: 결과 뷰어 (탭 인터페이스) -->
+    <!-- 우측: 결과 뷰어 -->
     <section class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
       <!-- 탭 바 -->
       <div class="bg-slate-800/80 px-2 py-1.5 border-b border-slate-800 flex items-center justify-between">
@@ -158,13 +166,13 @@
         </div>
 
         <div class="text-[11px] text-slate-400 pr-2 hidden sm:block">
-          KaTeX 모드: <span class="text-emerald-400 font-mono">throwOnError: false</span>
+          <span class="text-emerald-400 font-mono">throwOnError: false</span>
         </div>
       </div>
 
-      <!-- 탭 본문 영역 -->
-      <div class="flex-1 relative overflow-y-auto p-4 min-h-[350px] lg:min-h-[500px] max-h-[75vh]">
-        <!-- 1. 렌더링 미리보기 탭 -->
+      <!-- 탭 본문 -->
+      <div class="flex-1 relative overflow-y-auto p-4 min-h-[350px] lg:min-h-[520px] max-h-[75vh]">
+        <!-- 1. 렌더링 미리보기 -->
         <div id="tabContentPreview" class="tab-content block">
           <div id="renderOutput" class="markdown-body text-slate-200 text-sm leading-relaxed">
             <div class="text-slate-500 italic py-12 text-center text-xs">
@@ -178,15 +186,13 @@
           <div class="p-3 bg-sky-950/40 border border-sky-800/60 rounded-lg text-xs text-sky-200 flex items-start gap-2">
             <span class="text-base">💡</span>
             <div>
-              <p class="font-semibold mb-0.5">한글(HWP) 문서에 수식 넣는 방법:</p>
+              <p class="font-semibold mb-0.5">한글(HWP) 수식 넣는 방법:</p>
               <p class="text-sky-300/90 leading-relaxed">
-                아래 수식의 <b class="text-white">복사</b> 버튼 클릭 $\rightarrow$ 한글에서 <b class="text-white">Ctrl + N, M</b> (수식 편집기) $\rightarrow$ <b class="text-white">Ctrl + V</b> 붙여넣기 $\rightarrow$ <b class="text-white">Shift + Esc</b> (완료)
+                복사 후 한글 문서에서 <b class="text-white">Ctrl + N, M</b> (수식 편집기) $\rightarrow$ <b class="text-white">Ctrl + V</b> 붙여넣기 $\rightarrow$ <b class="text-white">Shift + Esc</b> (입력 완료)
               </p>
             </div>
           </div>
-          <div id="hwpFormulaList" class="space-y-2.5">
-            <!-- 동적으로 HWP 변환된 수식 리스트가 추가됨 -->
-          </div>
+          <div id="hwpFormulaList" class="space-y-2.5"></div>
         </div>
 
         <!-- 3. 정제된 소스 탭 -->
@@ -196,9 +202,7 @@
 
         <!-- 4. 복구 로그 탭 -->
         <div id="tabContentLogs" class="tab-content hidden">
-          <div id="repairLogsList" class="space-y-2 text-xs font-mono">
-            <!-- 복구 내역 목록 -->
-          </div>
+          <div id="repairLogsList" class="space-y-2 text-xs font-mono"></div>
         </div>
       </div>
     </section>
@@ -211,59 +215,62 @@
   </div>
 
   <script>
-    // --- 1. 샘플 텍스트 (깨진 수식 포함) ---
-    const SAMPLE_TEXT = `### 이차방정식의 근의 공식 유도
+    // 질문 속 스크린샷에 있던 실제 문제의 텍스트를 재현한 예시 데이터
+    const SAMPLE_TEXT = `주어진 문제의 조건을 단계별로 분석하여 상수 a, b, c와 \\alpha, \\beta의 값을 구해보겠습니다.
 
-이차방정식 \( ax^2 + bx + c = 0 \) (단, $a \\neq 0$)의 해를 구해봅시다.
+1단계: g(t)와 방정식 f((g(t)-1)|x|) = f(t)의 분석
+실수 t (t \\neq 0)에 대하여 y = x^2과 y = t의 교점의 개수 g(t)는 다음과 같습니다:
 
-1. 먼저 양변을 $a$로 나누고 상수항을 이항합니다:
-\\[ x^2 + \\frac{b}{a}x = -\\frac{c}{a} \\]
+• t < 0일 때: g(t) = 0 \\implies f(-\\vert{}x\\vert{}) = f(t)
+• t > 0일 때: g(t) = 2 \\implies f(\\vert{}x\\vert{}) = f(t)
 
-2. 완전제곱식을 만들기 위해 양변에 \\frac{b^2}{4a^2} 를 더합니다. (슬래시 누락 복구 테스트: frac{b^2}{4a^2})
+방정식 f((g(t)-1)|x|) = f(t)의 좌변은 x에 대한 우함수(|x|에만 의존)이므로, 0이 아닌 모든 실근은 항상 \\pm x_0의 쌍(짝수 개)으로 존재합니다. 따라서 실근의 개수 h(t)의 홀짝성은 x = 0이 근인지 여부에 의해 결정됩니다.
 
-3. 밑줄 이탤릭 충돌 방지 테스트:
-수열 $a_1, a_2, a_3$과 행렬 원소 $x_{i,j}$에 대해 다음이 성립합니다:
-$$ x_{n+1} = \\sqrt{x_n^2 + 1} $$
+• x = 0을 대입하면 f(0) = f(t)이고, 문제에서 f(0) = 3이므로:
+  - f(t) = 3 \\iff h(t)는 홀수
+  - f(t) \\neq 3 \\iff h(t)는 짝수
 
-4. 중괄호 닫기 누락 복구 및 근의 공식 최종 형태:
-\\[ x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a \\]
+2단계: 조건 (가)의 해석
+위로 볼록한 이차함수이므로 f(n) = 3을 만족하는 양수 n은 최대 2개뿐입니다.
+조건 (가)에 의해 h(t)가 t = -3과 \\alpha뿐이라는 뜻입니다.
 
-5. 적분 및 극한 표현:
-$$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx = 1 $$`;
+3단계: t < 0에서 h(t)의 개형과 a, b 구하기
+이때 x \\le 0에서 f(x) = x^3 + ax^2 + bx + 3이라 할 때, 만약 t = -3에서 f'(-3) \\neq 0이면 (2 \\to 3 \\to 4)하게 되어 극값을 가질 수 없습니다.
+따라서 \\alpha = 6이며, f(6) = 3에서 c를 구할 수 있습니다.`;
 
-    // --- 2. LaTeX -> 한글(HWP) 수식 스크립트 변환 엔진 ---
+    // --- LaTeX -> 한글(HWP) 수식 스크립트 변환 엔진 ---
     function latexToHwp(latex) {
       if (!latex) return '';
       let s = latex.trim();
 
-      // 구분자 제거 ($, $$, \[, \], \(, \))
       s = s.replace(/^\$\$([\s\S]*)\$\$$/, '$1')
            .replace(/^\$([\s\S]*)\$$/, '$1')
            .replace(/^\\\[([\s\S]*)\\\]$/, '$1')
            .replace(/^\\\(([\s\S]*)\\\)$/, '$1')
            .trim();
 
-      // 분수 변환: \frac{A}{B}, \dfrac, \tfrac -> {A} over {B} (중첩 분수 지원)
+      // 이상한 절댓값 표기 사전 보정
+      s = s.replace(/\\vert\{\}?/g, '|');
+
+      // 분수 변환: \frac{A}{B} -> {A} over {B}
       let prev;
       do {
         prev = s;
         s = s.replace(/\\[dt]?frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '{$1} over {$2}');
       } while (s !== prev);
 
-      // 거듭제곱근: \sqrt[n]{x} -> root {n} of {x}
+      // 거듭제곱근 및 제곱근
       s = s.replace(/\\sqrt\s*\[(.*?)\]\s*\{([^{}]+)\}/g, 'root {$1} of {$2}');
-
-      // 제곱근: \sqrt{x} -> sqrt {x}
       do {
         prev = s;
         s = s.replace(/\\sqrt\s*\{([^{}]+)\}/g, 'sqrt {$1}');
       } while (s !== prev);
 
-      // 화살표 및 관계 연산자
+      // 화살표 및 논리 기호
+      s = s.replace(/\\implies\b/g, '=>');
+      s = s.replace(/\\iff\b/g, '<=>');
       s = s.replace(/\\to\b|\\rightarrow\b/g, '->');
       s = s.replace(/\\gets\b|\\leftarrow\b/g, '<-');
-      s = s.replace(/\\Rightarrow\b/g, '=>');
-      s = s.replace(/\\Leftrightarrow\b/g, '<=>');
       s = s.replace(/\\le(q)?\b/g, '<=');
       s = s.replace(/\\ge(q)?\b/g, '>=');
       s = s.replace(/\\neq\b/g, '!=');
@@ -272,107 +279,68 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       s = s.replace(/\\times\b/g, 'times');
       s = s.replace(/\\div\b/g, 'divide');
       s = s.replace(/\\cdot\b/g, 'cdot');
-      s = s.replace(/\\cdots\b/g, 'cdots');
-      s = s.replace(/\\ldots\b/g, 'ldots');
-      s = s.replace(/\\vdots\b/g, 'vdots');
-      s = s.replace(/\\ddots\b/g, 'ddots');
       s = s.replace(/\\infty\b/g, 'inf');
       s = s.replace(/\\approx\b/g, 'approx');
-      s = s.replace(/\\equiv\b/g, 'equiv');
-
-      // 장식 기호 (Vector, Bar, Hat)
-      s = s.replace(/\\vec\s*\{([^{}]+)\}/g, 'vec {$1}');
-      s = s.replace(/\\bar\s*\{([^{}]+)\}/g, 'bar {$1}');
-      s = s.replace(/\\hat\s*\{([^{}]+)\}/g, 'hat {$1}');
-      s = s.replace(/\\dot\s*\{([^{}]+)\}/g, 'dot {$1}');
-
-      // 괄호 스케일링
-      s = s.replace(/\\left\s*([(\[{|])/g, 'left $1');
-      s = s.replace(/\\right\s*([)\]}|])/g, 'right $1');
-      s = s.replace(/\\left\./g, '');
-      s = s.replace(/\\right\./g, '');
 
       // 그리스 문자 (\ 제거)
       const greek = [
         'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
-        'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'pi', 'rho', 'sigma',
-        'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega',
-        'Gamma', 'Delta', 'Theta', 'Lambda', 'Xi', 'Pi', 'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega'
+        'lambda', 'mu', 'nu', 'xi', 'pi', 'rho', 'sigma', 'tau', 'phi', 'chi', 'psi', 'omega'
       ];
       greek.forEach(g => {
         s = s.replace(new RegExp('\\\\' + g + '\\b', 'g'), g);
       });
 
-      // 대형 연산자 및 초월함수
-      s = s.replace(/\\sum\b/g, 'sum');
-      s = s.replace(/\\prod\b/g, 'prod');
-      s = s.replace(/\\int\b/g, 'int');
-      s = s.replace(/\\lim\b/g, 'lim');
-      s = s.replace(/\\log\b/g, 'log');
-      s = s.replace(/\\ln\b/g, 'ln');
-      s = s.replace(/\\sin\b/g, 'sin');
-      s = s.replace(/\\cos\b/g, 'cos');
-      s = s.replace(/\\tan\b/g, 'tan');
-
-      // 집합 및 논리
-      s = s.replace(/\\in\b/g, 'in');
-      s = s.replace(/\\notin\b/g, 'not in');
-      s = s.replace(/\\subset\b/g, 'subset');
-      s = s.replace(/\\supset\b/g, 'supset');
-      s = s.replace(/\\cup\b/g, 'cup');
-      s = s.replace(/\\cap\b/g, 'cap');
-      s = s.replace(/\\emptyset\b/g, 'emptyset');
-      s = s.replace(/\\therefore\b/g, 'therefore');
-      s = s.replace(/\\because\b/g, 'because');
+      // 대형 연산자
+      s = s.replace(/\\(sum|int|lim|log|ln|sin|cos|tan)\b/g, '$1');
 
       // 공백 및 텍스트 정리
       s = s.replace(/\\text\s*\{([^{}]+)\}/g, '"$1"');
       s = s.replace(/\\quad/g, '~~');
-      s = s.replace(/\\qquad/g, '~~~~');
-      s = s.replace(/\\,/g, '`');
-      s = s.replace(/\\;/g, '`');
-      s = s.replace(/\\!/g, '');
-      s = s.replace(/\\ /g, '`');
+      s = s.replace(/\\[,;! ]/g, '`');
 
       return s.trim();
     }
 
-    // --- 3. 자동 복구 및 정제 파이프라인 ---
+    // --- 수식 내부 문법 교정기 ---
     const MATH_COMMANDS = [
       'frac', 'dfrac', 'tfrac', 'sqrt', 'alpha', 'beta', 'gamma', 'delta', 'theta',
-      'lambda', 'mu', 'pi', 'sigma', 'omega', 'sum', 'prod', 'int', 'iint', 'iiint',
-      'oint', 'lim', 'infty', 'approx', 'times', 'div', 'pm', 'mp', 'neq', 'leq',
-      'geq', 'le', 'ge', 'cdot', 'cdots', 'to', 'leftarrow', 'rightarrow', 'vec',
-      'left', 'right', 'sin', 'cos', 'tan', 'log', 'ln', 'begin', 'end'
+      'lambda', 'mu', 'pi', 'sigma', 'omega', 'sum', 'prod', 'int', 'lim', 'infty',
+      'approx', 'times', 'div', 'pm', 'mp', 'neq', 'leq', 'geq', 'le', 'ge',
+      'cdot', 'to', 'implies', 'iff', 'sin', 'cos', 'tan'
     ];
 
-    function repairMathString(mathContent, isDisplay) {
+    function repairMathString(mathContent) {
       let repaired = mathContent;
       const logs = [];
 
-      // A. 과도한 이스케이프 보정 (\\\\frac -> \\frac -> \frac)
-      if (/\\\\+([a-zA-Z]+)/.test(repaired)) {
-        repaired = repaired.replace(/\\\\+([a-zA-Z]+)/g, '\\$1');
-        logs.push("과도하게 이스케이프된 백슬래시(\\\\) 축소 보정");
+      // A. \vert{}x\vert{} -> |x| 보정
+      if (/\\vert\{\}?/g.test(repaired)) {
+        repaired = repaired.replace(/\\vert\{\}?/g, '|');
+        logs.push("\\vert{} 비표준 절댓값 기호를 | 로 보정");
       }
 
-      // B. 흔한 LaTeX 명령어 앞 백슬래시 누락 복구
+      // B. 과도한 이스케이프 보정 (\\\\frac -> \frac)
+      if (/\\\\+([a-zA-Z]+)/.test(repaired)) {
+        repaired = repaired.replace(/\\\\+([a-zA-Z]+)/g, '\\$1');
+        logs.push("과도한 백슬래시(\\\\) 축소 보정");
+      }
+
+      // C. 명령어 앞 백슬래시 누락 복구
       const cmdPattern = new RegExp(`(?<![a-zA-Z\\\\])(${MATH_COMMANDS.join('|')})(?![a-zA-Z])`, 'g');
       if (cmdPattern.test(repaired)) {
         repaired = repaired.replace(cmdPattern, (match) => {
-          logs.push(`누락된 백슬래시 추가: ${match} -> \\${match}`);
+          logs.push(`누락된 슬래시 추가: ${match} -> \\${match}`);
           return '\\' + match;
         });
       }
 
-      // C. 중괄호 {} 짝 맞추기
-      let openBraces = 0;
-      let closeBraces = 0;
+      // D. 중괄호 {} 짝 맞추기
+      let openBraces = 0, closeBraces = 0;
       for (let i = 0; i < repaired.length; i++) {
         if (repaired[i] === '{' && (i === 0 || repaired[i - 1] !== '\\')) openBraces++;
         if (repaired[i] === '}' && (i === 0 || repaired[i - 1] !== '\\')) closeBraces++;
       }
-
       if (openBraces > closeBraces) {
         const missing = openBraces - closeBraces;
         repaired += '}'.repeat(missing);
@@ -382,61 +350,136 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       return { repaired, logs };
     }
 
+    // --- 핵심 엔진: $ 기호 누락된 날것의 LaTeX 감지 및 전처리 파이프라인 ---
     function processText(rawText) {
       let text = rawText;
       const allLogs = [];
       const extractedFormulas = [];
 
-      // 1. LaTeX 구분자 통일
+      // 1. \[ ... \] 및 \( ... \) 구분자 통일
       if (/\\\[[\s\S]*?\\\]/.test(text)) {
         text = text.replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$');
-        allLogs.push("\\[ ... \\] 블록 구분자를 $$ ... $$ 로 통일");
+        allLogs.push("\\[ ... \\] 를 $$ ... $$ 로 통일");
       }
       if (/\\\([\s\S]*?\\\)/.test(text)) {
         text = text.replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$');
-        allLogs.push("\\( ... \\) 인라인 구분자를 $ ... $ 로 통일");
+        allLogs.push("\\( ... \\) 를 $ ... $ 로 통일");
       }
 
-      // 2. 수식 격리 및 복구
+      // 2. 이미 존재하는 수식($$...$$, $...$)을 임시 토큰으로 안전하게 보호 격리
+      const protectedBlocks = [];
+      let protIdx = 0;
+
+      // 2-1. 기존 블록 수식 보호
+      text = text.replace(/\$\$([\s\S]*?)\$\$/g, (m, content) => {
+        const token = `%%PROTECTED_DISPLAY_${protIdx++}%%`;
+        protectedBlocks.push({ token, content, isDisplay: true });
+        return token;
+      });
+
+      // 2-2. 기존 인라인 수식 보호
+      text = text.replace(/(?<!\$)\$([^\$\n]+?)\$(?!\$)/g, (m, content) => {
+        const token = `%%PROTECTED_INLINE_${protIdx++}%%`;
+        protectedBlocks.push({ token, content, isDisplay: false });
+        return token;
+      });
+
+      // 3. [핵심 혁신] $ 없이 본문에 방치된 '날것의 LaTeX' 자동 감지 및 $ ... $ 래핑
+      let autoWrappedCount = 0;
+
+      // 3-A. 수식 표현식 통째로 감지 (예: g(t) = 0 \implies f(-\vert{}x\vert{}) = f(t))
+      // 등호(=)와 \implies, \vert, \pm 등이 포함된 행 단위를 수식으로 묶음
+      text = text.replace(/(?:[a-zA-Z]\([a-zA-Z0-9_\-\|\s\\]+\)\s*=\s*[^\n,]+?\\(?:implies|iff)[^\n]+)/g, (m) => {
+        autoWrappedCount++;
+        return `$${m.trim()}$`;
+      });
+
+      // 3-B. \vert{}x\vert{} 포함 식 래핑
+      text = text.replace(/(?:[a-zA-Z]\([a-zA-Z0-9_\-\+\*\/\s]*\\vert\{\}?[^\\\{\}]*\\vert\{\}?[a-zA-Z0-9_\-\+\*\/\s]*\)(?:\s*=\s*[^\s,\.\n]+)?)/g, (m) => {
+        autoWrappedCount++;
+        return `$${m.trim()}$`;
+      });
+
+      // 3-C. 관계식 및 부등호 식 래핑 (예: t \neq 0, x \le 0, f(t) \neq 3, f(t) = 3)
+      text = text.replace(/(?<![a-zA-Z0-9_\$])([a-zA-Z0-9_\(\)]+(?:'[a-zA-Z0-9_\(\)]*)?\s*\\(?:neq|le|ge|leq|geq|approx)\s*-?[a-zA-Z0-9_\(\)]+)(?![a-zA-Z0-9_\$])/g, (m) => {
+        autoWrappedCount++;
+        return `$${m.trim()}$`;
+      });
+
+      // 3-D. 단독 연산자 표현식 래핑 (예: \pm x_0, 2 \to 3 \to 4)
+      text = text.replace(/(?<![\$\\])\\(pm|mp)\s+([a-zA-Z0-9_]+)/g, (m) => {
+        autoWrappedCount++;
+        return `$${m.trim()}$`;
+      });
+      text = text.replace(/([0-9a-zA-Z]\s*\\to\s*[0-9a-zA-Z](?:\s*\\to\s*[0-9a-zA-Z])*)/g, (m) => {
+        autoWrappedCount++;
+        return `$${m.trim()}$`;
+      });
+
+      // 3-E. 단독으로 쓰인 그리스 문자 래핑 (예: \alpha, \beta, \mu, \sigma) - 뒤에 한글 조사가 붙어도 분리
+      const greekRegex = /(?<![\$\\])\\(alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|omega|phi|psi|tau)(?![a-zA-Z])/g;
+      text = text.replace(greekRegex, (m, greek) => {
+        autoWrappedCount++;
+        return `$\\${greek}$`;
+      });
+
+      // 3-F. 단독 \implies, \iff 래핑
+      text = text.replace(/(?<![\$\\])\\(implies|iff)(?![a-zA-Z])/g, (m, op) => {
+        autoWrappedCount++;
+        return `$\\${op}$`;
+      });
+
+      if (autoWrappedCount > 0) {
+        allLogs.push(`$ 기호 없이 방치된 날것의 AI 수식 ${autoWrappedCount}개를 찾아 $...$ 로 자동 래핑`);
+      }
+
+      // 4. 보호했던 기존 수식 다시 복원
+      protectedBlocks.forEach(({ token, content, isDisplay }) => {
+        const restored = isDisplay ? `$$${content}$$` : `$${content}$`;
+        text = text.replace(token, restored);
+      });
+
+      // 5. 이제 모든 수식이 $ 또는 $$ 안에 들어왔으므로 최종 파싱 및 KaTeX 렌더링
       const mathTokens = [];
       let tokenIndex = 0;
 
-      // 블록 수식 ($$ ... $$)
+      // 블록 수식 처리
       text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
-        const { repaired, logs } = repairMathString(formula, true);
-        if (logs.length > 0) allLogs.push(...logs.map(l => `[블록 수식] ${l}`));
+        const { repaired, logs } = repairMathString(formula);
+        if (logs.length > 0) allLogs.push(...logs.map(l => `[블록] ${l}`));
 
         const hwpCode = latexToHwp(repaired);
         extractedFormulas.push({ raw: formula, cleaned: repaired, hwp: hwpCode, isDisplay: true });
 
-        const token = `%%KATEX_MATH_BLOCK_${tokenIndex++}%%`;
+        const token = `%%KATEX_FINAL_${tokenIndex++}%%`;
         mathTokens.push({ token, formula: repaired, isDisplay: true });
         return token;
       });
 
-      // 인라인 수식 ($ ... $)
+      // 인라인 수식 처리
       text = text.replace(/(?<!\$)\$([^\$\n]+?)\$(?!\$)/g, (match, formula) => {
-        const { repaired, logs } = repairMathString(formula, false);
-        if (logs.length > 0) allLogs.push(...logs.map(l => `[인라인 수식] ${l}`));
+        const { repaired, logs } = repairMathString(formula);
+        if (logs.length > 0) allLogs.push(...logs.map(l => `[인라인] ${l}`));
 
         const hwpCode = latexToHwp(repaired);
         extractedFormulas.push({ raw: formula, cleaned: repaired, hwp: hwpCode, isDisplay: false });
 
-        const token = `%%KATEX_MATH_INLINE_${tokenIndex++}%%`;
+        const token = `%%KATEX_FINAL_${tokenIndex++}%%`;
         mathTokens.push({ token, formula: repaired, isDisplay: false });
         return token;
       });
 
-      // 3. 마크다운 변환 (수식 내부 언더스코어 보호된 상태)
+      // 6. 마크다운 변환 (수식이 토큰화되어 있으므로 _ 이탤릭 충돌 원천 차단)
+      marked.setOptions({ gfm: true, breaks: true });
       let renderedHtml = marked.parse(text);
 
-      // 4. 격리했던 수식을 KaTeX 렌더링 결과로 치환
+      // 7. KaTeX 수식 주입 (throwOnError: false)
       mathTokens.forEach(({ token, formula, isDisplay }) => {
         let katexHtml = '';
         try {
           katexHtml = katex.renderToString(formula, {
             displayMode: isDisplay,
-            throwOnError: false, // 에러 시 멈추지 않고 빨간 밑줄 표시
+            throwOnError: false,
             errorColor: '#f87171'
           });
         } catch (e) {
@@ -445,7 +488,7 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
         renderedHtml = renderedHtml.replace(token, katexHtml);
       });
 
-      // 5. 정제본 LaTeX 소스 구성
+      // 8. 정제된 표준 LaTeX 소스 생성
       let cleanedSource = text;
       mathTokens.forEach(({ token, formula, isDisplay }) => {
         const wrapped = isDisplay ? `\n$$\n${formula}\n$$\n` : `$${formula}$`;
@@ -461,7 +504,7 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       };
     }
 
-    // --- 4. DOM 제어 및 이벤트 바인딩 ---
+    // --- UI 연동 및 이벤트 ---
     const rawInput = document.getElementById('rawInput');
     const renderOutput = document.getElementById('renderOutput');
     const cleanedSourceOutput = document.getElementById('cleanedSourceOutput');
@@ -496,14 +539,13 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       currentCleanedText = result.cleanedSource;
       currentExtractedFormulas = result.extractedFormulas;
 
-      // 렌더링 결과 주입
       renderOutput.innerHTML = result.renderedHtml;
       cleanedSourceOutput.textContent = result.cleanedSource;
       formulaCount.textContent = `수식 ${result.totalFormulas}개`;
       logCountBadge.textContent = result.allLogs.length;
       hwpCountBadge.textContent = result.extractedFormulas.length;
 
-      // 복구 로그 렌더링
+      // 복구 로그 출력
       if (result.allLogs.length > 0) {
         repairLogsList.innerHTML = result.allLogs.map(log => `
           <div class="p-2.5 bg-slate-950/70 border border-slate-800 rounded-lg flex items-start gap-2">
@@ -512,15 +554,15 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
           </div>
         `).join('');
       } else {
-        repairLogsList.innerHTML = '<div class="text-slate-400 py-6 text-center text-xs">수정할 문법 오류가 발견되지 않았습니다. 원문이 올바릅니다!</div>';
+        repairLogsList.innerHTML = '<div class="text-slate-400 py-6 text-center text-xs">수정할 오류가 없습니다.</div>';
       }
 
-      // 한글(HWP) 수식 카드 목록 렌더링
+      // HWP 수식 목록 출력
       if (result.extractedFormulas.length > 0) {
         hwpFormulaList.innerHTML = result.extractedFormulas.map((f, idx) => `
           <div class="bg-slate-950/80 border border-slate-800 hover:border-slate-700 p-3 rounded-lg flex flex-col gap-2 transition-all">
             <div class="flex items-center justify-between text-[11px] text-slate-400">
-              <span class="font-mono text-emerald-400">#${idx + 1} (${f.isDisplay ? '블록 수식' : '인라인 수식'})</span>
+              <span class="font-mono text-emerald-400">#${idx + 1} (${f.isDisplay ? '블록' : '인라인'})</span>
               <button onclick="copySingleHwp(${idx})" class="px-2 py-0.5 bg-sky-600/30 hover:bg-sky-600 text-sky-200 hover:text-white border border-sky-500/40 rounded text-xs transition-colors">
                 이 수식 복사
               </button>
@@ -531,7 +573,7 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
           </div>
         `).join('');
       } else {
-        hwpFormulaList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">변환할 수식이 감지되지 않았습니다.</div>';
+        hwpFormulaList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">변환할 수식이 없습니다.</div>';
       }
     }
 
@@ -539,14 +581,13 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    // 디바운스 입력 리스너
-    let timer = null;
+    let debounceTimer = null;
     rawInput.addEventListener('input', () => {
-      clearTimeout(timer);
-      timer = setTimeout(updateAll, 120);
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(updateAll, 100);
     });
 
-    // 탭 전환 처리
+    // 탭 전환
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => {
@@ -564,7 +605,7 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       });
     });
 
-    // 토스트 알림창
+    // 알림 토스트
     function showToast(msg, isHwp = false) {
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toastMsg');
@@ -585,10 +626,9 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       setTimeout(() => {
         toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
         toast.classList.remove('opacity-100', 'translate-y-0');
-      }, 3500);
+      }, 3000);
     }
 
-    // 클립보드 복사 함수
     function copyToClipboard(text, successMsg, isHwp = false) {
       if (!text) {
         showToast("복사할 내용이 없습니다.");
@@ -607,53 +647,37 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       });
     }
 
-    // 개별 HWP 수식 복사
     window.copySingleHwp = function(index) {
       if (currentExtractedFormulas[index]) {
-        const hwpText = currentExtractedFormulas[index].hwp;
-        copyToClipboard(hwpText, "<b>HWP 수식 복사 완료!</b> 한글에서 <code>Ctrl + N, M</code> $\\rightarrow$ 붙여넣기", true);
+        copyToClipboard(currentExtractedFormulas[index].hwp, "<b>HWP 수식 복사 완료!</b> 한글에서 <code>Ctrl + N, M</code> $\\rightarrow$ 붙여넣기", true);
       }
     };
 
-    // 상단 "한글(HWP) 수식 복사" 버튼 클릭 시
     document.getElementById('btnCopyHwp').addEventListener('click', () => {
       if (!currentExtractedFormulas || currentExtractedFormulas.length === 0) {
-        // 수식이 없으면 본문 전체 변환 시도
-        const hwpAll = latexToHwp(rawInput.value);
-        copyToClipboard(hwpAll, "<b>HWP 변환 복사 완료!</b> 한글에서 <code>Ctrl + N, M</code> $\\rightarrow$ 붙여넣기", true);
+        copyToClipboard(latexToHwp(rawInput.value), "<b>HWP 변환 복사 완료!</b> <code>Ctrl + N, M</code> 붙여넣기", true);
         return;
       }
-
-      if (currentExtractedFormulas.length === 1) {
-        // 수식이 1개면 바로 해당 수식 복사
-        copyToClipboard(currentExtractedFormulas[0].hwp, "<b>HWP 수식 복사 완료!</b> 한글에서 <code>Ctrl + N, M</code> $\\rightarrow$ 붙여넣기", true);
-      } else {
-        // 수식이 여러 개면 줄바꿈으로 모두 묶어서 복사
-        const combined = currentExtractedFormulas.map(f => f.hwp).join('\n\n');
-        copyToClipboard(combined, `<b>수식 ${currentExtractedFormulas.length}개 HWP 변환 복사 완료!</b> <code>Ctrl + N, M</code> 붙여넣기`, true);
-      }
+      const combined = currentExtractedFormulas.map(f => f.hwp).join('\n\n');
+      copyToClipboard(combined, `<b>수식 ${currentExtractedFormulas.length}개 HWP 변환 복사 완료!</b>`, true);
     });
 
-    // 정제된 LaTeX 소스 복사 버튼
     document.getElementById('btnCopyClean').addEventListener('click', () => {
-      copyToClipboard(currentCleanedText || rawInput.value, "정제된 LaTeX 텍스트가 클립보드에 복사되었습니다!");
+      copyToClipboard(currentCleanedText || rawInput.value, "정제된 LaTeX 텍스트가 복사되었습니다!");
     });
 
-    // 예시 불러오기
     document.getElementById('btnLoadSample').addEventListener('click', () => {
       rawInput.value = SAMPLE_TEXT;
       updateAll();
-      showToast("예시 텍스트를 불러왔습니다.");
+      showToast("오류 수식이 포함된 예시를 불러왔습니다.");
     });
 
-    // 지우기
     document.getElementById('btnClear').addEventListener('click', () => {
       rawInput.value = '';
       updateAll();
       rawInput.focus();
     });
 
-    // 단축키 (Ctrl + Enter: HWP 수식 복사)
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
@@ -661,7 +685,8 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       }
     });
 
-    // 초기 실행
+    // 시작 시 예시 자동 로드
+    rawInput.value = SAMPLE_TEXT;
     updateAll();
   </script>
 </body>
