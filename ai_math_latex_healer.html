@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 수학 수식 / LaTeX 자동 복구 및 실시간 뷰어</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- KaTeX CDN (Math rendering) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+  <!-- Marked.js (Markdown parser) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+
+  <style>
+    /* Custom Scrollbar for sleek dark mode */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* KaTeX Display Math block horizontal scrolling */
+    .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.85rem 0.5rem;
+      margin: 1rem 0 !important;
+      background: rgba(15, 23, 42, 0.65);
+      border-radius: 0.75rem;
+      border: 1px solid rgba(51, 65, 85, 0.4);
+    }
+    .katex {
+      font-size: 1.08em;
+    }
+
+    /* Markdown Styling in Preview */
+    .markdown-body h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      margin-top: 1.25rem;
+      margin-bottom: 0.75rem;
+      color: #f8fafc;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.4rem;
+    }
+    .markdown-body h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 1.25rem;
+      margin-bottom: 0.6rem;
+      color: #f1f5f9;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 0.3rem;
+    }
+    .markdown-body h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      color: #e2e8f0;
+    }
+    .markdown-body h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 0.85rem;
+      margin-bottom: 0.4rem;
+      color: #cbd5e1;
+    }
+    .markdown-body p {
+      margin-top: 0.5rem;
+      margin-bottom: 0.75rem;
+      line-height: 1.75;
+      color: #cbd5e1;
+    }
+    .markdown-body ul, .markdown-body ol {
+      padding-left: 1.5rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .markdown-body ul {
+      list-style-type: disc;
+    }
+    .markdown-body ol {
+      list-style-type: decimal;
+    }
+    .markdown-body li {
+      margin-top: 0.25rem;
+      margin-bottom: 0.25rem;
+      color: #cbd5e1;
+      line-height: 1.65;
+    }
+    .markdown-body blockquote {
+      border-left: 4px solid #6366f1;
+      padding-left: 1rem;
+      margin: 1rem 0;
+      color: #94a3b8;
+      background: rgba(30, 41, 59, 0.4);
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+    .markdown-body code:not(.katex code) {
+      background: #1e293b;
+      color: #38bdf8;
+      padding: 0.15rem 0.4rem;
+      border-radius: 0.375rem;
+      font-size: 0.9em;
+      font-family: monospace;
+    }
+    .markdown-body pre {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .markdown-body hr {
+      border: 0;
+      height: 1px;
+      background: #334155;
+      margin: 1.5rem 0;
+    }
+  </style>
+</head>
+
+<body class="bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Header Navigation -->
+  <header class="bg-[#111827]/90 backdrop-blur sticky top-0 z-30 border-b border-slate-800 px-4 py-3 sm:px-6">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <!-- Logo & App Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-xl">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2">
+              AI 수식 자동 복구 & 실시간 KaTeX 뷰어
+            </h1>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              v1.0 Auto-Heal
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">깨진 LaTeX 수식, 중괄호 누락, 이스케이프 오류를 실시간으로 교정합니다</p>
+        </div>
+      </div>
+
+      <!-- Quick Metrics & Global Actions -->
+      <div class="flex items-center flex-wrap gap-2 sm:gap-3">
+        <!-- Live Status Indicators -->
+        <div class="hidden sm:flex items-center space-x-2 text-xs bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-300">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+            <span>수식 <strong id="metricFormulaCount" class="text-indigo-400 font-mono">0</strong>개</span>
+          </div>
+          <span class="text-slate-600">|</span>
+          <div>
+            <span>보정 <strong id="metricRepairCount" class="text-emerald-400 font-mono">0</strong>건</span>
+          </div>
+        </div>
+
+        <!-- Sample Load Button -->
+        <button id="btnLoadSample" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+          <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          예시 불러오기
+        </button>
+
+        <!-- Copy Cleaned Text Button -->
+        <button id="btnCopyCleaned" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25 transition active:scale-95">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          정제된 텍스트 복사
+        </button>
+
+        <!-- Clear All Button -->
+        <button id="btnClear" type="button" title="내용 초기화" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 hover:text-rose-400 text-slate-400 border border-slate-700 transition">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container (2-Column Responsive Workspace) -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col">
+    
+    <!-- Rule Configuration Bar -->
+    <div class="mb-3.5 bg-slate-900/90 border border-slate-800/80 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-center gap-2 text-slate-400 font-medium">
+        <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+        <span>자동 복구 옵션:</span>
+      </div>
+      <div class="flex items-center flex-wrap gap-4 text-slate-300">
+        <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+          <input id="optDelimiter" type="checkbox" checked class="w-3.5 h-3.5 rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0 focus:ring-offset-0">
+          <span>구분자 통일 <span class="text-slate-500 font-mono">(\( \), \[ \] ➔ $)</span></span>
+        </label>
+        <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+          <input id="optBackslash" type="checkbox" checked class="w-3.5 h-3.5 rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0 focus:ring-offset-0">
+          <span>과도한 이스케이프 보정 <span class="text-slate-500 font-mono">(\\frac ➔ \frac)</span></span>
+        </label>
+        <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+          <input id="optMissingSlash" type="checkbox" checked class="w-3.5 h-3.5 rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0 focus:ring-offset-0">
+          <span>슬래시 누락 복구 <span class="text-slate-500 font-mono">(frac, sqrt)</span></span>
+        </label>
+        <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+          <input id="optBraces" type="checkbox" checked class="w-3.5 h-3.5 rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0 focus:ring-offset-0">
+          <span>중괄호 짝 닫기 <span class="text-slate-500 font-mono">({ ... })</span></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Workspace Columns -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch min-h-[580px]">
+      
+      <!-- LEFT PANEL: Raw AI Input -->
+      <section class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div class="bg-slate-950/70 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+            <h2 class="text-sm font-semibold text-slate-200">AI 원본 응답 입력</h2>
+          </div>
+          <div class="flex items-center gap-3 text-xs text-slate-400 font-mono">
+            <span>글자 수: <strong id="charCount" class="text-slate-300">0</strong></span>
+            <span>줄 수: <strong id="lineCount" class="text-slate-300">0</strong></span>
+          </div>
+        </div>
+
+        <div class="relative flex-1 flex flex-col p-3">
+          <textarea
+            id="rawInput"
+            spellcheck="false"
+            placeholder="이곳에 ChatGPT, Claude, DeepSeek 등의 AI가 생성한 수식/마크다운 텍스트를 붙여넣으세요.&#10;&#10;예:&#10;이차방정식의 해는 \[ x = frac{-b \pm sqrt{b^2 - 4ac}}{2a \] 입니다.&#10;가우스 적분은 \\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi} 입니다."
+            class="flex-1 w-full bg-slate-950 text-slate-200 font-mono text-sm leading-relaxed p-4 rounded-lg border border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none placeholder-slate-600 transition"
+          ></textarea>
+        </div>
+
+        <div class="bg-slate-950/50 border-t border-slate-800/80 px-4 py-2 flex items-center justify-between text-xs text-slate-500">
+          <span>💡 수식 내 언더스코어(_)는 마크다운 이탤릭체로 손상되지 않도록 격리 처리됩니다.</span>
+          <button id="btnQuickPaste" type="button" class="text-indigo-400 hover:text-indigo-300 font-medium">붙여넣기</button>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL: Live Preview / Healed Text / Diagnostics -->
+      <section class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <!-- Tab Navigation -->
+        <div class="bg-slate-950/70 border-b border-slate-800 px-3 py-2 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center space-x-1">
+            <button id="tabBtnPreview" type="button" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              실시간 렌더링 뷰
+            </button>
+            <button id="tabBtnSource" type="button" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              복구된 텍스트 (LaTeX Source)
+            </button>
+            <button id="tabBtnLogs" type="button" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              수식 검사 로그
+              <span id="badgeLogsCount" class="px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-400 text-[10px]">0</span>
+            </button>
+          </div>
+          <div class="text-[11px] text-slate-500 font-mono">
+            KaTeX 0.16.9
+          </div>
+        </div>
+
+        <!-- Tab 1: Rendered View (KaTeX + Markdown) -->
+        <div id="tabContentPreview" class="tab-panel flex-1 p-5 overflow-y-auto bg-slate-950/40">
+          <div id="previewContainer" class="markdown-body max-w-none text-slate-300">
+            <!-- Dynamic rendered markdown & math inserted here -->
+            <div class="text-center py-20 text-slate-600">
+              <svg class="w-12 h-12 mx-auto mb-3 opacity-40 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <p class="text-sm">왼쪽 입력창에 텍스트를 입력하거나 "예시 불러오기"를 클릭하세요.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Cleaned Raw Source (Ready for copying) -->
+        <div id="tabContentSource" class="tab-panel hidden flex-1 p-3 flex flex-col bg-slate-950/40">
+          <div class="flex items-center justify-between px-2 py-1 text-xs text-slate-400 mb-2">
+            <span>교정된 표준 LaTeX & Markdown 코드</span>
+            <button id="btnCopySourceInside" type="button" class="text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              이 내용 복사
+            </button>
+          </div>
+          <textarea
+            id="cleanedSourceArea"
+            readonly
+            class="flex-1 w-full bg-slate-950 text-emerald-300/90 font-mono text-xs leading-relaxed p-4 rounded-lg border border-slate-800 focus:outline-none resize-none"
+          ></textarea>
+        </div>
+
+        <!-- Tab 3: Diagnostics & Healed Report -->
+        <div id="tabContentLogs" class="tab-panel hidden flex-1 p-4 overflow-y-auto bg-slate-950/40">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">감지 및 복구 내역 상세</h3>
+            <span id="logSummaryText" class="text-xs text-slate-500"></span>
+          </div>
+          <div id="diagnosticLogsList" class="space-y-2">
+            <!-- Dynamic logs will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Bottom Status Bar -->
+        <div class="bg-slate-950/80 border-t border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-500">
+          <div class="flex items-center gap-2">
+            <span id="renderStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span id="renderStatusText" class="text-slate-400">렌더링 준비 완료</span>
+          </div>
+          <span class="text-slate-500">KaTeX errorMode: <span class="text-amber-400">throwOnError: false</span></span>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Modern Floating Toast Notification -->
+  <div id="toast" class="fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-slate-800 text-white border border-slate-700 shadow-2xl transition-all duration-300 transform translate-y-[-20px] opacity-0 pointer-events-none">
+    <div class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <span id="toastMsg" class="text-sm font-medium">클립보드에 복사되었습니다!</span>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    /**
+     * AI Math LaTeX Auto-Healer & Real-time Viewer
+     * Core Parsing & Auto-Repair Engine
+     */
+
+    // Common LaTeX math tokens that AI models frequently forget the leading backslash for
+    const COMMON_MATH_KEYWORDS = [
+      'frac', 'sqrt', 'sum', 'prod', 'int', 'iint', 'iiint', 'oint',
+      'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'varepsilon', 'zeta', 'eta', 'theta', 'vartheta',
+      'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'pi', 'varpi', 'rho', 'varrho', 'sigma',
+      'tau', 'upsilon', 'phi', 'varphi', 'chi', 'psi', 'omega',
+      'Gamma', 'Delta', 'Theta', 'Lambda', 'Xi', 'Pi', 'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega',
+      'times', 'cdot', 'pm', 'mp', 'le', 'ge', 'leq', 'geq', 'neq', 'approx', 'equiv', 'propto',
+      'infty', 'mathbf', 'mathrm', 'mathit', 'mathbb', 'mathcal', 'text',
+      'lim', 'limsup', 'liminf', 'log', 'ln', 'exp', 'det', 'dim', 'ker',
+      'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'arcsin', 'arccos', 'arctan',
+      'sinh', 'cosh', 'tanh',
+      'partial', 'nabla', 'in', 'notin', 'subset', 'subseteq', 'supset', 'supseteq', 'cup', 'cap', 'setminus',
+      'forall', 'exists', 'to', 'rightarrow', 'leftarrow', 'Rightarrow', 'Leftarrow', 'iff', 'iff',
+      'left', 'right', 'begin', 'end', 'pmatrix', 'bmatrix', 'vmatrix', 'matrix', 'cases'
+    ];
+
+    // Rich Messy AI Sample
+    const SAMPLE_BROKEN_AI_OUTPUT = `### 1. 이차방정식과 판별식
+AI 모델이 수식을 출력할 때 구분자가 깨지거나 슬래시가 누락되는 경우가 빈번합니다.
+
+일반적인 이차방정식 \( ax^2 + bx + c = 0 \) (단, \( a \\neq 0 \))의 근의 공식은 다음과 같습니다:
+\\[
+x = frac{-b \\pm sqrt{b^2 - 4ac}}{2a
+\\]
+위 식에서 닫는 중괄호가 빠져 있거나 슬래시가 누락되어도 자동으로 복구됩니다.
+판별식은 \( D = b^2 - 4ac \) 이며, 두 근 \( x_1 \)과 \( x_2 \)의 관계는 다음과 같습니다:
+\\[
+f(x_1, x_2) = x_1^2 + 2x_1 x_2 + x_2^2 = (x_1 + x_2)^2
+\\]
+수식 속 언더스코어(\`_\`)가 마크다운 이탤릭체(\`<em>\`)로 깨지지 않고 본래의 아래첨자로 정확히 유지됩니다.
+
+---
+
+### 2. 가우스 적분 (Gaussian Integral)
+과도하게 이스케이프된 백슬래시(\`\\\\frac\`, \`\\\\int\`) 처리 및 연쇄 적분:
+\\[
+I = \\\\int_{-\\\\infty}^{\\\\infty} e^{-x^2} dx = \\\\sqrt{\\\\pi}
+\\]
+극좌표계로 변환하여 적분 영역을 전개하면:
+\\[
+I^2 = int_0^{2pi} dtheta int_0^{infty} r e^{-r^2} dr = pi
+\\]
+
+---
+
+### 3. 확률 및 통계 (정규분포)
+평균이 \( \\mu \)이고 표준편차가 \( \\sigma \)인 정규분포의 확률밀도함수(PDF):
+\\[
+f(x; \\mu, \\sigma) = frac{1}{sigma sqrt{2pi}} exp \\left( -frac{(x - mu)^2}{2sigma^2} \\right)
+\\]
+
+> **알림:** 우측 "수식 검사 로그" 탭에서 자동으로 탐지되고 교정된 세부 항목들을 한눈에 확인할 수 있습니다.`;
+
+    // DOM Elements
+    const rawInput = document.getElementById('rawInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const cleanedSourceArea = document.getElementById('cleanedSourceArea');
+    const diagnosticLogsList = document.getElementById('diagnosticLogsList');
+    const logSummaryText = document.getElementById('logSummaryText');
+    const badgeLogsCount = document.getElementById('badgeLogsCount');
+
+    // Stats
+    const metricFormulaCount = document.getElementById('metricFormulaCount');
+    const metricRepairCount = document.getElementById('metricRepairCount');
+    const charCount = document.getElementById('charCount');
+    const lineCount = document.getElementById('lineCount');
+    const renderStatusDot = document.getElementById('renderStatusDot');
+    const renderStatusText = document.getElementById('renderStatusText');
+
+    // Option Checkboxes
+    const optDelimiter = document.getElementById('optDelimiter');
+    const optBackslash = document.getElementById('optBackslash');
+    const optMissingSlash = document.getElementById('optMissingSlash');
+    const optBraces = document.getElementById('optBraces');
+
+    // Buttons
+    const btnLoadSample = document.getElementById('btnLoadSample');
+    const btnCopyCleaned = document.getElementById('btnCopyCleaned');
+    const btnCopySourceInside = document.getElementById('btnCopySourceInside');
+    const btnClear = document.getElementById('btnClear');
+    const btnQuickPaste = document.getElementById('btnQuickPaste');
+
+    // Tabs
+    const tabBtnPreview = document.getElementById('tabBtnPreview');
+    const tabBtnSource = document.getElementById('tabBtnSource');
+    const tabBtnLogs = document.getElementById('tabBtnLogs');
+    const tabContentPreview = document.getElementById('tabContentPreview');
+    const tabContentSource = document.getElementById('tabContentSource');
+    const tabContentLogs = document.getElementById('tabContentLogs');
+
+    // Toast
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    let toastTimeout = null;
+
+    /**
+     * Show custom non-intrusive toast notification
+     */
+    function showToast(message) {
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastMsg.textContent = message;
+      toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      }, 2600);
+    }
+
+    /**
+     * Copy text to clipboard using reliable method
+     */
+    function copyToClipboard(text) {
+      if (!text || text.trim() === '') {
+        showToast('복사할 내용이 없습니다.');
+        return;
+      }
+
+      // Hidden textarea fallback compatible with iframes & various browsers
+      const tempArea = document.createElement('textarea');
+      tempArea.value = text;
+      tempArea.setAttribute('readonly', '');
+      tempArea.style.position = 'absolute';
+      tempArea.style.left = '-9999px';
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showToast('정제된 텍스트가 클립보드에 복사되었습니다!');
+        } else {
+          showToast('복사에 실패했습니다.');
+        }
+      } catch (err) {
+        showToast('복사 권한이 거부되었습니다.');
+      }
+      document.body.removeChild(tempArea);
+    }
+
+    /**
+     * Repair an individual formula string (inside delimiters)
+     */
+    function autoRepairFormula(formula, isDisplay, options, diagnostics, formulaId) {
+      let healed = formula;
+      let repairCounter = 0;
+
+      // 1. Over-escaped backslash clean up: e.g. \\frac -> \frac, \\\sqrt -> \sqrt
+      if (options.backslash) {
+        // Find 2 or more backslashes followed by a letter, reduce to a single backslash
+        const overEscapedRegex = /\\{2,}([a-zA-Z])/g;
+        if (overEscapedRegex.test(healed)) {
+          healed = healed.replace(overEscapedRegex, (match, letter) => {
+            repairCounter++;
+            diagnostics.push({
+              formulaId,
+              type: 'escape',
+              title: '과도한 백슬래시 이스케이프 축소',
+              detail: `${match} ➔ \\${letter}`
+            });
+            return '\\' + letter;
+          });
+        }
+      }
+
+      // 2. Missing backslashes for common math keywords
+      // e.g. "frac{a}{b}" -> "\frac{a}{b}", "sqrt{x}" -> "\sqrt{x}"
+      if (options.missingSlash) {
+        const pattern = new RegExp(`(?<![\\\\a-zA-Z])\\b(${COMMON_MATH_KEYWORDS.join('|')})\\b`, 'g');
+        healed = healed.replace(pattern, (match, word) => {
+          repairCounter++;
+          diagnostics.push({
+            formulaId,
+            type: 'slash',
+            title: '누락된 슬래시(\\) 복구',
+            detail: `${word} ➔ \\${word}`
+          });
+          return '\\' + word;
+        });
+      }
+
+      // 3. Balanced Curly Braces { } Correction
+      if (options.braces) {
+        let openCount = 0;
+        let closeCount = 0;
+        for (let i = 0; i < healed.length; i++) {
+          const char = healed[i];
+          const prev = i > 0 ? healed[i - 1] : '';
+          // Count non-escaped curly braces
+          if (char === '{' && prev !== '\\') openCount++;
+          if (char === '}' && prev !== '\\') closeCount++;
+        }
+
+        if (openCount > closeCount) {
+          const missingCount = openCount - closeCount;
+          healed = healed + '}'.repeat(missingCount);
+          repairCounter += missingCount;
+          diagnostics.push({
+            formulaId,
+            type: 'brace',
+            title: '닫는 중괄호 자동 완성',
+            detail: `누락된 '}' ${missingCount}개를 수식 끝에 추가했습니다.`
+          });
+        } else if (closeCount > openCount) {
+          // Extra closing braces at the end
+          const excessCount = closeCount - openCount;
+          let temp = healed;
+          let removed = 0;
+          while (removed < excessCount && temp.endsWith('}')) {
+            temp = temp.slice(0, -1);
+            removed++;
+          }
+          if (removed > 0) {
+            healed = temp;
+            repairCounter += removed;
+            diagnostics.push({
+              formulaId,
+              type: 'brace',
+              title: '잉여 닫는 중괄호 제거',
+              detail: `불필요한 '}' ${removed}개를 제거했습니다.`
+            });
+          }
+        }
+      }
+
+      return { healed, repairCounter };
+    }
+
+    /**
+     * Master Parsing Pipeline:
+     * 1. Normalize delimiters [ ... ] & \( ... \)
+     * 2. Extract math blocks to placeholders to isolate from Markdown parser
+     * 3. Run auto-repair on math blocks
+     * 4. Parse Markdown safely (underscores in math are 100% protected)
+     * 5. Re-inject KaTeX rendered HTML
+     * 6. Assemble cleaned Markdown/LaTeX source
+     */
+    function processInput() {
+      const rawText = rawInput.value;
+
+      // Update counters
+      charCount.textContent = rawText.length.toLocaleString();
+      lineCount.textContent = rawText ? rawText.split('\n').length.toLocaleString() : '0';
+
+      if (!rawText.trim()) {
+        previewContainer.innerHTML = `
+          <div class="text-center py-20 text-slate-600">
+            <svg class="w-12 h-12 mx-auto mb-3 opacity-40 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <p class="text-sm">왼쪽 입력창에 텍스트를 입력하거나 "예시 불러오기"를 클릭하세요.</p>
+          </div>
+        `;
+        cleanedSourceArea.value = '';
+        diagnosticLogsList.innerHTML = '<div class="text-xs text-slate-500 italic p-3">검사할 텍스트가 없습니다.</div>';
+        metricFormulaCount.textContent = '0';
+        metricRepairCount.textContent = '0';
+        badgeLogsCount.textContent = '0';
+        logSummaryText.textContent = '';
+        renderStatusDot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        renderStatusText.textContent = '대기 중';
+        return;
+      }
+
+      const options = {
+        delimiter: optDelimiter.checked,
+        backslash: optBackslash.checked,
+        missingSlash: optMissingSlash.checked,
+        braces: optBraces.checked
+      };
+
+      const diagnostics = [];
+      let totalRepairs = 0;
+      let workingText = rawText;
+
+      // STEP 1: Delimiter Normalization
+      if (options.delimiter) {
+        // Convert \[ ... \] to $$ ... $$ (Display Math)
+        workingText = workingText.replace(/\\\[([\s\S]*?)\\\]/g, (match, content) => {
+          totalRepairs++;
+          diagnostics.push({
+            formulaId: '전체',
+            type: 'delimiter',
+            title: 'Display 수식 구분자 표준화',
+            detail: '\\[ ... \\] ➔ $$ ... $$'
+          });
+          return `$$\n${content.trim()}\n$$`;
+        });
+
+        // Convert \( ... \) to $ ... $ (Inline Math)
+        workingText = workingText.replace(/\\\(([\s\S]*?)\\\)/g, (match, content) => {
+          totalRepairs++;
+          diagnostics.push({
+            formulaId: '전체',
+            type: 'delimiter',
+            title: 'Inline 수식 구분자 표준화',
+            detail: '\\( ... \\) ➔ $ ... $'
+          });
+          return `$${content.trim()}$`;
+        });
+      }
+
+      // STEP 2: Extract & Isolate Math Blocks
+      // We use distinct safe placeholder tokens that marked.js won't format as markdown (avoiding double underscores)
+      const mathItems = [];
+
+      // 2A. Extract Display Math: $$ ... $$
+      workingText = workingText.replace(/\$\$([\s\S]*?)\$\$/g, (match, inner) => {
+        const id = mathItems.length;
+        mathItems.push({
+          id: id + 1,
+          type: 'display',
+          raw: inner
+        });
+        return `%%KATEX_MATH_BLOCK_${id}%%`;
+      });
+
+      // 2B. Extract Inline Math: $ ... $ (Excludes escaped \$, and ignores newlines inside simple inline math)
+      workingText = workingText.replace(/(?<!\\)\$((?:\\\$|[^\$\n])+?)(?<!\\)\$/g, (match, inner) => {
+        const id = mathItems.length;
+        mathItems.push({
+          id: id + 1,
+          type: 'inline',
+          raw: inner
+        });
+        return `%%KATEX_MATH_BLOCK_${id}%%`;
+      });
+
+      metricFormulaCount.textContent = mathItems.length;
+
+      // STEP 3: Auto-Repair Each Math Block
+      for (let i = 0; i < mathItems.length; i++) {
+        const item = mathItems[i];
+        const { healed, repairCounter } = autoRepairFormula(
+          item.raw,
+          item.type === 'display',
+          options,
+          diagnostics,
+          item.id
+        );
+        item.healed = healed;
+        totalRepairs += repairCounter;
+      }
+
+      metricRepairCount.textContent = totalRepairs;
+      badgeLogsCount.textContent = diagnostics.length;
+
+      // STEP 4: Safe Markdown Parsing (marked.js)
+      // Marked options for GitHub Flavored Markdown & breaks
+      marked.setOptions({
+        gfm: true,
+        breaks: true
+      });
+
+      let htmlOutput = '';
+      try {
+        htmlOutput = marked.parse(workingText);
+      } catch (err) {
+        htmlOutput = `<div class="text-rose-400 p-4 bg-rose-950/40 rounded-lg">마크다운 파싱 오류: ${escapeHtml(err.message)}</div>`;
+      }
+
+      // STEP 5: Re-inject & Render KaTeX Blocks
+      let hadKaTeXError = false;
+
+      for (let i = 0; i < mathItems.length; i++) {
+        const item = mathItems[i];
+        const placeholder = `%%KATEX_MATH_BLOCK_${i}%%`;
+
+        let renderedMath = '';
+        try {
+          renderedMath = katex.renderToString(item.healed, {
+            displayMode: item.type === 'display',
+            throwOnError: false, // Ensures entire page doesn't crash on broken formulas!
+            errorColor: '#ef4444',
+            output: 'htmlAndMathml'
+          });
+        } catch (katexErr) {
+          hadKaTeXError = true;
+          renderedMath = `<span class="inline-block text-rose-400 bg-rose-950/40 border border-rose-500/30 px-2 py-0.5 rounded text-xs font-mono">KaTeX 에러: ${escapeHtml(katexErr.message)}</span>`;
+        }
+
+        // Replace all instances of the placeholder
+        htmlOutput = htmlOutput.split(placeholder).join(renderedMath);
+      }
+
+      previewContainer.innerHTML = htmlOutput;
+
+      // STEP 6: Assemble Cleaned Markdown/LaTeX Source
+      let cleanedSource = workingText;
+      for (let i = 0; i < mathItems.length; i++) {
+        const item = mathItems[i];
+        const placeholder = `%%KATEX_MATH_BLOCK_${i}%%`;
+        const replacement = item.type === 'display'
+          ? `$$\n${item.healed.trim()}\n$$`
+          : `$${item.healed.trim()}$`;
+        cleanedSource = cleanedSource.split(placeholder).join(replacement);
+      }
+      cleanedSourceArea.value = cleanedSource;
+
+      // STEP 7: Update Status UI & Diagnostics Drawer
+      if (hadKaTeXError) {
+        renderStatusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        renderStatusText.textContent = '일부 수식 문법 에러 감지 (표시 계속됨)';
+      } else {
+        renderStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        renderStatusText.textContent = '모든 수식 정상 렌더링 완료';
+      }
+
+      renderDiagnostics(diagnostics, mathItems.length, totalRepairs);
+    }
+
+    /**
+     * Render the Diagnostics Tab
+     */
+    function renderDiagnostics(diagnostics, totalFormulas, totalRepairs) {
+      logSummaryText.textContent = `감지 수식: ${totalFormulas}개 | 보정 작업: ${totalRepairs}건`;
+
+      if (diagnostics.length === 0) {
+        diagnosticLogsList.innerHTML = `
+          <div class="text-center py-10 bg-slate-900/50 rounded-xl border border-slate-800">
+            <div class="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p class="text-sm font-medium text-slate-300">발견된 수식 오류가 없습니다</p>
+            <p class="text-xs text-slate-500 mt-1">모든 LaTeX 수식이 정상적인 표준 문법을 따르고 있습니다.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      diagnostics.forEach((log, idx) => {
+        let badgeColor = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+        if (log.type === 'delimiter') badgeColor = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+        if (log.type === 'slash') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        if (log.type === 'brace') badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+        if (log.type === 'escape') badgeColor = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+
+        html += `
+          <div class="p-3 bg-slate-900 border border-slate-800/80 rounded-lg flex items-start gap-3 text-xs hover:border-slate-700 transition">
+            <span class="px-2 py-0.5 rounded font-mono font-medium border ${badgeColor} shrink-0">
+              #${log.formulaId} ${log.type.toUpperCase()}
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-slate-200 font-medium">${escapeHtml(log.title)}</div>
+              <div class="text-slate-400 font-mono mt-0.5 break-all text-[11px]">${escapeHtml(log.detail)}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      diagnosticLogsList.innerHTML = html;
+    }
+
+    /**
+     * Helper to safely escape HTML special chars
+     */
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    /**
+     * Tab Switcher Handler
+     */
+    function setActiveTab(tab) {
+      // Buttons
+      [tabBtnPreview, tabBtnSource, tabBtnLogs].forEach(b => {
+        b.classList.remove('bg-indigo-600', 'text-white');
+        b.classList.add('text-slate-400');
+      });
+
+      // Panels
+      [tabContentPreview, tabContentSource, tabContentLogs].forEach(p => p.classList.add('hidden'));
+
+      if (tab === 'preview') {
+        tabBtnPreview.classList.add('bg-indigo-600', 'text-white');
+        tabBtnPreview.classList.remove('text-slate-400');
+        tabContentPreview.classList.remove('hidden');
+      } else if (tab === 'source') {
+        tabBtnSource.classList.add('bg-indigo-600', 'text-white');
+        tabBtnSource.classList.remove('text-slate-400');
+        tabContentSource.classList.remove('hidden');
+      } else if (tab === 'logs') {
+        tabBtnLogs.classList.add('bg-indigo-600', 'text-white');
+        tabBtnLogs.classList.remove('text-slate-400');
+        tabContentLogs.classList.remove('hidden');
+      }
+    }
+
+    // Event Listeners
+    rawInput.addEventListener('input', () => {
+      processInput();
+    });
+
+    [optDelimiter, optBackslash, optMissingSlash, optBraces].forEach(elem => {
+      elem.addEventListener('change', () => {
+        processInput();
+      });
+    });
+
+    // Preset Example
+    btnLoadSample.addEventListener('click', () => {
+      rawInput.value = SAMPLE_BROKEN_AI_OUTPUT;
+      processInput();
+      showToast('깨진 수식 AI 샘플 텍스트를 불러왔습니다.');
+    });
+
+    // Copy Cleaned
+    btnCopyCleaned.addEventListener('click', () => {
+      copyToClipboard(cleanedSourceArea.value);
+    });
+
+    btnCopySourceInside.addEventListener('click', () => {
+      copyToClipboard(cleanedSourceArea.value);
+    });
+
+    // Clear
+    btnClear.addEventListener('click', () => {
+      rawInput.value = '';
+      processInput();
+      showToast('입력 내용이 초기화되었습니다.');
+    });
+
+    // Quick Paste button
+    btnQuickPaste.addEventListener('click', async () => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const text = await navigator.clipboard.readText();
+          rawInput.value = text;
+          processInput();
+          showToast('클립보드 내용을 붙여넣었습니다.');
+        } else {
+          rawInput.focus();
+          showToast('Ctrl+V (Mac: Cmd+V)를 눌러 붙여넣으세요.');
+        }
+      } catch (err) {
+        rawInput.focus();
+        showToast('Ctrl+V를 눌러 붙여넣어주세요.');
+      }
+    });
+
+    // Tab buttons
+    tabBtnPreview.addEventListener('click', () => setActiveTab('preview'));
+    tabBtnSource.addEventListener('click', () => setActiveTab('source'));
+    tabBtnLogs.addEventListener('click', () => setActiveTab('logs'));
+
+    // Initial Load: Auto-inject sample on first start so the user immediately sees the effect
+    window.onload = function () {
+      rawInput.value = SAMPLE_BROKEN_AI_OUTPUT;
+      processInput();
+    };
+  </script>
+</body>
+</html>
