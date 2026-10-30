@@ -663,6 +663,45 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     'cdot', 'to', 'implies', 'iff', 'sin', 'cos', 'tan', 'det'
   ];
 
+  // --- 줄바꿈(\n)으로 끊어진 인라인 수식($...$) 및 \text{...} 자동 봉합기 ---
+  function stitchBrokenMultilineFormulas(text) {
+    let stitched = text;
+
+    // 1. \text{의 \n }2\text{개} 처럼 중괄호 내부에서 개행된 패턴 우선 봉합
+    stitched = stitched.replace(/(\\(?:text|mathrm|textbf)\s*\{[^{}\n]*)\r?\n\s*([^{}\n]*\})/g, '$1 $2');
+
+    // 2. 한 줄에서 열린 $... 가 닫히지 않고 줄바꿈된 뒤 다음 줄에서 닫히는 인라인 수식 봉합
+    const lines = stitched.split('\n');
+    const resultLines = [];
+
+    function countUnescapedDollars(str) {
+      let count = 0;
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === '$' && (i === 0 || str[i - 1] !== '\\')) count++;
+      }
+      return count;
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      let curr = lines[i];
+      // 현재 줄의 $ 개수가 홀수이고, 다음 줄도 존재하며 마지막 열린 $ 이후에 수식 기호(\, {, (, =, + 등)가 있는 경우
+      if (i + 1 < lines.length && countUnescapedDollars(curr) % 2 === 1 && !curr.includes('%%GLOBAL_BLOCK_')) {
+        const lastDollarIdx = curr.lastIndexOf('$');
+        const tailAfterDollar = curr.slice(lastDollarIdx + 1);
+        const nextLine = lines[i + 1];
+        const firstDollarNext = nextLine.indexOf('$');
+
+        if (firstDollarNext !== -1 && /[\\\{\(\=\+\-\*\/\^\_<>0-9a-zA-Z]/.test(tailAfterDollar)) {
+          curr = curr + ' ' + nextLine.trimStart();
+          i++; // 다음 줄을 병합했으므로 건너뛰기
+        }
+      }
+      resultLines.push(curr);
+    }
+
+    return resultLines.join('\n');
+  }
+
   function repairMathString(mathContent) {
     let repaired = mathContent;
     const logs = [];
@@ -772,8 +811,10 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         }
         if (nextDollar !== -1) {
           const inner = l.slice(cursor + 1, nextDollar);
-          // 내부가 비어있지 않고 한글이 없다면 정상 수식으로 즉시 보호
-          if (inner.trim().length > 0 && !/[가-힣]/.test(inner)) {
+          // \text{...}, \mathrm{...} 내부의 한글은 정상 수식 문법이므로 검사에서 제외
+          const innerWithoutTextCmd = inner.replace(/\\(?:text|mathrm|textbf|textit)\s*\{[^{}]*\}/g, '');
+          // 내부가 비어있지 않고 \text{} 외부에 일반 한글이 없다면 정상 수식으로 즉시 보호
+          if (inner.trim().length > 0 && !/[가-힣]/.test(innerWithoutTextCmd)) {
             scanned += protect(inner);
             cursor = nextDollar + 1;
             continue;
@@ -795,7 +836,13 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       return token;
     });
 
-    // 3. 중첩 중괄호를 포함한 Bare \frac, \sqrt를 밸런스 파서로 추출하여 __MATH_ATOM_N__ 토큰화
+    // 3. 중첩 중괄호를 포함한 Bare \frac, \sqrt, \text를 밸런스 파서로 추출하여 __MATH_ATOM_N__ 토큰화
+    l = replaceBalancedCommands(l, /(?<![a-zA-Z0-9_])\\?(text|mathrm)\b/, 1, false, (cmd, opt, args) => {
+      const rawLatex = `\\${cmd}{${args[0]}}`;
+      const atomToken = `__MATH_ATOM_${atomIdx++}__`;
+      mathAtoms.push({ atomToken, rawLatex });
+      return atomToken;
+    });
     l = replaceBalancedCommands(l, /(?<![a-zA-Z0-9_])\\?([dt]?frac)\b/, 2, false, (cmd, opt, args) => {
       const rawLatex = `\\${cmd}{${args[0]}}{${args[1]}}`;
       const atomToken = `__MATH_ATOM_${atomIdx++}__`;
@@ -942,6 +989,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       allLogs.push(`[행렬/수식 환경 자동 감지] ${envBody.slice(0, 24)}... 보정 완료`);
       return `\n${token}\n`;
     });
+
+    // B-1. 줄바꿈(\n)으로 인해 두 줄로 쪼개진 인라인 수식($...$) 및 \text{...} 자동 봉합
+    text = stitchBrokenMultilineFormulas(text);
 
     // C. 라인 단위로 나누어 개행 및 문장 구조 100% 보존하며 수식 보정
     const lines = text.split('\n');
