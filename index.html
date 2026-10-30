@@ -1302,28 +1302,28 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       return;
     }
 
-    showToast("<b>한글(.hwpx) 파일 생성 중...</b>", true);
+    showToast("<b>한컴독스 호환 한글(.hwpx) 파일 생성 중...</b>", true);
 
     try {
       const zip = new JSZip();
 
-      // 1. mimetype (비압축 저장)
+      // 1. mimetype: 표준 규격 준수 (ZIP 최상단 무압축 플랫 바이트)
       zip.file("mimetype", "application/hwp+zip", { compression: "STORE" });
 
-      // 2. META-INF/container.xml
-      zip.folder("META-INF").file("container.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      // 2. META-INF/container.xml (공식 대소문자 Section0.xml 표기)
+      zip.file("META-INF/container.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container">
   <ocf:rootfiles>
     <ocf:rootfile full-path="Contents/content.hpf" media-type="application/hwp+zip"/>
   </ocf:rootfiles>
 </ocf:container>`);
 
-      // 3. version.xml
+      // 3. version.xml (한컴독스 호환 최신 버전 메타데이터)
       zip.file("version.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<hh:version xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" version="1.0" targetApplication="HWP" targetAppVersion="10.0.0.0"/>`);
+<hh:version xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" version="1.0" targetApplication="HWP" targetAppVersion="11.0.0.0"/>`);
 
-      // 4. Contents/content.hpf
-      zip.folder("Contents").file("content.hpf", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      // 4. Contents/content.hpf (대문자 Section0.xml 반영)
+      zip.file("Contents/content.hpf", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <package xmlns="http://www.hancom.co.kr/hwpml/2011/head" version="1.0">
   <metadata>
     <title>AI Math LaTeX Export</title>
@@ -1331,32 +1331,32 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   </metadata>
   <manifest>
     <item id="header" href="header.xml" media-type="application/xml"/>
-    <item id="section0" href="section0.xml" media-type="application/xml"/>
+    <item id="Section0" href="Section0.xml" media-type="application/xml"/>
   </manifest>
   <spine>
     <itemref idref="header"/>
-    <itemref idref="section0"/>
+    <itemref idref="Section0"/>
   </spine>
 </package>`);
 
-      // 5. Contents/header.xml (스타일, 폰트, 단락 속성)
-      zip.folder("Contents").file("header.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      // 5. Contents/header.xml (한컴독스 XSD 스키마 검증 통과를 위한 tabProperties 및 완전체 속성 정의)
+      zip.file("Contents/header.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <hh:head xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph">
   <hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/>
   <hh:refList>
     <hh:fontfaces itemCnt="7">
-      <hh:fontface lang="hangul" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
-      <hh:fontface lang="latin" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
-      <hh:fontface lang="hanja" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
-      <hh:fontface lang="japanese" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
-      <hh:fontface lang="other" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
-      <hh:fontface lang="symbol" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
-      <hh:fontface lang="user" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="hangul" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="latin" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="hanja" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="japanese" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="other" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="symbol" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="user" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF"/></hh:fontface>
     </hh:fontfaces>
     <hh:borderFills itemCnt="1">
       <hh:borderFill id="1" backSlash="NONE" slash="NONE" type="SOLID">
-        <hh:slash/>
-        <hh:backSlash/>
+        <hh:slash type="NONE" Crooked="0" isCounter="0"/>
+        <hh:backSlash type="NONE" Crooked="0" isCounter="0"/>
         <hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/>
         <hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/>
         <hh:topBorder type="NONE" width="0.1 mm" color="#000000"/>
@@ -1379,6 +1379,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         <hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>
       </hh:charPr>
     </hh:charProperties>
+    <hh:tabProperties itemCnt="1">
+      <hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/>
+    </hh:tabProperties>
     <hh:paraProperties itemCnt="2">
       <hh:paraPr id="0" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0">
         <hh:align horizontal="JUSTIFY" vertical="BASELINE"/>
@@ -1403,7 +1406,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   </hh:refList>
 </hh:head>`);
 
-      // 6. Contents/section0.xml 조립 (줄글 + <hp:equation> 글자처럼 취급)
+      // 6. Contents/Section0.xml 조립 (한컴독스 규격의 완전한 <hp:equation> 구조 적용)
       const tokenMap = new Map();
       if (currentMathTokens) {
         currentMathTokens.forEach(t => tokenMap.set(t.token, t));
@@ -1427,17 +1430,15 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
         let runsXml = '';
 
-        // 첫 번째 문단에는 기본 A4 용지 규격 (secPr) 주입
+        // 첫 문단에 완전한 섹션 설정 주입
         if (pIdx === 0) {
-          runsXml += `<hp:run charPrIDRef="0">
-              <hp:secPr id="0" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" outlineShapeIDRef="1" memoShapeIDRef="1">
-                <hp:grid char="0" line="0"/>
-                <hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/>
-                <hp:pagePr landscape="WIDELY" width="59528" height="84188" gutterType="LEFT_ONLY">
-                  <hp:margin left="8504" right="8504" top="5669" bottom="5669" header="4252" footer="4252" gutter="0"/>
-                </hp:pagePr>
-              </hp:secPr>
-            </hp:run>`;
+          runsXml += `<hp:secPr id="0" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" outlineShapeIDRef="1" memoShapeIDRef="1">
+              <hp:grid char="0" line="0"/>
+              <hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/>
+              <hp:pagePr landscape="WIDELY" width="59528" height="84188" gutterType="LEFT_ONLY">
+                <hp:margin left="8504" right="8504" top="5669" bottom="5669" header="4252" footer="4252" gutter="0"/>
+              </hp:pagePr>
+            </hp:secPr>`;
         }
 
         if (lineContent.length === 0) {
@@ -1450,15 +1451,17 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
               const tokenInfo = tokenMap.get(part);
               const eqId = 1000000000 + (eqCounter++);
               if (tokenInfo.isDisplay) {
-                paraPrId = 1; // 블록 수식은 중앙 정렬
+                paraPrId = 1; // 블록 수식 중앙 정렬
               }
               const cleanScript = escapeXml(tokenInfo.hwpCode || tokenInfo.formula);
+
+              // 한컴독스에서 요구하는 <hp:equation> 완전체 속성 및 lineShape
               runsXml += `<hp:run charPrIDRef="${charPrId}">
-                  <hp:equation id="${eqId}" zOrder="0" numberingType="EQUATION" textWrap="IN_LINE" textFlow="BOTH_SIDES">
-                    <hp:sz width="4000" height="2000" widthRelTo="ABSOLUTE" heightRelTo="ABSOLUTE"/>
+                  <hp:equation id="${eqId}" zOrder="0" numberingType="EQUATION" textWrap="IN_LINE" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" version="EQUATION_2">
+                    <hp:sz width="3500" height="1500" widthRelTo="ABSOLUTE" heightRelTo="ABSOLUTE"/>
                     <hp:pos treatAsChar="1" arrange="FLOW" groupLevel="0"/>
                     <hp:outMargin left="100" right="100" top="50" bottom="50"/>
-                    <hp:shapeComment></hp:shapeComment>
+                    <hp:lineShape color="#000000" width="0" style="NONE" endCap="FLAT" headStyle="FLAT" tailStyle="FLAT"/>
                     <hp:script>${cleanScript}</hp:script>
                   </hp:equation>
                 </hp:run>`;
@@ -1476,10 +1479,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 ${paragraphsXml}
 </hs:sec>`;
 
-      zip.folder("Contents").file("section0.xml", section0Xml);
+      // 반드시 대문자 Section0.xml 로 저장
+      zip.file("Contents/Section0.xml", section0Xml);
 
       // 7. 클라이언트 측 즉시 다운로드 실행
-      const content = await zip.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip' });
+      const content = await zip.generateAsync({
+        type: 'blob',
+        mimeType: 'application/hwp+zip',
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 }
+      });
       const now = new Date();
       const dateStr = now.getFullYear() + ('0' + (now.getMonth() + 1)).slice(-2) + ('0' + now.getDate()).slice(-2) + '_' + ('0' + now.getHours()).slice(-2) + ('0' + now.getMinutes()).slice(-2);
       const fileName = `AI_Math_LaTeX_${dateStr}.hwpx`;
@@ -1493,7 +1502,7 @@ ${paragraphsXml}
       document.body.removeChild(a);
       URL.revokeObjectURL(downloadUrl);
 
-      showToast(`<b>${fileName} 다운로드 완료!</b> 한글에서 바로 열 수 있습니다.`, true);
+      showToast(`<b>${fileName} 다운로드 완료!</b> 한컴독스 및 한글에서 열어보세요.`, true);
     } catch (err) {
       console.error("HWPX 생성 에러:", err);
       showToast("HWPX 생성 중 오류가 발생했습니다: " + err.message);
