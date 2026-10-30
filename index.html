@@ -703,9 +703,9 @@ $$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\int_{0}^{\\infty} e^{-x} dx
       }
     });
 
-    // 시작 시 예시 자동 로드
-    rawInput.value = SAMPLE_TEXT;
+    // 시작 시 빈 상태로 초기화 및 즉시 붙여넣을 수 있도록 포커스
     updateAll();
+    rawInput.focus();
   </script>
 </body>
 </html>
