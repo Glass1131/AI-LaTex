@@ -359,7 +359,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     // --- [공통 유틸] 중첩 괄호(Balanced Group) 정밀 추출기 ---
     function extractBalancedGroup(str, startIdx, openChar = '{', closeChar = '}') {
       let i = startIdx;
-      while (i < str.length && (str[i] === ' ' || str[i] === '\t')) i++;
+      while (i < str.length && /\s/.test(str[i])) i++;
       if (i >= str.length || str[i] !== openChar) return null;
 
       let depth = 0;
@@ -383,6 +383,37 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         }
       }
       return null;
+    }
+
+    // --- 한글(HWP) 행렬/조건식 블록 전처리 (중첩 중괄호 및 다중 라인 완벽 지원) ---
+    function convertHwpMatricesToLatex(text, allLogs) {
+      let result = '';
+      let lastIndex = 0;
+      const hwpMatRegex = /(?:([a-zA-Z0-9_'^\{\}\(\)\[\]\|\+\-\*\/\\ ]+=\s*))?(?<![\\a-zA-Z0-9_])(pmatrix|bmatrix|dmatrix|matrix|cases)\s*\{/g;
+      let match;
+
+      while ((match = hwpMatRegex.exec(text)) !== null) {
+        const fullStart = match.index;
+        const prefix = match[1] || '';
+        const type = match[2];
+        const braceStart = match.index + match[0].length - 1; // '{' 위치
+
+        const group = extractBalancedGroup(text, braceStart, '{', '}');
+        if (group) {
+          result += text.slice(lastIndex, fullStart);
+          let latexType = type === 'dmatrix' ? 'vmatrix' : type;
+          const rows = group.content.split(/##|#/).map(row => hwpToLatex(row.trim()));
+          const latexMatrix = `\\begin{${latexType}} ${rows.join(' \\\\ ')} \\end{${latexType}}`;
+          const fullFormula = prefix ? `${prefix.trim()} ${latexMatrix}` : latexMatrix;
+
+          if (allLogs) allLogs.push(`한글(HWP) ${type} 문법 감지 -> LaTeX \\begin{${latexType}} 자동 변환`);
+          result += `\n$$\n${fullFormula}\n$$\n`;
+          lastIndex = group.endIndex;
+          hwpMatRegex.lastIndex = group.endIndex;
+        }
+      }
+      result += text.slice(lastIndex);
+      return result;
     }
 
     // --- 중첩 중괄호 명령어 치환기 (\frac, \sqrt, \vec, \text 등 재귀 변환) ---
@@ -620,8 +651,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       'frac', 'dfrac', 'tfrac', 'sqrt', 'alpha', 'beta', 'gamma', 'delta', 'theta',
       'lambda', 'mu', 'pi', 'sigma', 'omega', 'sum', 'prod', 'int', 'lim', 'infty',
       'approx', 'times', 'div', 'pm', 'mp', 'neq', 'leq', 'geq', 'le', 'ge',
-      'cdot', 'to', 'implies', 'iff', 'sin', 'cos', 'tan', 'det', 'matrix', 'pmatrix',
-      'bmatrix', 'vmatrix'
+      'cdot', 'to', 'implies', 'iff', 'sin', 'cos', 'tan', 'det'
     ];
 
     function repairMathString(mathContent) {
@@ -871,16 +901,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       text = text.replace(/\\\[([\s\S]*?)\\\]/g, (m, c) => `$$${c}$$`);
       text = text.replace(/\\\(([\s\S]*?)\\\)/g, (m, c) => `$${c}$`);
 
-      // A-1. 한글(HWP) 행렬 및 조건식 블록 자동 감지 -> LaTeX 블록 수식($$ ... $$)으로 사전 변환
-      text = text.replace(/(?<![\\a-zA-Z0-9_])(pmatrix|bmatrix|dmatrix|matrix|cases)\s*\{([\s\S]*?)\}/g, (m, type, body) => {
-        let latexType = type === 'dmatrix' ? 'vmatrix' : type;
-        const rows = body.split(/##|#/).map(row => {
-          let trimmedRow = row.trim();
-          return hwpToLatex(trimmedRow);
-        });
-        allLogs.push(`한글(HWP) ${type} 문법 감지 -> LaTeX \\begin{${latexType}} 자동 변환`);
-        return `$$\\begin{${latexType}} ${rows.join(' \\\\ ')} \\end{${latexType}}$$`;
-      });
+      // A-1. 한글(HWP) 행렬 및 조건식 블록 자동 감지 -> LaTeX 블록 수식($$ ... $$)으로 변환 (중첩 중괄호 안전 파싱)
+      text = convertHwpMatricesToLatex(text, allLogs);
 
       // B. 블록 수식($$ ... $$) 최우선 금고 격리 (줄바꿈 포함 가능)
       const globalProtectedBlocks = [];
@@ -892,15 +914,14 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         return `\n${token}\n`;
       });
 
-      // 3. $$ 기호 없이 본문에 방치된(Bare) 행렬/환경 자동 감지 및 보호 (다중 라인 포함)
-      // 등식 앞머리(A =, det(A) =) 및 괄호, 지수(^T, ^-1)까지 하나의 온전한 수식 블록으로 통합
+      // 3. $$ 기호 없이 본문에 방치된(Bare) 행렬/환경 자동 감지 및 보호 (다중 라인 및 \right 없는 일반 행렬 포함)
       const MATH_ENV_LIST = 'matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|cases|dcases|aligned|array';
       const bareEnvRegex = new RegExp(
-        `((?:[a-zA-Z0-9_'\^\\{\\}\\(\\)\\[\\]\\|\\+\\-\\*\\/\\\\]+[ \\t]*)+=[ \\t]*)?` +
+        `(?:([a-zA-Z0-9_'^\\{\\}\\(\\)\\[\\]\\|\\+\\-\\*\\/\\\\]+[ \\t]*)+=[ \\t]*)?` +
         `(\\\\left[\\(\\[\\|\\{]?[ \\t]*)?` +
-        `(\\\\begin\\{(?:${MATH_ENV_LIST})\\}(?:\\{[^{}]*\\})?[\\s\\S]*?\\\\end\\{(?:${MATH_ENV_LIST})\\})` +
-        `([ \\t]*\\\\right[\\)\\]\\|\\}]?)` +
-        `([\\^\\_](?:\\{[^{}]+\\}|[a-zA-Z0-9]+))?`,
+        `(\\\\begin\\{(?:${MATH_ENV_LIST})\\*?\\}(?:\\{[^{}]*\\})?[\\s\\S]*?\\\\end\\{(?:${MATH_ENV_LIST})\\*?\\})` +
+        `([ \\t]*\\\\right[\\)\\]\\|\\}]?)?` +
+        `([\\^\\_](?:\\{[^{}]+\\}|[a-zA-Z0-9\\-]+))?`,
         'g'
       );
 
