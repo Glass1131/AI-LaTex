@@ -13,8 +13,15 @@
       theme: {
         extend: {
           colors: {
-            brand: { 50: '#f0fdf4', 500: '#10b981', 600: '#059669' },
-            hwp: { 500: '#0284c7', 600: '#0369a1' }
+            brand: {
+              50: '#f0fdf4',
+              500: '#10b981',
+              600: '#059669',
+            },
+            hwp: {
+              500: '#0284c7',
+              600: '#0369a1',
+            }
           }
         }
       }
@@ -29,12 +36,17 @@
   <!-- Marked.js for Markdown parsing -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
+  <!-- JSZip for HWPX (.hwpx) generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
   <style>
+    /* 스크롤바 커스텀 */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
+    /* KaTeX 에러 인라인 표시 스타일 */
     .katex-error {
       color: #f87171 !important;
       text-decoration: underline wavy #ef4444 !important;
@@ -45,78 +57,106 @@
       font-size: 0.9em;
     }
 
-    .interactive-formula {
+    /* 프리뷰 내 수식 클릭 인터랙션 */
+    .katex-interactive {
       cursor: pointer;
-      display: inline-block;
-      padding: 1px 4px;
       border-radius: 4px;
+      padding: 1px 3px;
+      margin: 0 -1px;
       transition: all 0.15s ease;
       position: relative;
     }
-    .interactive-formula:hover {
+    .katex-interactive:hover {
       background-color: rgba(14, 165, 233, 0.2);
-      outline: 1px solid #38bdf8;
+      outline: 1px solid rgba(56, 189, 248, 0.5);
     }
-    .interactive-formula.copied-flash {
-      background-color: rgba(16, 185, 129, 0.35) !important;
-      outline: 1px solid #10b981 !important;
+    .katex-interactive:active {
+      transform: scale(0.97);
+      background-color: rgba(14, 165, 233, 0.35);
     }
 
-    .markdown-body h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #f1f5f9; }
+    /* 마크다운 렌더링 스타일 보정 */
+    .markdown-body h1 { font-size: 1.45rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #f1f5f9; }
     .markdown-body h2 { font-size: 1.25rem; font-weight: 700; margin: 0.8rem 0 0.4rem; color: #f1f5f9; }
     .markdown-body h3 { font-size: 1.1rem; font-weight: 600; margin: 0.6rem 0 0.3rem; color: #f1f5f9; }
-    .markdown-body p { margin-bottom: 0.75rem; line-height: 1.7; color: #cbd5e1; }
+    .markdown-body p { margin-bottom: 0.75rem; line-height: 1.75; color: #cbd5e1; }
     .markdown-body ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; color: #cbd5e1; }
     .markdown-body ol { list-style: decimal; margin-left: 1.5rem; margin-bottom: 0.75rem; color: #cbd5e1; }
-    .markdown-body li { margin-bottom: 0.25rem; line-height: 1.65; }
+    .markdown-body li { margin-bottom: 0.35rem; line-height: 1.7; }
     .markdown-body code { background: #1e293b; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: #38bdf8; }
     .markdown-body pre { background: #090d16; padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1rem; }
     .markdown-body blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; color: #94a3b8; font-style: italic; }
 
+    .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.75rem 0.5rem;
+      margin: 0.75rem 0 !important;
+    }
+
     @media print {
-      header, section:first-child, .no-print, #toast { display: none !important; }
       body { background: white !important; color: black !important; }
-      main { max-width: 100% !important; margin: 0 !important; padding: 0 !important; display: block !important; }
-      section { border: none !important; background: transparent !important; box-shadow: none !important; }
-      .markdown-body p, .markdown-body li { color: black !important; }
+      header, #leftPanel, #rightTabBar, #toast, #previewTipBanner { display: none !important; }
+      main { display: block !important; max-width: 100% !important; padding: 0 !important; }
+      #rightPanel { border: none !important; box-shadow: none !important; background: white !important; }
+      #tabContentPreview { display: block !important; max-height: none !important; overflow: visible !important; }
+      .markdown-body p, .markdown-body li, .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+        color: #111827 !important;
+      }
+      .katex { color: #000 !important; }
     }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
 
-<!-- 헤더 -->
+<!-- 헤더 & 툴바 -->
 <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
   <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
     <div class="flex items-center gap-2.5">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-sky-500 flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20">
-        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M7 4c0-1.1.9-2 2-2 1.5 0 2 1 2 2.5V17c0 1.5.5 3 2.5 3 1.5 0 2.5-1 2.5-2"/>
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-sky-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M16 4c-2.5 0-4 1.8-4 4.5v7c0 2.7-1.5 4.5-4 4.5" />
         </svg>
       </div>
       <div>
         <h1 class="text-base font-bold leading-tight flex items-center gap-2 text-slate-100">
           AI 수식 복구기 & 뷰어
-          <span class="text-[11px] font-medium bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full">v2.4 개행 복구 지원</span>
+          <span class="text-[11px] font-medium bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full">v3.2 HWP ↔ LaTeX 양방향 엔진</span>
         </h1>
-        <p class="text-xs text-slate-400 hidden sm:block">수식 내 개행 자동 봉합 + 수식 클릭 시 즉시 HWP 복사</p>
+        <p class="text-xs text-slate-400 hidden sm:block">AI 깨진 LaTeX 복구 + 한글(HWP) 수식 스크립트 직접 입력 시 실시간 KaTeX 자동 렌더링</p>
       </div>
     </div>
 
-    <!-- 상단 버튼 그룹 -->
+    <!-- 상단 액션 버튼 -->
     <div class="flex items-center flex-wrap gap-2">
-      <button id="btnRestoreHistory" class="hidden text-xs bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-800/80 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+      <button id="btnRestoreLast" class="hidden text-xs bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-800/70 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
         이전 작업 복원
       </button>
-      <button id="btnLoadSample" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors">
-        예시 불러오기
+
+      <button id="btnLoadSample" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        실제 오류 예시 불러오기
       </button>
-      <button id="btnPrint" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors">
+
+      <button id="btnPrintPdf" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5" title="흰색 배경으로 인쇄 또는 PDF 저장">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
         PDF / 인쇄
       </button>
+
+      <!-- 한글(.hwpx) 직접 다운로드 버튼 -->
+      <button id="btnDownloadHwpx" class="text-xs font-semibold bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-lg shadow-sky-600/30 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 active:scale-95" title="줄글과 수식 개체가 포함된 정식 한글 문서(.hwpx) 다운로드">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        한글(.hwpx) 다운로드
+      </button>
+
       <button id="btnCopyHwp" class="text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-600/30 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 active:scale-95">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         한글(HWP) 수식 전체 복사
       </button>
+
       <button id="btnCopyClean" class="text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 active:scale-95">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
         정제본 복사
       </button>
     </div>
@@ -125,13 +165,16 @@
 
 <!-- 메인 작업 영역 -->
 <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-  <!-- 좌측 에디터 -->
-  <section class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+
+  <!-- 좌측: 입력 에디터 -->
+  <section id="leftPanel" class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
     <div class="bg-slate-800/80 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs text-slate-300">
-      <div class="flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span class="font-medium text-slate-200">AI 원문 입력</span>
-        <button id="btnClear" class="text-xs text-slate-400 hover:text-red-400 hover:bg-red-950/40 border border-slate-700/80 hover:border-red-800/60 px-2 py-0.5 rounded transition-colors flex items-center gap-1">
+      <div class="flex items-center gap-2.5">
+          <span class="font-medium flex items-center gap-1.5 text-slate-200">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            AI 원문 입력
+          </span>
+        <button id="btnClear" class="text-[11px] bg-slate-800/90 hover:bg-red-950 hover:text-red-300 text-slate-400 border border-slate-700 hover:border-red-800/60 px-2 py-0.5 rounded transition-colors flex items-center gap-1">
           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           비우기
         </button>
@@ -142,20 +185,21 @@
         <span id="formulaCount" class="text-emerald-400 font-medium">수식 0개</span>
       </div>
     </div>
-    <div class="relative flex-1 min-h-[350px] lg:min-h-[500px]">
+    <div class="relative flex-1 min-h-[350px] lg:min-h-[520px]">
         <textarea id="rawInput"
-                  placeholder="깨진 LaTeX 수식이나 ChatGPT, Claude 등 AI 답변을 그대로 붙여넣으세요...&#10;&#10;자동 지원:&#10;• 줄바꿈(\n)으로 두 동강 난 수식 자동 봉합&#10;• \(...\), \[...\] -> $, $$ 자동 통일&#10;• HWP 행렬 (bmatrix, pmatrix) 및 수식 편집기 문법 실시간 렌더링&#10;• 수식 내부 한글 \text{} 자동 보호"
+                  placeholder="AI 답변 또는 수식을 자유롭게 붙여넣으세요.&#10;• LaTeX 수식 (\frac, \begin{bmatrix}, \alpha 등) 자동 복구 및 렌더링&#10;• 한글(HWP) 수식 스크립트 (bmatrix { 1 & 0 # 0 & 1 }, {a} over {b}, sqrt {x} 등) 직접 입력도 자동 감지하여 실시간 렌더링&#10;• 오른쪽 렌더링 화면에서 원하는 수식을 '클릭'하면 해당 수식의 한글(HWP) 코드가 즉시 복사됩니다."
                   class="w-full h-full p-4 bg-slate-900/60 text-slate-200 text-sm font-mono leading-relaxed outline-none resize-none focus:ring-1 focus:ring-emerald-500/50"></textarea>
     </div>
     <div class="px-4 py-2 bg-slate-950/60 border-t border-slate-800/60 text-[11px] text-slate-500 flex items-center justify-between">
-      <span>개행 분리 수식 봉합 및 HWP 양방향 엔진 활성화</span>
+      <span>라인 단위 정밀 파서 적용됨 (개행 소실 차단)</span>
       <span class="hidden sm:inline">단축키: Ctrl + Enter (전체 HWP 수식 복사)</span>
     </div>
   </section>
 
-  <!-- 우측 뷰어 -->
-  <section class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-    <div class="bg-slate-800/80 px-2 py-1.5 border-b border-slate-800 flex items-center justify-between">
+  <!-- 우측: 결과 뷰어 -->
+  <section id="rightPanel" class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+    <!-- 탭 바 -->
+    <div id="rightTabBar" class="bg-slate-800/80 px-2 py-1.5 border-b border-slate-800 flex items-center justify-between">
       <div class="flex items-center gap-1">
         <button data-tab="preview" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 text-emerald-400 border border-slate-700/60 shadow-sm transition-all">
           실시간 렌더링
@@ -172,14 +216,20 @@
           <span id="logCountBadge" class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] px-1.5 py-0.2 rounded-full">0</span>
         </button>
       </div>
-      <div class="text-[11px] text-sky-400 pr-2 hidden sm:flex items-center gap-1">
+
+      <div class="text-[11px] text-sky-400/90 pr-2 hidden sm:flex items-center gap-1">
         <span>👆 수식 클릭 시 HWP 복사</span>
       </div>
     </div>
 
-    <div class="flex-1 relative overflow-y-auto p-4 min-h-[350px] lg:min-h-[500px] max-h-[75vh]">
-      <!-- 렌더링 탭 -->
+    <!-- 탭 본문 -->
+    <div class="flex-1 relative overflow-y-auto p-4 min-h-[350px] lg:min-h-[520px] max-h-[75vh]">
+      <!-- 1. 렌더링 미리보기 -->
       <div id="tabContentPreview" class="tab-content block">
+        <div id="previewTipBanner" class="hidden mb-3 px-3 py-2 bg-slate-800/60 border border-slate-700/70 rounded-lg text-[11px] text-slate-300 flex items-center justify-between">
+          <span>💡 <b>팁:</b> 아래 본문에서 <b>수식을 직접 클릭</b>하면 해당 수식의 한글(HWP) 코드가 바로 복사됩니다.</span>
+          <span class="text-sky-400 font-mono">Ctrl+N, M → Ctrl+V</span>
+        </div>
         <div id="renderOutput" class="markdown-body text-slate-200 text-sm leading-relaxed">
           <div class="text-slate-500 italic py-12 text-center text-xs">
             왼쪽에 수식 또는 AI 답변을 입력하면 실시간으로 렌더링됩니다.
@@ -187,26 +237,26 @@
         </div>
       </div>
 
-      <!-- HWP 수식 목록 탭 -->
+      <!-- 2. 한글(HWP) 수식 전용 탭 -->
       <div id="tabContentHwp" class="tab-content hidden space-y-3">
         <div class="p-3 bg-sky-950/40 border border-sky-800/60 rounded-lg text-xs text-sky-200 flex items-start gap-2">
           <span class="text-base">💡</span>
           <div>
             <p class="font-semibold mb-0.5">한글(HWP) 수식 넣는 방법:</p>
             <p class="text-sky-300/90 leading-relaxed">
-              복사 후 한글 문서에서 <b>Ctrl + N, M</b> (수식 편집기) → <b>Ctrl + V</b> 붙여넣기 → <b>Shift + Esc</b> (입력 완료)
+              복사 후 한글 문서에서 <b class="text-white">Ctrl + N, M</b> (수식 편집기) → <b class="text-white">Ctrl + V</b> 붙여넣기 → <b class="text-white">Shift + Esc</b> (입력 완료)
             </p>
           </div>
         </div>
         <div id="hwpFormulaList" class="space-y-2.5"></div>
       </div>
 
-      <!-- 정제 소스 탭 -->
+      <!-- 3. 정제된 소스 탭 -->
       <div id="tabContentCleaned" class="tab-content hidden">
         <pre class="w-full h-full bg-slate-950 p-3.5 rounded-lg text-slate-300 font-mono text-xs overflow-x-auto whitespace-pre-wrap leading-relaxed border border-slate-800" id="cleanedSourceOutput"></pre>
       </div>
 
-      <!-- 로그 탭 -->
+      <!-- 4. 복구 로그 탭 -->
       <div id="tabContentLogs" class="tab-content hidden">
         <div id="repairLogsList" class="space-y-2 text-xs font-mono"></div>
       </div>
@@ -221,91 +271,252 @@
 </div>
 
 <script>
-  const SAMPLE_TEXT = `### 3단계: $t < 0$에서 $h(t)$의 개형과 $a, b$ 구하기
+  const STORAGE_KEY = 'ai_latex_healer_last_text';
 
-$k = -3 < 0$이므로 $f(-3) = 3$이어야 합니다.
-$x \\le 0$에서 $f(x) = x^3 + ax^2 + bx + 3$이라 할 때, $t < 0$에서의 $h(t)$는
-$u \\le 0$에서 방정식 $f(u) = f(t)$의 음수 근의 개수에 $2$를 곱하고, $f(t) = 3$이면 $1$($x = 0$)를 더한 값입니다.
+  // 실제 오류 발생 샘플 원문
+  const SAMPLE_TEXT = `주어진 문제의 조건을 단계별로 분석하여 상수 a, b, c와 \\alpha, \\beta의 값을 구해보겠습니다.
+1단계: $g(t)$와 방정식 $f((g(t)-1)\\vert{}x\\vert{}) = f(t)$의 분석
+실수 $t\\ ( t \\neq 0)$에 대하여 y = x^2과 y = t의 교점의 개수 $g(t)$는 다음과 같습니다.
+* t < 0일 때: g(t) = 0 \\implies f(-\\vert{}x\\vert{}) = f(t)
+* t > 0일 때: g(t) = 2 \\implies f(\\vert{}x\\vert{}) = f(t)
+방정식 $f((g(t)-1)\\vert{}x\\vert{}) = f(t)$의 좌변은 $x$에 대한 우함수(\\vert{}x\\vert{}$에만 의존)이므로, 0이 아닌 모든 실근은 항상 \\pm x_0의 쌍(짝수 개)으로 존재합니다.
+따라서 실근의 개수 $h(t)$의 홀짝성은 x = 0이 근인지 여부에 의해 결정됩니다.
+* x = 0을 대입하면 f(0) = f(t)이고, 문제에서 f(0) = 3이므로:
+  • f(t) = 3 \\iff h(t)는 홀수
+  • f(t) \\neq 3 \\iff h(t)는 짝수
+2단계: 조건 (가)의 해석
+n > 0일 때, f(n) = -n^2 + an - b + c는 위로 볼록한 이차함수이므로 f(n) = 3을 만족하는 양수 n은 최대 2개뿐입니다.
+* t < -4: h(t) = 2
+* t = -4: h(-4) = 4
+* -4 < t < -3: h(t) = 6
+* t = -3: h(-3) = 3 (극소)
+* -3 < t < -1 : h(t) = 6
+* t = -1: h(-1) = 4 (극소)
+* -1 < t < 0 : h(t) = 6
+4단계: t > 0에서 h(t)의 개형과 c, \\alpha, \\beta 구하기
+a = 6, b = 9를 x > 0일 때의 식에 대입하면 완전제곱식 형태로 정리됩니다.
 
-만약 $t = -3$에서 $f'(-3) \\neq 0$이면, $t$가 $-3$을 지날 때 $f(t)$가 $3$을
-단조롭게 통과하므로 $u = 0$ 부근의 근의 개수가 $(x = \\pm u\\text{의
-}2\\text{개}) \\to (x = 0\\text{의 }1\\text{개}) \\to (0\\text{개})$로 변하여
-$h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\to 4$)하게 되어 극값을 가질 수 없습니다.
+* 0 < t < 6 (t \\neq 3)일 때: 대칭점 v = 6 - t > 0이 존재하므로 양수 교점이 2개 \\implies 0이 아닌 실근 4개
+* t \\ge 6일 때: v = 6 - t \\le 0이므로 양수 교점이 v = t로 1개뿐 \\implies 0이 아닌 실근 2개
+또한 조건 (가), (나)를 동시에 만족시키는 실수 k의 값이 -3뿐이라면, (가)를 만족시키는 또 다른 값인 $t = \\alpha$ (\\alpha > 0)에서는 $h(t)$가 극값을 갖지 않아야 합니다.
 
-따라서 조건 (나)에 의해 $h(t)$가 $t = -3$에서 극값을 가지려면 $t = -3$이 $f(t) = 3$의 중근(극댓점)이어야 합니다.`;
+* 만약 \\alpha \\neq 6인 점에서 f(\\alpha) = 3이면, 그 주변에서 h(t)가 4 \\to 5 \\to 4 (또는 2 \\to 3 \\to 2)가 되어 t = \\alpha에서도 극값을 가지게 됩니다.
+* 반면 0이 아닌 실근의 개수가 4개에서 2개로 바뀌는 경계점인 t = 6에서 f(6) = 3이 되면, t = 6 좌우에서 $h(t)$가 변하여 극값을 갖지 않습니다!
+따라서 \\alpha = 6이며, f(6) = 3에서 c를 구할 수 있습니다.
+5단계: $f(\\alpha + \\beta)$의 값 계산 및 중첩 근의 공식/정적분 테스트
+\\[ x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}, \\quad y = \\frac{\\sqrt{x^2+1}}{2} \\]
+$$ \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1, \\quad \\sum_{k=1}^{n} k^2 = \\frac{n(n+1)(2n+1)}{6}, \\quad \\int_{a}^{b} x^2 dx $$
 
-  // 밸런스 그룹 추출기
-  function extractBalancedGroup(str, openIdx, openChar = '{', closeChar = '}') {
+6단계: 한글(HWP) 수식 스크립트 직접 입력 테스트 (자동 감지 & KaTeX 실시간 렌더링)
+bmatrix { 1 & 0 # 0 & 1 }
+pmatrix { a & b # c & d }
+y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
+
+  // --- [신규] 한글(HWP) 수식 스크립트 -> LaTeX 자동 변환기 ---
+  function hwpToLatex(hwp) {
+    if (!hwp) return '';
+    let s = hwp.trim();
+
+    // HWP 행렬: (pmatrix|bmatrix|dmatrix|matrix|cases) { ... } -> \begin{...} ... \end{...}
+    s = s.replace(/\b(pmatrix|bmatrix|dmatrix|matrix|cases)\s*\{([\s\S]*?)\}/g, (m, type, body) => {
+      let latexType = type === 'dmatrix' ? 'vmatrix' : type;
+      const rows = body.split(/##|#/).map(row => hwpToLatex(row.trim()));
+      return `\\begin{${latexType}} ${rows.join(' \\\\ ')} \\end{${latexType}}`;
+    });
+
+    // HWP 분수: {A} over {B} -> \frac{A}{B}
+    let prev;
+    let guard = 0;
+    do {
+      prev = s;
+      s = s.replace(/\{([^{}]+)\}\s*over\s*\{([^{}]+)\}/g, '\\frac{$1}{$2}');
+      s = s.replace(/(?<=[^a-zA-Z0-9_\}]|^)([a-zA-Z0-9_]+)\s*over\s*\{([^{}]+)\}/g, '\\frac{$1}{$2}');
+      s = s.replace(/\{([^{}]+)\}\s*over\s*([a-zA-Z0-9_]+)(?=[^a-zA-Z0-9_\{]|$)/g, '\\frac{$1}{$2}');
+      s = s.replace(/(?<=[^a-zA-Z0-9_\}]|^)([a-zA-Z0-9_]+)\s*over\s*([a-zA-Z0-9_]+)(?=[^a-zA-Z0-9_\{]|$)/g, '\\frac{$1}{$2}');
+      guard++;
+    } while (s !== prev && guard < 8);
+
+    // HWP 거듭제곱근 및 제곱근: root {n} of {x}, sqrt {x}
+    s = s.replace(/root\s*\{([^{}]+)\}\s*of\s*\{([^{}]+)\}/g, '\\sqrt[$1]{$2}');
+    s = s.replace(/root\s*\{([^{}]+)\}\s*of\s*([a-zA-Z0-9_]+)/g, '\\sqrt[$1]{$2}');
+    guard = 0;
+    do {
+      prev = s;
+      s = s.replace(/(?<!\\)\bsqrt\s*\{([^{}]+)\}/g, '\\sqrt{$1}');
+      guard++;
+    } while (s !== prev && guard < 8);
+
+    // 연산자 및 기호
+    s = s.replace(/<=\b/g, '\\le ')
+            .replace(/>=\b/g, '\\ge ')
+            .replace(/!=\b/g, '\\neq ')
+            .replace(/\+-\b/g, '\\pm ')
+            .replace(/-\+\b/g, '\\mp ')
+            .replace(/\btimes\b/g, '\\times ')
+            .replace(/\bdivide\b/g, '\\div ')
+            .replace(/\bcdot\b/g, '\\cdot ')
+            .replace(/\bcdots\b/g, '\\cdots ')
+            .replace(/\binf\b/g, '\\infty ')
+            .replace(/\bapprox\b/g, '\\approx ')
+            .replace(/\b=>\b/g, '\\implies ')
+            .replace(/\b<=>\b/g, '\\iff ')
+            .replace(/\b->\b/g, '\\to ');
+
+    return s;
+  }
+
+  // --- [공통 유틸] 중첩 괄호(Balanced Group) 정밀 추출기 ---
+  function extractBalancedGroup(str, startIdx, openChar = '{', closeChar = '}') {
+    let i = startIdx;
+    while (i < str.length && /\s/.test(str[i])) i++;
+    if (i >= str.length || str[i] !== openChar) return null;
+
     let depth = 0;
-    let start = -1;
-    for (let i = openIdx; i < str.length; i++) {
+    const contentStart = i + 1;
+    for (; i < str.length; i++) {
+      if (str[i] === '\\') {
+        i++; // 이스케이프된 문자 건너뛰기
+        continue;
+      }
       if (str[i] === openChar) {
-        if (depth === 0) start = i;
         depth++;
       } else if (str[i] === closeChar) {
         depth--;
-        if (depth === 0) return { content: str.substring(start + 1, i), endIndex: i };
+        if (depth === 0) {
+          return {
+            content: str.slice(contentStart, i),
+            endIndex: i + 1,
+            rawMatch: str.slice(startIdx, i + 1)
+          };
+        }
       }
     }
     return null;
   }
 
-  function replaceBalancedCommands(input) {
-    let s = input;
-    let idx = 0;
-    while ((idx = s.indexOf('\\frac', idx)) !== -1) {
-      let firstOpen = s.indexOf('{', idx + 5);
-      if (firstOpen !== -1 && s.substring(idx + 5, firstOpen).trim() === '') {
-        const numGroup = extractBalancedGroup(s, firstOpen);
-        if (numGroup) {
-          let secondOpen = s.indexOf('{', numGroup.endIndex + 1);
-          if (secondOpen !== -1 && s.substring(numGroup.endIndex + 1, secondOpen).trim() === '') {
-            const denGroup = extractBalancedGroup(s, secondOpen);
-            if (denGroup) {
-              const innerNum = replaceBalancedCommands(numGroup.content);
-              const innerDen = replaceBalancedCommands(denGroup.content);
-              const replacement = `{${innerNum}} over {${innerDen}}`;
-              s = s.substring(0, idx) + replacement + s.substring(denGroup.endIndex + 1);
-              idx += replacement.length;
-              continue;
-            }
+  // --- 한글(HWP) 행렬/조건식 블록 전처리 (중첩 중괄호 및 다중 라인 완벽 지원) ---
+  function convertHwpMatricesToLatex(text, allLogs) {
+    let result = '';
+    let lastIndex = 0;
+    const hwpMatRegex = /(?:([a-zA-Z0-9_'^\{\}\(\)\[\]\|\+\-\*\/\\ ]+=\s*))?(?<![\\a-zA-Z0-9_])(pmatrix|bmatrix|dmatrix|matrix|cases)\s*\{/g;
+    let match;
+
+    while ((match = hwpMatRegex.exec(text)) !== null) {
+      const fullStart = match.index;
+      const prefix = match[1] || '';
+      const type = match[2];
+      const braceStart = match.index + match[0].length - 1; // '{' 위치
+
+      const group = extractBalancedGroup(text, braceStart, '{', '}');
+      if (group) {
+        result += text.slice(lastIndex, fullStart);
+        let latexType = type === 'dmatrix' ? 'vmatrix' : type;
+        const rows = group.content.split(/##|#/).map(row => hwpToLatex(row.trim()));
+        const latexMatrix = `\\begin{${latexType}} ${rows.join(' \\\\ ')} \\end{${latexType}}`;
+        const fullFormula = prefix ? `${prefix.trim()} ${latexMatrix}` : latexMatrix;
+
+        if (allLogs) allLogs.push(`한글(HWP) ${type} 문법 감지 -> LaTeX \\begin{${latexType}} 자동 변환`);
+        result += `\n$$\n${fullFormula}\n$$\n`;
+        lastIndex = group.endIndex;
+        hwpMatRegex.lastIndex = group.endIndex;
+      }
+    }
+    result += text.slice(lastIndex);
+    return result;
+  }
+
+  // --- 중첩 중괄호 명령어 치환기 (\frac, \sqrt, \vec, \text 등 재귀 변환) ---
+  function replaceBalancedCommands(str, cmdRegex, argCount, allowOptionalBracket, replacer) {
+    let result = '';
+    let lastIndex = 0;
+    const regex = new RegExp(cmdRegex.source, 'g');
+    let match;
+
+    while ((match = regex.exec(str)) !== null) {
+      const matchStart = match.index;
+      const cmdName = match[1] || match[0];
+      let cursor = regex.lastIndex;
+
+      let optGroup = null;
+      if (allowOptionalBracket) {
+        optGroup = extractBalancedGroup(str, cursor, '[', ']');
+        if (optGroup) cursor = optGroup.endIndex;
+      }
+
+      const args = [];
+      let valid = true;
+      for (let a = 0; a < argCount; a++) {
+        const grp = extractBalancedGroup(str, cursor, '{', '}');
+        if (!grp) {
+          valid = false;
+          break;
+        }
+        args.push(grp.content);
+        cursor = grp.endIndex;
+      }
+
+      if (valid) {
+        result += str.slice(lastIndex, matchStart);
+        result += replacer(cmdName, optGroup ? optGroup.content : null, args, str.slice(matchStart, cursor));
+        lastIndex = cursor;
+        regex.lastIndex = cursor;
+      }
+    }
+    result += str.slice(lastIndex);
+    return result;
+  }
+
+  // --- HWP 첨자(_ / ^) 및 정적분/극한/시그마 띄어쓰기 정밀 보정기 ---
+  function formatHwpScriptsAndLimits(str) {
+    let out = '';
+    let i = 0;
+    while (i < str.length) {
+      if (str[i] === '_' || str[i] === '^') {
+        const scriptType = str[i];
+        let cursor = i + 1;
+        while (cursor < str.length && (str[cursor] === ' ' || str[cursor] === '\t')) cursor++;
+
+        let inner = '';
+        const braceGrp = extractBalancedGroup(str, cursor, '{', '}');
+        if (braceGrp) {
+          inner = latexToHwp(braceGrp.content);
+          cursor = braceGrp.endIndex;
+        } else {
+          const subMatch = str.slice(cursor).match(/^(\\[a-zA-Z]+|[a-zA-Z0-9\+\-]+)/);
+          if (subMatch) {
+            inner = latexToHwp(subMatch[1]);
+            cursor += subMatch[1].length;
           }
         }
-      }
-      idx += 5;
-    }
 
-    idx = 0;
-    while ((idx = s.indexOf('\\sqrt', idx)) !== -1) {
-      let afterCmd = idx + 5;
-      let rootIdx = null;
-      let rootGroup = null;
-      let nextChar = s.substring(afterCmd).match(/^\s*\[/);
-      if (nextChar) {
-        let openBracket = s.indexOf('[', afterCmd);
-        rootGroup = extractBalancedGroup(s, openBracket, '[', ']');
-        if (rootGroup) afterCmd = rootGroup.endIndex + 1;
-      }
+        if (inner !== '') {
+          // 앞 토큰이 대형 연산자(int, oint, iint, iiint, sum, prod, lim)이거나 이미 닫힌 첨자(})인 경우 앞에 공백 보장
+          const prevTrimmed = out.trimEnd();
+          const isAfterBigOp = /\b(?:int|oint|iint|iiint|sum|prod|lim)$/.test(prevTrimmed);
+          const isAfterScriptOnBigOp = /\b(?:int|oint|iint|iiint|sum|prod|lim)\s+[_^]\{[^{}]*\}$/.test(prevTrimmed);
 
-      let firstOpen = s.indexOf('{', afterCmd);
-      if (firstOpen !== -1 && s.substring(afterCmd, firstOpen).trim() === '') {
-        const bodyGroup = extractBalancedGroup(s, firstOpen);
-        if (bodyGroup) {
-          const innerBody = replaceBalancedCommands(bodyGroup.content);
-          let replacement = rootGroup
-                  ? `root {${replaceBalancedCommands(rootGroup.content)}} of {${innerBody}}`
-                  : `sqrt {${innerBody}}`;
-          s = s.substring(0, idx) + replacement + s.substring(bodyGroup.endIndex + 1);
-          idx += replacement.length;
+          if ((isAfterBigOp || isAfterScriptOnBigOp) && !out.endsWith(' ')) {
+            out += ' ';
+          }
+
+          out += `${scriptType}{${inner}}`;
+
+          // 뒤에 바로 문자, 숫자, 한글, 괄호, 연산자 등이 붙을 때 수식 엉킴 방지를 위해 공백 삽입
+          const nextChar = str[cursor] || '';
+          if (nextChar && !/[\s_^})\],.;:]/.test(nextChar)) {
+            out += ' ';
+          }
+          i = cursor;
           continue;
         }
       }
-      idx += 5;
+      out += str[i];
+      i++;
     }
-    return s;
+    return out;
   }
 
-  // LaTeX -> HWP 수식 변환
+  // --- LaTeX -> 한글(HWP) 수식 스크립트 변환 엔진 ---
   function latexToHwp(latex) {
     if (!latex) return '';
     let s = latex.trim();
@@ -316,344 +527,492 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
             .replace(/^\\\(([\s\S]*)\\\)$/, '$1')
             .trim();
 
-    s = s.replace(/\\begin\{([a-zA-Z*]+)\}([\s\S]*?)\\end\{\1\}/g, (match, env, content) => {
-      let clean = content.trim().replace(/\\\\/g, ' # ');
-      if (env === 'pmatrix') return `pmatrix { ${clean} }`;
-      if (env === 'bmatrix') return `bmatrix { ${clean} }`;
-      if (env === 'vmatrix') return `dmatrix { ${clean} }`;
-      if (env === 'cases') return `cases { ${clean} }`;
-      return `matrix { ${clean} }`;
+    s = s.replace(/\\vert\{\}?/g, '|');
+
+    // 1. 조건부 함수 \begin{cases} ... \end{cases} -> cases { ... # ... }
+    s = s.replace(/\\begin\{(?:cases|dcases)\}([\s\S]*?)\\end\{(?:cases|dcases)\}/g, (m, body) => {
+      const cleanBody = body.replace(/\\cr/g, '\\\\').replace(/\\hline/g, '').trim();
+      const rows = cleanBody.split(/\\\\/).map(r => r.trim()).filter(r => r.length > 0);
+      const hwpRows = rows.map(row => {
+        const cells = row.split('&').map(c => latexToHwp(c.trim()));
+        return cells.join(' & ');
+      });
+      return `cases { ${hwpRows.join(' # ')} }`;
     });
 
-    s = replaceBalancedCommands(s);
+    // 2. 행렬 완벽 변환 (pmatrix, bmatrix, vmatrix -> dmatrix, Bmatrix, Vmatrix, matrix, array)
+    const matrixEnvRegex = /\\begin\{(matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|array)\*?\}(?:\{[^{}]*\})?([\s\S]*?)\\end\{\1\*?\}/g;
+    s = s.replace(matrixEnvRegex, (m, type, body) => {
+      const cleanBody = body.replace(/\\cr/g, '\\\\').replace(/\\hline/g, '').trim();
+      const rows = cleanBody.split(/\\\\/).map(r => r.trim()).filter(r => r.length > 0);
+      const hwpRows = rows.map(row => {
+        const cells = row.split('&').map(c => latexToHwp(c.trim()));
+        return cells.join(' & ');
+      });
+      const content = hwpRows.join(' # ');
 
-    s = s.replace(/\\(int|sum|prod|lim)_\{([^{}]+)\}\^\{([^{}]+)\}/g, '$1 _{$2} ^{$3} ')
-            .replace(/\\(int|sum|prod|lim)_\{([^{}]+)\}/g, '$1 _{$2} ')
-            .replace(/\\(int|sum|prod|lim)\^\{([^{}]+)\}/g, '$1 ^{$2} ')
-            .replace(/\\(int|sum|prod|lim)\b/g, '$1 ');
+      if (type === 'vmatrix') {
+        return `dmatrix { ${content} }`; // 한글에서는 세로줄 행렬식이 dmatrix
+      } else if (type === 'Vmatrix') {
+        return `left Vert matrix { ${content} } right Vert`; // 노름 이중 세로줄
+      } else if (type === 'Bmatrix') {
+        return `left { matrix { ${content} } right }`; // 중괄호 행렬
+      } else if (type === 'array') {
+        return `matrix { ${content} }`;
+      } else {
+        return `${type} { ${content} }`; // pmatrix, bmatrix, matrix
+      }
+    });
 
-    s = s.replace(/\\to\b|\\rightarrow\b/g, ' -> ')
-            .replace(/\\leftarrow\b|\\gets\b/g, ' <- ')
-            .replace(/\\implies\b|\\Rightarrow\b/g, ' => ')
-            .replace(/\\iff\b|\\Leftrightarrow\b/g, ' <=> ')
-            .replace(/\\le(q)?\b/g, ' <= ')
-            .replace(/\\ge(q)?\b/g, ' >= ')
-            .replace(/\\neq\b/g, ' != ')
-            .replace(/\\pm\b/g, ' +- ')
-            .replace(/\\mp\b/g, ' -+ ')
-            .replace(/\\times\b/g, ' times ')
-            .replace(/\\div\b/g, ' divide ')
-            .replace(/\\cdot\b/g, ' cdot ')
-            .replace(/\\cdots\b/g, ' cdots ')
-            .replace(/\\ldots\b/g, ' ldots ')
-            .replace(/\\infty\b/g, ' inf ')
-            .replace(/\\approx\b/g, ' approx ')
-            .replace(/\\equiv\b/g, ' equiv ');
+    // 3. 중첩 분수 (\frac, \dfrac, \tfrac) - 밸런스 파서로 다중 중첩 재귀 해결
+    let prev;
+    let guard = 0;
+    do {
+      prev = s;
+      s = replaceBalancedCommands(s, /\\([dt]?frac)\b/, 2, false, (cmd, opt, args) => {
+        return `{${latexToHwp(args[0])}} over {${latexToHwp(args[1])}}`;
+      });
+      guard++;
+    } while (s !== prev && guard < 8);
 
-    s = s.replace(/\\vec\s*\{([^{}]+)\}/g, 'vec {$1}')
-            .replace(/\\bar\s*\{([^{}]+)\}/g, 'bar {$1}')
-            .replace(/\\hat\s*\{([^{}]+)\}/g, 'hat {$1}');
+    // 4. 거듭제곱근 및 제곱근 (\sqrt[n]{x}, \sqrt{x}) - 밸런스 파서 재귀 해결
+    guard = 0;
+    do {
+      prev = s;
+      s = replaceBalancedCommands(s, /\\(sqrt)\b/, 1, true, (cmd, opt, args) => {
+        const inner = latexToHwp(args[0]);
+        if (opt !== null) {
+          return `root {${latexToHwp(opt)}} of {${inner}}`;
+        }
+        return `sqrt {${inner}}`;
+      });
+      guard++;
+    } while (s !== prev && guard < 8);
 
-    s = s.replace(/\\left\s*([(\[{|])/g, 'left $1 ')
-            .replace(/\\right\s*([)\]}|])/g, 'right $1 ')
-            .replace(/\\left\./g, '')
-            .replace(/\\right\./g, '');
+    // 5. 장식 기호 및 텍스트 (\vec, \bar, \hat, \dot, \text)
+    s = replaceBalancedCommands(s, /\\(overrightarrow|vec)\b/, 1, false, (cmd, opt, args) => `vec {${latexToHwp(args[0])}}`);
+    s = replaceBalancedCommands(s, /\\(overline|bar)\b/, 1, false, (cmd, opt, args) => `bar {${latexToHwp(args[0])}}`);
+    s = replaceBalancedCommands(s, /\\(hat)\b/, 1, false, (cmd, opt, args) => `hat {${latexToHwp(args[0])}}`);
+    s = replaceBalancedCommands(s, /\\(dot)\b/, 1, false, (cmd, opt, args) => `dot {${latexToHwp(args[0])}}`);
+    s = replaceBalancedCommands(s, /\\(text|mathrm)\b/, 1, false, (cmd, opt, args) => `"${args[0]}"`);
 
+    // 6. 대형 연산자 먼저 변환 (\int, \sum, \lim 등)
+    s = s.replace(/\\(sum|prod|iiint|iint|oint|int|lim|log|ln|sin|cos|tan|sec|csc|cot|det|tr|dim|rank)\b/g, '$1');
+
+    // 7. 첨자(_ / ^) 및 정적분/극한/시그마 범위 공백 정밀 처리
+    s = formatHwpScriptsAndLimits(s);
+
+    // 8. 화살표 및 논리 기호
+    s = s.replace(/\\implies\b|\\Longrightarrow\b/g, '=>');
+    s = s.replace(/\\iff\b|\\Longleftrightarrow\b/g, '<=>');
+    s = s.replace(/\\to\b|\\rightarrow\b/g, '->');
+    s = s.replace(/\\gets\b|\\leftarrow\b/g, '<-');
+    s = s.replace(/\\le(q)?\b/g, '<=');
+    s = s.replace(/\\ge(q)?\b/g, '>=');
+    s = s.replace(/\\neq\b|\\ne\b/g, '!=');
+    s = s.replace(/\\pm\b/g, '+-');
+    s = s.replace(/\\mp\b/g, '-+');
+    s = s.replace(/\\times\b/g, 'times');
+    s = s.replace(/\\div\b/g, 'divide');
+    s = s.replace(/\\cdot\b/g, 'cdot');
+    s = s.replace(/\\cdots\b/g, 'cdots');
+    s = s.replace(/\\ldots\b/g, 'ldots');
+    s = s.replace(/\\infty\b/g, 'inf');
+    s = s.replace(/\\approx\b/g, 'approx');
+    s = s.replace(/\\equiv\b/g, 'equiv');
+    s = s.replace(/\\in\b/g, 'in');
+    s = s.replace(/\\notin\b/g, 'not in');
+    s = s.replace(/\\subset\b/g, 'subset');
+    s = s.replace(/\\cup\b/g, 'cup');
+    s = s.replace(/\\cap\b/g, 'cap');
+    s = s.replace(/\\emptyset\b/g, 'emptyset');
+    s = s.replace(/\\therefore\b/g, 'therefore');
+    s = s.replace(/\\because\b/g, 'because');
+
+    // 9. 괄호 스케일링
+    s = s.replace(/\\left\s*([(\[{|])/g, 'left $1');
+    s = s.replace(/\\right\s*([)\]}|])/g, 'right $1');
+    s = s.replace(/\\left\./g, '');
+    s = s.replace(/\\right\./g, '');
+
+    // 10. 그리스 문자 (\ 제거)
     const greek = [
       'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
       'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'pi', 'rho', 'sigma',
       'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega',
-      'Gamma', 'Delta', 'Theta', 'Lambda', 'Xi', 'Pi', 'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega'
+      'Gamma', 'Delta', 'Theta', 'Lambda', 'Xi', 'Pi', 'Sigma', 'Phi', 'Psi', 'Omega'
     ];
     greek.forEach(g => {
-      s = s.replace(new RegExp('\\\\' + g + '\\b', 'g'), ' ' + g + ' ');
+      s = s.replace(new RegExp('\\\\' + g + '(?![a-zA-Z])', 'g'), g);
     });
 
-    s = s.replace(/\\(sin|cos|tan|log|ln|det)\b/g, ' $1 ')
-            .replace(/\\text\s*\{([^{}]+)\}/g, ' "$1" ')
-            .replace(/\\quad/g, ' ~~ ')
-            .replace(/\\qquad/g, ' ~~~~ ')
-            .replace(/\\,/g, ' ` ')
-            .replace(/\\;/g, ' ` ')
-            .replace(/\\ /g, ' ` ');
+    // 11. 공백 정리
+    s = s.replace(/\\quad/g, '~~');
+    s = s.replace(/\\qquad/g, '~~~~');
+    s = s.replace(/\\[,;! ]/g, '`');
+    s = s.replace(/\s{2,}/g, ' ');
 
-    s = s.replace(/_([a-zA-Z0-9])/g, '_$1 ')
-            .replace(/\^([a-zA-Z0-9])/g, '^$1 ');
-
-    return s.replace(/\s+/g, ' ').trim();
+    return s.trim();
   }
 
-  // HWP -> LaTeX 변환
-  function convertHwpToLatex(text) {
-    let t = text;
-    const hwpEnvNames = ['bmatrix', 'pmatrix', 'dmatrix', 'cases'];
-    hwpEnvNames.forEach(env => {
-      let pattern = new RegExp(`\\b${env}\\s*\\{`, 'g');
-      let match;
-      while ((match = pattern.exec(t)) !== null) {
-        const openIdx = match.index + match[0].length - 1;
-        const grp = extractBalancedGroup(t, openIdx);
-        if (grp) {
-          let latexEnv = env === 'dmatrix' ? 'vmatrix' : env;
-          let rows = grp.content.split('#').map(r => r.trim()).join(' \\\\ ');
-          let latexBlock = `\\begin{${latexEnv}} ${rows} \\end{${latexEnv}}`;
-          t = t.substring(0, match.index) + `$$${latexBlock}$$` + t.substring(grp.endIndex + 1);
-          pattern.lastIndex = match.index + latexBlock.length + 4;
-        }
-      }
-    });
-
-    let overIdx = 0;
-    while ((overIdx = t.indexOf(' over ', overIdx)) !== -1) {
-      let leftClose = t.lastIndexOf('}', overIdx);
-      let rightOpen = t.indexOf('{', overIdx + 6);
-      if (leftClose !== -1 && rightOpen !== -1 && t.substring(leftClose + 1, overIdx).trim() === '' && t.substring(overIdx + 6, rightOpen).trim() === '') {
-        let leftDepth = 0;
-        let leftOpen = -1;
-        for (let i = leftClose; i >= 0; i--) {
-          if (t[i] === '}') leftDepth++;
-          else if (t[i] === '{') {
-            leftDepth--;
-            if (leftDepth === 0) { leftOpen = i; break; }
-          }
-        }
-        const rightGrp = extractBalancedGroup(t, rightOpen);
-        if (leftOpen !== -1 && rightGrp) {
-          let num = t.substring(leftOpen + 1, leftClose);
-          let den = rightGrp.content;
-          let repl = `\\frac{${num}}{${den}}`;
-          t = t.substring(0, leftOpen) + repl + t.substring(rightGrp.endIndex + 1);
-          overIdx = leftOpen + repl.length;
-          continue;
-        }
-      }
-      overIdx += 6;
-    }
-    return t;
-  }
-
-  // 수식 내부 보정
+  // --- 수식 내부 보정기 ---
   const MATH_COMMANDS = [
     'frac', 'dfrac', 'tfrac', 'sqrt', 'alpha', 'beta', 'gamma', 'delta', 'theta',
-    'lambda', 'mu', 'pi', 'sigma', 'omega', 'sum', 'prod', 'int', 'iint', 'iiint',
-    'oint', 'lim', 'infty', 'approx', 'times', 'div', 'pm', 'mp', 'neq', 'leq',
-    'geq', 'le', 'ge', 'cdot', 'cdots', 'to', 'leftarrow', 'rightarrow', 'vec',
-    'left', 'right', 'sin', 'cos', 'tan', 'log', 'ln', 'det'
+    'lambda', 'mu', 'pi', 'sigma', 'omega', 'sum', 'prod', 'int', 'lim', 'infty',
+    'approx', 'times', 'div', 'pm', 'mp', 'neq', 'leq', 'geq', 'le', 'ge',
+    'cdot', 'to', 'implies', 'iff', 'sin', 'cos', 'tan', 'det'
   ];
 
   function repairMathString(mathContent) {
     let repaired = mathContent;
     const logs = [];
 
-    // 개행을 공백으로 교정
-    if (repaired.includes('\n')) {
-      repaired = repaired.replace(/\n+/g, ' ');
-      logs.push("수식 내부 줄바꿈(\\n) 공백 자동 보정");
+    if (/\\vert\{\}?/g.test(repaired)) {
+      repaired = repaired.replace(/\\vert\{\}?/g, '|');
+      logs.push("\\vert{} 기호를 | 로 보정");
     }
 
     if (/\\\\+([a-zA-Z]+)/.test(repaired)) {
       repaired = repaired.replace(/\\\\+([a-zA-Z]+)/g, '\\$1');
-      logs.push("과도한 이스케이프(\\\\) 축소");
+      logs.push("과도한 백슬래시(\\\\) 축소");
     }
-
-    // 수식 내부 비보호 한글 \text{} 자동 감싸기
-    repaired = repaired.replace(/([가-힣]+)/g, (match, hangul, offset, fullStr) => {
-      let prefix = fullStr.substring(0, offset);
-      if (/\\text\s*\{[^}]*$/.test(prefix)) return match;
-      return `\\text{${hangul}}`;
-    });
 
     const cmdPattern = new RegExp(`(?<![a-zA-Z\\\\])(${MATH_COMMANDS.join('|')})(?![a-zA-Z])`, 'g');
     if (cmdPattern.test(repaired)) {
       repaired = repaired.replace(cmdPattern, (match) => {
-        logs.push(`누락된 슬래시 추가: \\${match}`);
+        logs.push(`누락된 슬래시 추가: ${match} -> \\${match}`);
         return '\\' + match;
       });
     }
 
-    // 중괄호 짝 닫기
     let openBraces = 0, closeBraces = 0;
     for (let i = 0; i < repaired.length; i++) {
       if (repaired[i] === '{' && (i === 0 || repaired[i - 1] !== '\\')) openBraces++;
       if (repaired[i] === '}' && (i === 0 || repaired[i - 1] !== '\\')) closeBraces++;
     }
     if (openBraces > closeBraces) {
-      const diff = openBraces - closeBraces;
-      repaired += '}'.repeat(diff);
-      logs.push(`닫히지 않은 중괄호('}') ${diff}개 보정`);
+      const missing = openBraces - closeBraces;
+      repaired += '}'.repeat(missing);
+      logs.push(`닫히지 않은 중괄호('}') ${missing}개 보정`);
     }
 
     return { repaired, logs };
   }
 
-  // 개행 분리 수식 봉합 전처리기 (핵심 해결책)
-  function stitchBrokenMultilineFormulas(text) {
-    // 1. $... 가 줄바꿈으로 끊어져 다음 줄에서 닫히는 패턴 안전 결합
-    let stitched = text.replace(/(\$(?:[^\$\n]|\\\$)+)\n+((?:[^\$\n]|\\\$)+\$)/g, (m, part1, part2) => {
-      return `${part1} ${part2}`;
-    });
-
-    // 2. \text{의 \n }2개} 처럼 중괄호가 다음 줄로 넘어간 경우 결합
-    stitched = stitched.replace(/(\\text\{[^\n}]*)\n+([^\n{]*\})/g, (m, p1, p2) => {
-      return `${p1} ${p2}`;
-    });
-
-    return stitched;
-  }
-
-  // 라인 단위 Bare 수식 보호
+  // --- 단일 라인 내 'Bare-LaTeX' 정밀 감지 엔진 (즉시 토큰 보호 & 중첩 중괄호 지원) ---
   function sanitizeLineBareMath(line) {
-    if (!line || !line.trim()) return line;
+    if (!line.trim()) return line;
 
-    let prefixMatch = line.match(/^(\s*(?:[\*\-\+]|\d+\.)\s+)/);
-    let prefix = prefixMatch ? prefixMatch[1] : '';
-    let content = line.substring(prefix.length);
-
-    const lineProtected = [];
-    const protect = (mathStr) => {
-      const idx = lineProtected.length;
-      const wrapped = mathStr.startsWith('$') ? mathStr : `$${mathStr}$`;
-      lineProtected.push(wrapped);
-      return `__LINE_PROT_${idx}__`;
-    };
-
-    // 1. 온전한 $...$ 수식 우선 격리
-    content = content.replace(/\$([^\$\n]+?)\$/g, (m) => protect(m));
-
-    // 2. Bare \implies, \iff
-    content = content.replace(/\\(implies|iff)\b/g, (m) => protect(m));
-
-    // 3. Bare 화살표 체인
-    const arrowChainRegex = /([a-zA-Z0-9\s\\_^{}]+?)\\to([a-zA-Z0-9\s\\+\-*\/=<>_^{}]+?)(?=[가-힣\s,.)]|$)/g;
-    content = content.replace(arrowChainRegex, (m) => protect(m.trim()));
-
-    // 4. 단독 적분/극한/시그마
-    const calculusRegex = /(\\(?:int|sum|lim|prod)(?:_[^{\s]+|\_\{[^}]+\})?(?:\^[^{\s]+|\^\{[^}]+\})?)(?=[가-힣\s,.)]|$)/g;
-    content = content.replace(calculusRegex, (m) => protect(m.trim()));
-
-    // 5. Bare 등식 및 부등식
-    const bareEquationRegex = /([a-zA-Z0-9_^{}\\]+(?:\([a-zA-Z0-9_^{}\\]+\))?)\s*(<=|>=|!=|==|=|<|>|\\le|\\ge|\\neq)\s*([a-zA-Z0-9_^{}\\\-+*\/()]+(?:\s*[+\-*\/]\s*[a-zA-Z0-9_^{}\\\-+*\/()]+)*)/g;
-    content = content.replace(bareEquationRegex, (match, left, op, right) => {
-      if (/^[가-힣]/.test(left) || /[가-힣]$/.test(right)) return match;
-      return protect(match.trim());
-    });
-
-    // 6. 단독 함수 및 변수
-    const singleFuncRegex = /(?<![a-zA-Z0-9_\\])([fgh]\([a-zA-Z0-9_+\-*\/]+\))(?![a-zA-Z0-9_\\])/g;
-    content = content.replace(singleFuncRegex, (m) => protect(m));
-
-    // 7. 단독 그리스 문자
-    const greekRegex = /(\\(?:alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|omega|phi|psi))(?![a-zA-Z])/g;
-    content = content.replace(greekRegex, (m) => protect(m));
-
-    // 8. 짝이 안 맞는 단독 고아 달러만 무력화 (숫자 뒤 정상 $는 보존)
-    let dCount = 0;
-    content = content.replace(/\$/g, () => {
-      dCount++;
-      return '$';
-    });
-    if (dCount % 2 !== 0) {
-      content = content.replace(/\$([가-힣\s])/g, '$1'); // 한글 바로 앞 가짜 달러만 제거
+    // 0. 마크다운 리스트(*, -, •, 1.), 인용구(>), 제목(#) 접두어를 분리하여 수식 파서가 절대 침범하지 못하게 보호
+    let linePrefix = '';
+    const prefixMatch = line.match(/^(\s*(?:[\*\-•+]|\d+\.)\s+|\s*#{1,6}\s+|\s*>\s*)/);
+    let l = line;
+    if (prefixMatch) {
+      linePrefix = prefixMatch[1];
+      l = l.slice(linePrefix.length);
     }
 
-    // 복원
-    lineProtected.forEach((item, idx) => {
-      const token = `__LINE_PROT_${idx}__`;
-      content = content.replace(token, () => item);
+    // 0-1. 한글(HWP) 인라인 수식 스크립트 전처리 ({a} over {b}, root {n} of {x}, sqrt {x})
+    if (/\bover\b/.test(l)) {
+      let prevL;
+      let g = 0;
+      do {
+        prevL = l;
+        l = l.replace(/\{([^{}]+)\}\s*over\s*\{([^{}]+)\}/g, '\\frac{$1}{$2}');
+        l = l.replace(/(?<=[^a-zA-Z0-9_\}]|^)([a-zA-Z0-9_]+)\s*over\s*\{([^{}]+)\}/g, '\\frac{$1}{$2}');
+        l = l.replace(/\{([^{}]+)\}\s*over\s*([a-zA-Z0-9_]+)(?=[^a-zA-Z0-9_\{]|$)/g, '\\frac{$1}{$2}');
+        l = l.replace(/(?<=[^a-zA-Z0-9_\}]|^)([a-zA-Z0-9_]+)\s*over\s*([a-zA-Z0-9_]+)(?=[^a-zA-Z0-9_\{]|$)/g, '\\frac{$1}{$2}');
+        g++;
+      } while (l !== prevL && g < 6);
+    }
+    if (/\broot\s*\{/.test(l)) {
+      l = l.replace(/root\s*\{([^{}]+)\}\s*of\s*\{([^{}]+)\}/g, '\\sqrt[$1]{$2}');
+      l = l.replace(/root\s*\{([^{}]+)\}\s*of\s*([a-zA-Z0-9_]+)/g, '\\sqrt[$1]{$2}');
+    }
+    if (/(?<!\\)\bsqrt\s*\{/.test(l)) {
+      l = l.replace(/(?<!\\)\bsqrt\s*\{/g, '\\sqrt{');
+    }
+
+    const protectedInline = [];
+    let pIdx = 0;
+
+    // 중첩 분수/루트 원자 토큰 저장소 (복합 등식 내부에 흡수될 수 있도록 관리)
+    const mathAtoms = [];
+    let atomIdx = 0;
+
+    function unprotectAtoms(str) {
+      let res = str;
+      for (let i = mathAtoms.length - 1; i >= 0; i--) {
+        const { atomToken, rawLatex } = mathAtoms[i];
+        res = res.replace(atomToken, () => rawLatex);
+      }
+      return res;
+    }
+
+    // 단계별로 매칭된 수식을 즉시 __LINE_PROT_N__ 토큰으로 치환하여 후속 정규식의 재매칭/쪼개짐 원천 차단
+    function protect(mathStr) {
+      const restored = unprotectAtoms(mathStr).trim();
+      if (!restored) return mathStr;
+      const token = `__LINE_PROT_${pIdx++}__`;
+      protectedInline.push({ token, val: `$${restored}$` });
+      return token;
+    }
+
+    // 1. 기존 $...$ 스캔: 한글([가-힣])이 포함되지 않은 정상 $...$는 즉시 보호하고, 짝 없는 고아 $는 제거
+    let scanned = '';
+    let cursor = 0;
+    while (cursor < l.length) {
+      if (l[cursor] === '$' && (cursor === 0 || l[cursor - 1] !== '\\')) {
+        let nextDollar = -1;
+        for (let j = cursor + 1; j < l.length; j++) {
+          if (l[j] === '$' && l[j - 1] !== '\\') {
+            nextDollar = j;
+            break;
+          }
+        }
+        if (nextDollar !== -1) {
+          const inner = l.slice(cursor + 1, nextDollar);
+          // 내부가 비어있지 않고 한글이 없다면 정상 수식으로 즉시 보호
+          if (inner.trim().length > 0 && !/[가-힣]/.test(inner)) {
+            scanned += protect(inner);
+            cursor = nextDollar + 1;
+            continue;
+          }
+        }
+        // 짝이 없거나 한글을 삼킨 가짜/고아 $는 건너뛰어 제거
+        cursor++;
+        continue;
+      }
+      scanned += l[cursor];
+      cursor++;
+    }
+    l = scanned;
+
+    // 2. 마크다운 볼드체(**...**) 및 인라인 코드(`...`) 보호
+    l = l.replace(/`[^`\n]+`|\*\*[^*\n]+\*\*/g, (m) => {
+      const token = `__LINE_PROT_${pIdx++}__`;
+      protectedInline.push({ token, val: m });
+      return token;
     });
 
-    return prefix + content;
+    // 3. 중첩 중괄호를 포함한 Bare \frac, \sqrt를 밸런스 파서로 추출하여 __MATH_ATOM_N__ 토큰화
+    l = replaceBalancedCommands(l, /(?<![a-zA-Z0-9_])\\?([dt]?frac)\b/, 2, false, (cmd, opt, args) => {
+      const rawLatex = `\\${cmd}{${args[0]}}{${args[1]}}`;
+      const atomToken = `__MATH_ATOM_${atomIdx++}__`;
+      mathAtoms.push({ atomToken, rawLatex });
+      return atomToken;
+    });
+    l = replaceBalancedCommands(l, /(?<![a-zA-Z0-9_])\\?(sqrt)\b/, 1, true, (cmd, opt, args) => {
+      const optPart = opt !== null ? `[${opt}]` : '';
+      const rawLatex = `\\sqrt${optPart}{${args[0]}}`;
+      const atomToken = `__MATH_ATOM_${atomIdx++}__`;
+      mathAtoms.push({ atomToken, rawLatex });
+      return atomToken;
+    });
+
+    // 4. 논리 화살표 단독 보호 (\implies, \iff)
+    l = l.replace(/\\(implies|iff|Longrightarrow|Longleftrightarrow)(?![a-zA-Z])/g, (m) => {
+      return ` ${protect(m)} `;
+    });
+
+    // 5. 화살표 체인 보호 (예: 4 \to 5 \to 4, x \to 0)
+    l = l.replace(/([0-9a-zA-Z_\(\)\|]+(?:[ \t]*\\(?:to|rightarrow)[ \t]*[0-9a-zA-Z_\(\)\\]+)+)/g, (m) => {
+      if (m.includes('__LINE_PROT_')) return m;
+      return protect(m);
+    });
+
+    // 6. 정적분, 극한, 시그마 수식 블록 추출 (\int_{a}^{b} ..., \lim_{x \to 0} ..., \sum_{k=1}^{n} ...)
+    l = l.replace(/\\(?:int|oint|iint|iiint|sum|prod|lim)(?:\s*[_^]\s*(?:\{[^{}]*\}|[a-zA-Z0-9\\]+))*(?:\s*[a-zA-Z0-9_\^\{\}\(\)\+\-\*\/\\]+)*/g, (m) => {
+      if (m.includes('__LINE_PROT_')) return m;
+      return protect(m);
+    });
+
+    // 7. 등식 / 부등식 추출 (한글 조사 및 기존 보호 토큰 침범 원천 차단)
+    // 좌변과 우변은 반드시 수식 토큰(영문, 숫자, 괄호, 절댓값, LaTeX 명령어, __MATH_ATOM_)으로 시작/종료되어야 함
+    const mathAtomUnit = `(?:__MATH_ATOM_\\d+__|\\\\[a-zA-Z]+|[a-zA-Z0-9_\\^\\{\\}\\(\\)\\[\\]\\|])`;
+    const mathMidUnit = `(?:__MATH_ATOM_\\d+__|\\\\[a-zA-Z]+|[a-zA-Z0-9_\\^\\{\\}\\(\\)\\[\\]\\|\\+\\-\\*\\/ \t])`;
+    const relOp = `(?:=|<=|>=|<|>|\\\\(?:le|ge|leq|geq|neq|ne|approx|equiv|in|notin|subset)(?![a-zA-Z]))`;
+    const eqRegex = new RegExp(
+            `(?<![a-zA-Z0-9_\\\\])(${mathAtomUnit}${mathMidUnit}*?[ \t]*${relOp}(?:[ \t]*${mathMidUnit}*?${mathAtomUnit}(?:[ \t]*${relOp}[ \t]*${mathMidUnit}*?${mathAtomUnit})*))(?:,\\s*-?\\d+)*(?=[가-힣\\s\\)\\]\\.,;:!?]|$)`,
+            'g'
+    );
+
+    l = l.replace(eqRegex, (m) => {
+      if (m.includes('__LINE_PROT_') || /[가-힣]/.test(m)) return m;
+      // 괄호 짝이 맞지 않는 외부 여는/닫는 괄호가 끝에 걸린 경우 정제
+      let cleaned = m.trim();
+      let openP = (cleaned.match(/\(/g) || []).length;
+      let closeP = (cleaned.match(/\)/g) || []).length;
+      while (closeP > openP && cleaned.endsWith(')')) {
+        cleaned = cleaned.slice(0, -1).trim();
+        closeP--;
+      }
+      while (openP > closeP && cleaned.startsWith('(')) {
+        cleaned = cleaned.slice(1).trim();
+        openP--;
+      }
+      return protect(cleaned);
+    });
+
+    // 8. 등식에 흡수되지 않고 남은 단독 \frac, \sqrt (__MATH_ATOM_N__) 즉시 보호
+    l = l.replace(/__MATH_ATOM_\d+__/g, (m) => protect(m));
+
+    // 9. 단독 연산자/절댓값/첨자 수식 보호 (\pm x_0, |x|, a_1, x_{n+1}, 2m+1)
+    l = l.replace(/\\(?:pm|mp)\s*[a-zA-Z0-9_]+(?:\^\{?[a-zA-Z0-9_\+\-]+\}?)?/g, (m) => {
+      if (m.includes('__LINE_PROT_')) return m;
+      return protect(m);
+    });
+    l = l.replace(/\|[a-zA-Z0-9_\+\-]+\|/g, (m) => {
+      if (m.includes('__LINE_PROT_')) return m;
+      return protect(m);
+    });
+    l = l.replace(/(?<![a-zA-Z0-9_\\])[a-zA-Z](?:_(?:\{[^{}]+\}|[a-zA-Z0-9]+)|\^(?:\{[^{}]+\}|[a-zA-Z0-9]+))+/g, (m) => {
+      if (m.includes('__LINE_PROT_')) return m;
+      return protect(m);
+    });
+    l = l.replace(/(?<=\()[0-9]+[a-zA-Z]\s*[\+\-]\s*[0-9]+(?=\))/g, (m) => {
+      if (m.includes('__LINE_PROT_')) return m;
+      return protect(m);
+    });
+
+    // 10. 단독 함수 호출 보호 (예: f(t), g(t), h(t), f(\alpha), f(-3), h(n))
+    // 7번에서 이미 보호된 등식 내부의 함수는 __LINE_PROT_N__ 상태이므로 절대 중복 매칭되지 않음
+    l = l.replace(/(?<![a-zA-Z0-9_\\])([fghFGH]\s*\(\s*(?:\\[a-zA-Z]+|[a-zA-Z0-9_\+\-\s,]+)\s*\))/g, (m) => {
+      if (m.includes('__LINE_PROT_')) return m;
+      return protect(m);
+    });
+
+    // 11. 단독 그리스 문자 및 수학 기호 보호 (\alpha, \beta, \infty 등)
+    l = l.replace(/\\(alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Phi|Psi|Omega|infty|emptyset|therefore|because)(?![a-zA-Z])/g, (m) => {
+      return protect(m);
+    });
+
+    // 12. 모든 보호 토큰을 일괄 복원 (콜백 함수를 사용하여 $$ 특수 패턴 오작동 원천 방지)
+    for (let i = protectedInline.length - 1; i >= 0; i--) {
+      const { token, val } = protectedInline[i];
+      l = l.replace(token, () => val);
+    }
+
+    return linePrefix + l;
   }
 
-  // 전체 텍스트 처리 파이프라인
+  // --- 전체 텍스트 처리 파이프라인 ---
   function processText(rawText) {
     let text = rawText;
     const allLogs = [];
     const extractedFormulas = [];
 
-    // A. 개행 분리 수식 봉합
-    text = stitchBrokenMultilineFormulas(text);
+    // A. 기초 정규화
+    text = text.replace(/\\vert\{\}?/g, '|');
+    text = text.replace(/\\\\+([a-zA-Z]+)/g, '\\$1');
 
-    // B. HWP 수식 -> LaTeX 변환
-    text = convertHwpToLatex(text);
+    // LaTeX 블록 구분자 통일
+    text = text.replace(/\\\[([\s\S]*?)\\\]/g, (m, c) => `$$${c}$$`);
+    text = text.replace(/\\\(([\s\S]*?)\\\)/g, (m, c) => `$${c}$`);
 
-    // C. 블록 구분자 통일
-    if (/\\\[[\s\S]*?\\\]/.test(text)) {
-      text = text.replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$');
-      allLogs.push("\\[ ... \\] 블록 구분자를 $$ ... $$ 로 통일");
-    }
-    if (/\\\([\s\S]*?\\\)/.test(text)) {
-      text = text.replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$');
-      allLogs.push("\\( ... \\) 인라인 구분자를 $ ... $ 로 통일");
-    }
+    // A-1. 한글(HWP) 행렬 및 조건식 블록 자동 감지 -> LaTeX 블록 수식($$ ... $$)으로 변환 (중첩 중괄호 안전 파싱)
+    text = convertHwpMatricesToLatex(text, allLogs);
 
-    // D. 블록 수식 격리
+    // B. 블록 수식($$ ... $$) 최우선 금고 격리 (줄바꿈 포함 가능)
     const globalProtectedBlocks = [];
     let blockIdx = 0;
-    text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
-      const token = `%%GLOBAL_BLOCK_MATH_${blockIdx++}%%`;
-      globalProtectedBlocks.push({ token, formula: formula.trim(), isDisplay: true });
-      return token;
+
+    text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, content) => {
+      const token = `%%GLOBAL_BLOCK_${blockIdx++}%%`;
+      globalProtectedBlocks.push({ token, content: content.trim(), isDisplay: true });
+      return `\n${token}\n`;
     });
 
-    // E. 라인 단위 Bare-LaTeX 수식 감지
-    const lines = text.split('\n');
-    const processedLines = lines.map(line => sanitizeLineBareMath(line));
-    text = processedLines.join('\n');
+    // 3. $$ 기호 없이 본문에 방치된(Bare) 행렬/환경 자동 감지 및 보호 (다중 라인 및 \right 없는 일반 행렬 포함)
+    const MATH_ENV_LIST = 'matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|cases|dcases|aligned|array';
+    const bareEnvRegex = new RegExp(
+            `(?:([a-zA-Z0-9_'^\\{\\}\\(\\)\\[\\]\\|\\+\\-\\*\\/\\\\]+[ \\t]*)+=[ \\t]*)?` +
+            `(\\\\left[\\(\\[\\|\\{]?[ \\t]*)?` +
+            `(\\\\begin\\{(?:${MATH_ENV_LIST})\\*?\\}(?:\\{[^{}]*\\})?[\\s\\S]*?\\\\end\\{(?:${MATH_ENV_LIST})\\*?\\})` +
+            `([ \\t]*\\\\right[\\)\\]\\|\\}]?)?` +
+            `([\\^\\_](?:\\{[^{}]+\\}|[a-zA-Z0-9\\-]+))?`,
+            'g'
+    );
 
-    // F. 수식 토큰화 및 KaTeX 렌더링
+    text = text.replace(bareEnvRegex, (match, prefix, leftBracket, envBody, rightBracket, scriptPart) => {
+      if (match.includes('%%GLOBAL_BLOCK_')) return match;
+      const fullFormula = (prefix || '') + (leftBracket || '') + envBody + (rightBracket || '') + (scriptPart || '');
+      const token = `%%GLOBAL_BLOCK_${blockIdx++}%%`;
+      globalProtectedBlocks.push({ token, content: fullFormula.trim(), isDisplay: true });
+      allLogs.push(`[행렬/수식 환경 자동 감지] ${envBody.slice(0, 24)}... 보정 완료`);
+      return `\n${token}\n`;
+    });
+
+    // C. 라인 단위로 나누어 개행 및 문장 구조 100% 보존하며 수식 보정
+    const lines = text.split('\n');
+    const sanitizedLines = lines.map(line => {
+      if (line.includes('%%GLOBAL_BLOCK_')) return line;
+      return sanitizeLineBareMath(line);
+    });
+    text = sanitizedLines.join('\n');
+
+    // D. 블록 수식 복원 (콜백 함수로 안전 치환)
+    globalProtectedBlocks.forEach(({ token, content }) => {
+      text = text.replace(token, () => `$$${content}$$`);
+    });
+
+    // E. 모든 수식을 최종 KaTeX 토큰으로 치환 (marked.parse 실행 전에 모든 수식 내부의 *, _ 보호)
     const mathTokens = [];
     let tokenIndex = 0;
 
-    // 블록 복원 및 등록
-    globalProtectedBlocks.forEach(({ token, formula, isDisplay }) => {
+    // 1) 블록 수식 ($$ ... $$)
+    text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
       const { repaired, logs } = repairMathString(formula);
-      if (logs.length > 0) allLogs.push(...logs.map(l => `[블록 수식] ${l}`));
+      if (logs.length > 0) allLogs.push(...logs.map(l => `[블록] ${l}`));
 
       const hwpCode = latexToHwp(repaired);
-      const formulaId = extractedFormulas.length;
-      extractedFormulas.push({ id: formulaId, raw: formula, cleaned: repaired, hwp: hwpCode, isDisplay });
+      const currentIdx = extractedFormulas.length;
+      extractedFormulas.push({ raw: formula, cleaned: repaired, hwp: hwpCode, isDisplay: true });
 
-      const mToken = `%%KATEX_MATH_BLOCK_${tokenIndex++}%%`;
-      text = text.replace(token, () => mToken);
-      mathTokens.push({ token: mToken, formula: repaired, isDisplay, id: formulaId });
-    });
-
-    // 인라인 수식 등록
-    text = text.replace(/(?<!\$)\$([^\$\n]+?)\$(?!\$)/g, (match, formula) => {
-      const { repaired, logs } = repairMathString(formula);
-      if (logs.length > 0) allLogs.push(...logs.map(l => `[인라인 수식] ${l}`));
-
-      const hwpCode = latexToHwp(repaired);
-      const formulaId = extractedFormulas.length;
-      extractedFormulas.push({ id: formulaId, raw: formula, cleaned: repaired, hwp: hwpCode, isDisplay: false });
-
-      const token = `%%KATEX_MATH_INLINE_${tokenIndex++}%%`;
-      mathTokens.push({ token, formula: repaired, isDisplay: false, id: formulaId });
+      const token = `%%KATEX_TOKEN_${tokenIndex++}%%`;
+      mathTokens.push({ token, formula: repaired, hwpCode, formulaIdx: currentIdx, isDisplay: true });
       return token;
     });
 
-    // G. 마크다운 변환
+    // 2) 인라인 수식 ($ ... $)
+    text = text.replace(/(?<!\\)\$([^\$\n]+?)(?<!\\)\$/g, (match, formula) => {
+      const { repaired, logs } = repairMathString(formula);
+      if (logs.length > 0) allLogs.push(...logs.map(l => `[인라인] ${l}`));
+
+      const hwpCode = latexToHwp(repaired);
+      const currentIdx = extractedFormulas.length;
+      extractedFormulas.push({ raw: formula, cleaned: repaired, hwp: hwpCode, isDisplay: false });
+
+      const token = `%%KATEX_TOKEN_${tokenIndex++}%%`;
+      mathTokens.push({ token, formula: repaired, hwpCode, formulaIdx: currentIdx, isDisplay: false });
+      return token;
+    });
+
+    // 3) 남은 짝 없는 외톨이 $ 안전 이스케이프
+    text = text.replace(/(?<!\\)\$/g, '\\$');
+
+    // F. 마크다운 변환 (수식 내부 언더스코어 및 별표 완전 격리 상태)
+    marked.setOptions({ gfm: true, breaks: true });
     let renderedHtml = marked.parse(text);
 
-    // H. 대화형 KaTeX HTML 주입
-    mathTokens.forEach(({ token, formula, isDisplay, id }) => {
-      let katexInner = '';
+    // G. KaTeX 렌더링 결과 주입 (콜백 함수 () => interactiveHtml 사용으로 $ 특수 패턴 안전성 확보)
+    mathTokens.forEach(({ token, formula, hwpCode, formulaIdx, isDisplay }) => {
+      let katexHtml = '';
       try {
-        katexInner = katex.renderToString(formula, {
+        katexHtml = katex.renderToString(formula, {
           displayMode: isDisplay,
           throwOnError: false,
           errorColor: '#f87171'
         });
       } catch (e) {
-        katexInner = `<span class="katex-error">${formula}</span>`;
+        katexHtml = `<span class="katex-error">${formula}</span>`;
       }
-
-      const interactiveHtml = `<span class="interactive-formula" data-formula-id="${id}" onclick="handleFormulaClick(event, ${id})" title="클릭하면 한글(HWP) 수식 코드가 복사됩니다">${katexInner}</span>`;
+      const safeTooltip = escapeHtml(hwpCode).replace(/"/g, '&quot;');
+      const interactiveHtml = `<span class="katex-interactive" onclick="copySingleHwp(${formulaIdx})" title="클릭하여 HWP 수식 복사: ${safeTooltip}">${katexHtml}</span>`;
       renderedHtml = renderedHtml.replace(token, () => interactiveHtml);
     });
 
-    // I. 정제본 LaTeX 소스 구성
+    // H. 정제본 LaTeX 소스 구성 (콜백 함수 () => wrapped 사용)
     let cleanedSource = text;
     mathTokens.forEach(({ token, formula, isDisplay }) => {
       const wrapped = isDisplay ? `\n$$\n${formula}\n$$\n` : `$${formula}$`;
@@ -663,13 +1022,15 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
     return {
       renderedHtml,
       cleanedSource,
+      tokenizedText: text,
+      mathTokens,
       allLogs,
       extractedFormulas,
       totalFormulas: mathTokens.length
     };
   }
 
-  // DOM 참조
+  // --- UI 연동 및 이벤트 핸들링 ---
   const rawInput = document.getElementById('rawInput');
   const renderOutput = document.getElementById('renderOutput');
   const cleanedSourceOutput = document.getElementById('cleanedSourceOutput');
@@ -679,11 +1040,17 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
   const formulaCount = document.getElementById('formulaCount');
   const logCountBadge = document.getElementById('logCountBadge');
   const hwpCountBadge = document.getElementById('hwpCountBadge');
-  const btnRestoreHistory = document.getElementById('btnRestoreHistory');
+  const previewTipBanner = document.getElementById('previewTipBanner');
+  const btnRestoreLast = document.getElementById('btnRestoreLast');
 
   let currentCleanedText = '';
   let currentExtractedFormulas = [];
-  const STORAGE_KEY = 'ai_math_healer_saved_input';
+  let currentTokenizedText = '';
+  let currentMathTokens = [];
+
+  if (localStorage.getItem(STORAGE_KEY)) {
+    btnRestoreLast.classList.remove('hidden');
+  }
 
   function updateAll() {
     const val = rawInput.value;
@@ -691,32 +1058,39 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
 
     if (val.trim()) {
       localStorage.setItem(STORAGE_KEY, val);
-      btnRestoreHistory.classList.add('hidden');
+      btnRestoreLast.classList.add('hidden');
     }
 
     if (!val.trim()) {
+      previewTipBanner.classList.add('hidden');
       renderOutput.innerHTML = '<div class="text-slate-500 italic py-12 text-center text-xs">왼쪽에 수식 또는 AI 답변을 입력하면 실시간으로 렌더링됩니다.</div>';
       cleanedSourceOutput.textContent = '';
-      repairLogsList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">복구 로그가 없습니다.</div>';
+      repairLogsList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">수식 복구 로그가 없습니다.</div>';
       hwpFormulaList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">감지된 수식이 없습니다.</div>';
       formulaCount.textContent = '수식 0개';
       logCountBadge.textContent = '0';
       hwpCountBadge.textContent = '0';
       currentCleanedText = '';
       currentExtractedFormulas = [];
+      currentTokenizedText = '';
+      currentMathTokens = [];
       return;
     }
 
     const result = processText(val);
     currentCleanedText = result.cleanedSource;
     currentExtractedFormulas = result.extractedFormulas;
+    currentTokenizedText = result.tokenizedText;
+    currentMathTokens = result.mathTokens;
 
+    previewTipBanner.classList.toggle('hidden', result.totalFormulas === 0);
     renderOutput.innerHTML = result.renderedHtml;
     cleanedSourceOutput.textContent = result.cleanedSource;
     formulaCount.textContent = `수식 ${result.totalFormulas}개`;
     logCountBadge.textContent = result.allLogs.length;
     hwpCountBadge.textContent = result.extractedFormulas.length;
 
+    // 로그 출력
     if (result.allLogs.length > 0) {
       repairLogsList.innerHTML = result.allLogs.map(log => `
           <div class="p-2.5 bg-slate-950/70 border border-slate-800 rounded-lg flex items-start gap-2">
@@ -725,15 +1099,16 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
           </div>
         `).join('');
     } else {
-      repairLogsList.innerHTML = '<div class="text-slate-400 py-6 text-center text-xs">수정할 문법 오류가 발견되지 않았습니다. 원문이 올바릅니다!</div>';
+      repairLogsList.innerHTML = '<div class="text-slate-400 py-6 text-center text-xs">모든 수식 문법이 정상입니다.</div>';
     }
 
+    // HWP 목록 출력
     if (result.extractedFormulas.length > 0) {
       hwpFormulaList.innerHTML = result.extractedFormulas.map((f, idx) => `
           <div class="bg-slate-950/80 border border-slate-800 hover:border-slate-700 p-3 rounded-lg flex flex-col gap-2 transition-all">
             <div class="flex items-center justify-between text-[11px] text-slate-400">
               <span class="font-mono text-emerald-400">#${idx + 1} (${f.isDisplay ? '블록 수식' : '인라인 수식'})</span>
-              <button onclick="copySingleHwp(${f.id})" class="px-2.5 py-1 bg-sky-600/30 hover:bg-sky-600 text-sky-200 hover:text-white border border-sky-500/40 rounded text-xs transition-colors">
+              <button onclick="copySingleHwp(${idx})" class="px-2 py-0.5 bg-sky-600/30 hover:bg-sky-600 text-sky-200 hover:text-white border border-sky-500/40 rounded text-xs transition-colors">
                 이 수식 복사
               </button>
             </div>
@@ -743,7 +1118,7 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
           </div>
         `).join('');
     } else {
-      hwpFormulaList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">변환할 수식이 감지되지 않았습니다.</div>';
+      hwpFormulaList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">변환할 수식이 없습니다.</div>';
     }
   }
 
@@ -751,10 +1126,10 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  let timer = null;
+  let debounceTimer = null;
   rawInput.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(updateAll, 120);
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(updateAll, 80);
   });
 
   // 탭 전환
@@ -775,7 +1150,7 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
     });
   });
 
-  // 토스트 팝업
+  // 토스트 알림
   function showToast(msg, isHwp = false) {
     const toast = document.getElementById('toast');
     const toastMsg = document.getElementById('toastMsg');
@@ -796,7 +1171,7 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
     setTimeout(() => {
       toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
       toast.classList.remove('opacity-100', 'translate-y-0');
-    }, 3500);
+    }, 3000);
   }
 
   function copyToClipboard(text, successMsg, isHwp = false) {
@@ -817,33 +1192,20 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
     });
   }
 
-  // 수식 클릭 즉시 HWP 복사
-  window.handleFormulaClick = function(event, id) {
-    const formulaObj = currentExtractedFormulas.find(f => f.id === id);
-    if (!formulaObj) return;
-
-    const target = event.currentTarget;
-    target.classList.add('copied-flash');
-    setTimeout(() => target.classList.remove('copied-flash'), 400);
-
-    copyToClipboard(formulaObj.hwp, `<b>수식 복사 완료!</b> 한글에서 <code>Ctrl + N, M</code> → 붙여넣기`, true);
-  };
-
-  window.copySingleHwp = function(id) {
-    const f = currentExtractedFormulas.find(item => item.id === id);
-    if (f) {
-      copyToClipboard(f.hwp, "<b>HWP 수식 복사 완료!</b> 한글에서 <code>Ctrl + N, M</code> → 붙여넣기", true);
+  window.copySingleHwp = function(index) {
+    if (currentExtractedFormulas[index]) {
+      const code = currentExtractedFormulas[index].hwp;
+      copyToClipboard(code, `<b>#${index + 1} HWP 수식 복사 완료!</b> (<code>${escapeHtml(code.slice(0, 26))}${code.length > 26 ? '...' : ''}</code>)`, true);
     }
   };
 
-  // 상단 버튼 액션
   document.getElementById('btnCopyHwp').addEventListener('click', () => {
     if (!currentExtractedFormulas || currentExtractedFormulas.length === 0) {
-      copyToClipboard(latexToHwp(rawInput.value), "<b>전체 HWP 변환 복사 완료!</b> <code>Ctrl + N, M</code> 붙여넣기", true);
+      copyToClipboard(latexToHwp(rawInput.value), "<b>HWP 변환 복사 완료!</b> <code>Ctrl + N, M</code> → 붙여넣기", true);
       return;
     }
     const combined = currentExtractedFormulas.map(f => f.hwp).join('\n\n');
-    copyToClipboard(combined, `<b>수식 ${currentExtractedFormulas.length}개 HWP 변환 복사 완료!</b> <code>Ctrl + N, M</code> 붙여넣기`, true);
+    copyToClipboard(combined, `<b>수식 ${currentExtractedFormulas.length}개 HWP 변환 복사 완료!</b>`, true);
   });
 
   document.getElementById('btnCopyClean').addEventListener('click', () => {
@@ -853,26 +1215,250 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
   document.getElementById('btnLoadSample').addEventListener('click', () => {
     rawInput.value = SAMPLE_TEXT;
     updateAll();
-    showToast("예시 텍스트를 불러왔습니다.");
+    showToast("실제 오류 예시 텍스트를 불러왔습니다.");
   });
 
-  document.getElementById('btnClear').addEventListener('click', () => {
-    rawInput.value = '';
-    updateAll();
-    rawInput.focus();
-  });
-
-  document.getElementById('btnPrint').addEventListener('click', () => {
-    window.print();
-  });
-
-  btnRestoreHistory.addEventListener('click', () => {
+  document.getElementById('btnRestoreLast').addEventListener('click', () => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       rawInput.value = saved;
       updateAll();
-      showToast("이전 작업을 복원했습니다.");
+      showToast("마지막 작업 내용을 복원했습니다.");
     }
+  });
+
+  document.getElementById('btnPrintPdf').addEventListener('click', () => {
+    window.print();
+  });
+
+  // --- 한글(.hwpx) 정식 파일 생성 및 다운로드 엔진 ---
+  function escapeXml(str) {
+    if (!str) return '';
+    return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+  }
+
+  async function exportToHwpx() {
+    if (!rawInput.value.trim()) {
+      showToast("다운로드할 내용이 없습니다. 먼저 본문을 입력해 주세요.");
+      return;
+    }
+    if (typeof JSZip === 'undefined') {
+      showToast("JSZip 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    showToast("<b>한글(.hwpx) 파일 생성 중...</b>", true);
+
+    try {
+      const zip = new JSZip();
+
+      // 1. mimetype (비압축 저장)
+      zip.file("mimetype", "application/hwp+zip", { compression: "STORE" });
+
+      // 2. META-INF/container.xml
+      zip.folder("META-INF").file("container.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container">
+  <ocf:rootfiles>
+    <ocf:rootfile full-path="Contents/content.hpf" media-type="application/hwp+zip"/>
+  </ocf:rootfiles>
+</ocf:container>`);
+
+      // 3. version.xml
+      zip.file("version.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hh:version xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" version="1.0" targetApplication="HWP" targetAppVersion="10.0.0.0"/>`);
+
+      // 4. Contents/content.hpf
+      zip.folder("Contents").file("content.hpf", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<package xmlns="http://www.hancom.co.kr/hwpml/2011/head" version="1.0">
+  <metadata>
+    <title>AI Math LaTeX Export</title>
+    <language>ko</language>
+  </metadata>
+  <manifest>
+    <item id="header" href="header.xml" media-type="application/xml"/>
+    <item id="section0" href="section0.xml" media-type="application/xml"/>
+  </manifest>
+  <spine>
+    <itemref idref="header"/>
+    <itemref idref="section0"/>
+  </spine>
+</package>`);
+
+      // 5. Contents/header.xml (스타일, 폰트, 단락 속성)
+      zip.folder("Contents").file("header.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hh:head xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph">
+  <hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/>
+  <hh:refList>
+    <hh:fontfaces itemCnt="7">
+      <hh:fontface lang="hangul" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="latin" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="hanja" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="japanese" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="other" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="symbol" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
+      <hh:fontface lang="user" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF"/></hh:fontface>
+    </hh:fontfaces>
+    <hh:borderFills itemCnt="1">
+      <hh:borderFill id="1" backSlash="NONE" slash="NONE" type="SOLID">
+        <hh:slash/>
+        <hh:backSlash/>
+        <hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/>
+        <hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/>
+        <hh:topBorder type="NONE" width="0.1 mm" color="#000000"/>
+        <hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/>
+      </hh:borderFill>
+    </hh:borderFills>
+    <hh:charProperties itemCnt="2">
+      <hh:charPr id="0" height="1000" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="0" borderFillIDRef="1">
+        <hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>
+        <hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>
+        <hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>
+        <hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>
+        <hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>
+      </hh:charPr>
+      <hh:charPr id="1" height="1200" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="0" borderFillIDRef="1" bold="1">
+        <hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>
+        <hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>
+        <hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>
+        <hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>
+        <hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>
+      </hh:charPr>
+    </hh:charProperties>
+    <hh:paraProperties itemCnt="2">
+      <hh:paraPr id="0" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0">
+        <hh:align horizontal="JUSTIFY" vertical="BASELINE"/>
+        <hh:heading type="NONE" idRef="0" level="0"/>
+        <hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD"/>
+        <hh:margin><hh:intent value="0" unit="PT"/><hh:left value="0" unit="PT"/><hh:right value="0" unit="PT"/><hh:prev value="0" unit="PT"/><hh:next value="0" unit="PT"/></hh:margin>
+        <hh:lineSpacing type="PERCENT" value="160" unit="PERCENT"/>
+        <hh:border borderFillIDRef="1" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/>
+      </hh:paraPr>
+      <hh:paraPr id="1" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0">
+        <hh:align horizontal="CENTER" vertical="BASELINE"/>
+        <hh:heading type="NONE" idRef="0" level="0"/>
+        <hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD"/>
+        <hh:margin><hh:intent value="0" unit="PT"/><hh:left value="0" unit="PT"/><hh:right value="0" unit="PT"/><hh:prev value="0" unit="PT"/><hh:next value="0" unit="PT"/></hh:margin>
+        <hh:lineSpacing type="PERCENT" value="160" unit="PERCENT"/>
+        <hh:border borderFillIDRef="1" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/>
+      </hh:paraPr>
+    </hh:paraProperties>
+    <hh:styles itemCnt="1">
+      <hh:style id="0" type="PARA" name="Normal" engName="Normal" paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0"/>
+    </hh:styles>
+  </hh:refList>
+</hh:head>`);
+
+      // 6. Contents/section0.xml 조립 (줄글 + <hp:equation> 글자처럼 취급)
+      const tokenMap = new Map();
+      if (currentMathTokens) {
+        currentMathTokens.forEach(t => tokenMap.set(t.token, t));
+      }
+
+      const lines = (currentTokenizedText || rawInput.value).split('\n');
+      let eqCounter = 1;
+      let paragraphsXml = '';
+
+      lines.forEach((line, pIdx) => {
+        let lineContent = line.trim();
+        let isHeading = false;
+        let paraPrId = 0;
+        let charPrId = 0;
+
+        if (/^#{1,6}\s+/.test(lineContent)) {
+          isHeading = true;
+          charPrId = 1;
+          lineContent = lineContent.replace(/^#{1,6}\s+/, '');
+        }
+
+        let runsXml = '';
+
+        // 첫 번째 문단에는 기본 A4 용지 규격 (secPr) 주입
+        if (pIdx === 0) {
+          runsXml += `<hp:run charPrIDRef="0">
+              <hp:secPr id="0" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" outlineShapeIDRef="1" memoShapeIDRef="1">
+                <hp:grid char="0" line="0"/>
+                <hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/>
+                <hp:pagePr landscape="WIDELY" width="59528" height="84188" gutterType="LEFT_ONLY">
+                  <hp:margin left="8504" right="8504" top="5669" bottom="5669" header="4252" footer="4252" gutter="0"/>
+                </hp:pagePr>
+              </hp:secPr>
+            </hp:run>`;
+        }
+
+        if (lineContent.length === 0) {
+          runsXml += `<hp:run charPrIDRef="${charPrId}"><hp:t></hp:t></hp:run>`;
+        } else {
+          const parts = lineContent.split(/(%%KATEX_TOKEN_\d+%%)/g);
+          parts.forEach(part => {
+            if (!part) return;
+            if (tokenMap.has(part)) {
+              const tokenInfo = tokenMap.get(part);
+              const eqId = 1000000000 + (eqCounter++);
+              if (tokenInfo.isDisplay) {
+                paraPrId = 1; // 블록 수식은 중앙 정렬
+              }
+              const cleanScript = escapeXml(tokenInfo.hwpCode || tokenInfo.formula);
+              runsXml += `<hp:run charPrIDRef="${charPrId}">
+                  <hp:equation id="${eqId}" zOrder="0" numberingType="EQUATION" textWrap="IN_LINE" textFlow="BOTH_SIDES">
+                    <hp:sz width="4000" height="2000" widthRelTo="ABSOLUTE" heightRelTo="ABSOLUTE"/>
+                    <hp:pos treatAsChar="1" arrange="FLOW" groupLevel="0"/>
+                    <hp:outMargin left="100" right="100" top="50" bottom="50"/>
+                    <hp:shapeComment></hp:shapeComment>
+                    <hp:script>${cleanScript}</hp:script>
+                  </hp:equation>
+                </hp:run>`;
+            } else {
+              runsXml += `<hp:run charPrIDRef="${charPrId}"><hp:t>${escapeXml(part)}</hp:t></hp:run>`;
+            }
+          });
+        }
+
+        paragraphsXml += `<hp:p id="${pIdx}" paraPrIDRef="${paraPrId}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">${runsXml}</hp:p>\n`;
+      });
+
+      const section0Xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hs:sec xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head">
+${paragraphsXml}
+</hs:sec>`;
+
+      zip.folder("Contents").file("section0.xml", section0Xml);
+
+      // 7. 클라이언트 측 즉시 다운로드 실행
+      const content = await zip.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip' });
+      const now = new Date();
+      const dateStr = now.getFullYear() + ('0' + (now.getMonth() + 1)).slice(-2) + ('0' + now.getDate()).slice(-2) + '_' + ('0' + now.getHours()).slice(-2) + ('0' + now.getMinutes()).slice(-2);
+      const fileName = `AI_Math_LaTeX_${dateStr}.hwpx`;
+
+      const downloadUrl = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+
+      showToast(`<b>${fileName} 다운로드 완료!</b> 한글에서 바로 열 수 있습니다.`, true);
+    } catch (err) {
+      console.error("HWPX 생성 에러:", err);
+      showToast("HWPX 생성 중 오류가 발생했습니다: " + err.message);
+    }
+  }
+
+  document.getElementById('btnDownloadHwpx').addEventListener('click', exportToHwpx);
+
+  document.getElementById('btnClear').addEventListener('click', () => {
+    rawInput.value = '';
+    updateAll();
+    if (localStorage.getItem(STORAGE_KEY)) {
+      btnRestoreLast.classList.remove('hidden');
+    }
+    rawInput.focus();
   });
 
   window.addEventListener('keydown', (e) => {
@@ -882,12 +1468,6 @@ $h(t)$가 단조증가 또는 단조감소($2 \\to 3 \\to 4$ 또는 $6 \\to 5 \\
     }
   });
 
-  // 시작 시 저장 데이터 복원 버튼 표시 여부 결정
-  const savedContent = localStorage.getItem(STORAGE_KEY);
-  if (savedContent && savedContent.trim()) {
-    btnRestoreHistory.classList.remove('hidden');
-  }
-  rawInput.value = '';
   updateAll();
   rawInput.focus();
 </script>
