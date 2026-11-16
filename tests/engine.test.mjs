@@ -566,3 +566,91 @@ test('renderHwpxTemplatePreviewHtml renders inline photos, BEHIND_TEXT form laye
   assert.ok(patched.files['Contents/section0.xml'].includes('binaryItemIDRef="bg1"'));
   assert.ok(patched.files['Contents/section0.xml'].includes('바뀐 제목'));
 });
+
+test('Korean math shorthand recognition translates fractions, roots, powers, sums, limits without breaking currency', () => {
+  const f1 = engine.processText('$2 분의 1 + 루트(x+1) = 알파$').extractedFormulas[0];
+  assert.equal(f1.cleaned, '\\frac{1}{2} + \\sqrt{x+1} = \\alpha');
+  assert.equal(f1.hwp, '{1} over {2} + sqrt {x+1} = alpha');
+
+  const f2 = engine.processText('$x의 제곱 + y의 세제곱 \\ge 0$').extractedFormulas[0];
+  assert.equal(f2.cleaned, 'x^{2} + y^{3} \\ge 0');
+
+  const f3 = engine.processText('$$시그마 k=1에서 n까지 k의 제곱$$').extractedFormulas[0];
+  assert.equal(f3.cleaned, '\\sum_{k=1}^{n} k^{2}');
+
+  const f4 = engine.processText('$$리미트 x가 무한대로 갈 때 x 분의 1 = 0$$').extractedFormulas[0];
+  assert.equal(f4.cleaned, '\\lim_{x \\to \\infty} \\frac{1}{x} = 0');
+
+  const f5 = engine.processText('| A | $리미트 x가 무한대로 갈 때 x 분의 1 = 0$ |').extractedFormulas[0];
+  assert.equal(f5.cleaned, '\\lim_{x \\to \\infty} \\frac{1}{x} = 0');
+
+  const f6 = engine.processText('값은 $인테그랄 0에서 1까지 x의 제곱 dx$ 이다.').extractedFormulas[0];
+  assert.equal(f6.cleaned, '\\int_{0}^{1} x^{2} dx');
+
+  const cur = engine.processText('가격은 $500과 $600입니다.');
+  assert.equal(cur.extractedFormulas.length, 0);
+  assert.ok(cur.cleanedSource.includes('\\$500과 \\$600'));
+});
+
+test('Markdown tables convert to OWPML <hp:tbl> and preview reflects table widths, drawText, footer, textColor, edited badge, and multi-section', () => {
+  // 1. Standalone Markdown table -> OWPML <hp:tbl>
+  const mdInput = '# 분석표\n\n| 연도 | 식 |\n| :---: | --- |\n| 2025 | $2 분의 1$ |';
+  const pkg = engine.buildHwpxPackageFiles(mdInput, new Date('2026-05-01T00:00:00Z'));
+  const sec0 = pkg.files['Contents/section0.xml'];
+  assertWellFormedXml(pkg.files['Contents/header.xml'], 'Header XML with 4 borderFills');
+  assertWellFormedXml(sec0, 'Section XML with Markdown table');
+  assert.ok(sec0.includes('<hp:tbl '), 'Markdown table must compile to OWPML <hp:tbl>');
+  assert.ok(sec0.includes('<hp:tc '), 'OWPML table must include <hp:tc> cells');
+  assert.ok(sec0.includes('2025') && sec0.includes('{1} over {2}'), 'Cell text and Korean-math equation must compile cleanly');
+
+  // 2. Template preview fidelity 1 & 2 (width, align, drawText, footer, textColor, edited highlight, multi-section)
+  const nsAttrs = 'xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head"';
+  const headerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head ${nsAttrs}><hh:refList><hh:charProperties itemCnt="2"><hh:charPr id="0" height="1000" textColor="#000000"/><hh:charPr id="1" height="1000" textColor="#1D4ED8"/></hh:charProperties><hh:paraProperties itemCnt="1"><hh:paraPr id="0"><hh:align horizontal="LEFT"/></hh:paraPr></hh:paraProperties><hh:borderFills itemCnt="1"><hh:borderFill id="3"><hh:leftBorder type="SOLID" color="#64748B"/><hh:rightBorder type="SOLID" color="#64748B"/><hh:topBorder type="SOLID" color="#64748B"/><hh:bottomBorder type="SOLID" color="#64748B"/></hh:borderFill></hh:borderFills><hh:styles itemCnt="1"><hh:style id="0" paraPrIDRef="0" charPrIDRef="0"/></hh:styles></hh:refList></hh:head>`;
+  const s0Xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hs:sec ${nsAttrs}><hp:p id="1" paraPrIDRef="0"><hp:run charPrIDRef="0"><hp:secPr><hp:pagePr width="59527" height="84188"/></hp:secPr><hp:ctrl><hp:footer><hp:subList><hp:p><hp:run><hp:t>쪽 바닥글</hp:t></hp:run></hp:p></hp:subList></hp:footer></hp:ctrl><hp:t>첫 구역 본문</hp:t></hp:run></hp:p><hp:p id="2" paraPrIDRef="0"><hp:run charPrIDRef="1"><hp:t>파란 강조</hp:t></hp:run></hp:p><hp:p id="3" paraPrIDRef="0"><hp:run charPrIDRef="0"><hp:drawText><hp:subList><hp:p id="4" paraPrIDRef="0"><hp:run charPrIDRef="0"><hp:t>도형 글상자</hp:t></hp:run></hp:p></hp:subList></hp:drawText></hp:run></hp:p><hp:p id="5" paraPrIDRef="0"><hp:run charPrIDRef="0"><hp:tbl borderFillIDRef="3"><hp:sz width="20000" height="3000"/><hp:pos horzAlign="RIGHT" horzOffset="0"/><hp:tr><hp:tc borderFillIDRef="3"><hp:subList><hp:p id="6" paraPrIDRef="0"><hp:run charPrIDRef="0"><hp:t>작은표</hp:t></hp:run></hp:p></hp:subList><hp:cellSz width="20000" height="3000"/></hp:tc></hp:tr></hp:tbl></hp:run></hp:p></hs:sec>`;
+  const s1Xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hs:sec ${nsAttrs}><hp:p id="10" paraPrIDRef="0"><hp:run charPrIDRef="0"><hp:t>둘째 구역</hp:t></hp:run></hp:p></hs:sec>`;
+
+  const multiPreview = engine.renderHwpxTemplatePreviewHtml(
+    { 'Contents/header.xml': headerXml, 'Contents/section0.xml': s0Xml, 'Contents/section1.xml': s1Xml },
+    {
+      sectionPath: 'Contents/section0.xml',
+      renderAllSections: true,
+      activeSlotId: 1,
+      activeMode: 'replace',
+      edits: [{ sectionPath: 'Contents/section0.xml', slotId: 0, mode: 'replace', renderedHtml: '수정된 첫 문단' }]
+    }
+  );
+  assert.ok(multiPreview.includes('hwpx-slot-edited') && multiPreview.includes('data-slot-edited="true"'));
+  assert.ok(multiPreview.includes('color:#1D4ED8'), 'Custom run textColor must render');
+  assert.ok(multiPreview.includes('hwpx-preview-drawbox') && multiPreview.includes('도형 글상자'));
+  assert.ok(multiPreview.includes('hwpx-preview-footer-note') && multiPreview.includes('쪽 바닥글'));
+  assert.ok(multiPreview.includes('hwpx-section-divider') && multiPreview.includes('둘째 구역'));
+  assert.ok(/hwpx-preview-table" style="width:\d+%;.*margin-left:auto/.test(multiPreview), 'Narrow right-aligned table must retain width% and margin alignment');
+});
+
+test('Round-trip integration: build/template export -> re-inspect slots & re-render preserves tables, Korean math, and edits', () => {
+  // 1. Standalone export -> re-inspect & re-render round-trip
+  const source = '# 보고서\n\n계산식 $2 분의 1 + x의 제곱$\n\n| 구분 | 결과 |\n| --- | --- |\n| 1차 | $알파 = 3$ |';
+  const built = engine.buildHwpxPackageFiles(source, new Date('2026-05-01T00:00:00Z'));
+  const reInspected = engine.inspectHwpxSectionSlots(built.files['Contents/section0.xml']);
+  assert.ok(reInspected.slots.some(s => s.inTable && s.rawText.includes('구분')), 'Exported Markdown table must parse back as table slots');
+  assert.ok(reInspected.slots.some(s => s.equationCount > 0 && s.editorText.includes('\\frac{1}{2}')), 'Exported equations must round-trip cleanly');
+  const reRendered = engine.renderHwpxTemplatePreviewHtml(built.files, { edits: [] });
+  assert.ok(reRendered.includes('hwpx-preview-table') && reRendered.includes('구분') && reRendered.includes('1차'));
+
+  // 2. Sample worksheet multi-slot export (Markdown table + Korean math) -> re-inspect & re-render round-trip
+  const sampleFiles = engine.buildSampleWorksheetTemplateFiles(new Date('2026-05-01T00:00:00Z'));
+  const sampleInspected = engine.inspectHwpxSectionSlots(sampleFiles['Contents/section0.xml']);
+  const subj = sampleInspected.slots.find(s => s.locationLabel === '표1 · 1행 1열');
+  const body = sampleInspected.slots.find(s => s.locationLabel === '표1 · 2행 1열');
+  const exported = engine.applyEditsToHwpxTemplateFiles(sampleFiles, [
+    { sectionPath: 'Contents/section0.xml', slotId: subj.slotId, mode: 'replace', rawText: '과목: 미적분' },
+    { sectionPath: 'Contents/section0.xml', slotId: body.slotId, mode: 'replace', rawText: '| x | y |\n| --- | --- |\n| 1 | $2 분의 1$ |' }
+  ]);
+  assertWellFormedXml(exported.files['Contents/section0.xml'], 'Round-trip template export section0.xml');
+
+  const rtSlots = engine.inspectHwpxSectionSlots(exported.files['Contents/section0.xml']);
+  assert.ok(rtSlots.slots.some(s => s.rawText.includes('과목: 미적분')));
+  assert.ok(rtSlots.slots.some(s => s.equationCount > 0 && s.editorText.includes('\\frac{1}{2}')));
+  const rtHtml = engine.renderHwpxTemplatePreviewHtml(exported.files, { edits: [] });
+  assert.ok(rtHtml.includes('과목: 미적분') && rtHtml.includes('{1} over {2}'));
+});

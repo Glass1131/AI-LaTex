@@ -68,6 +68,13 @@
     .markdown-body code { background: #1e293b; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: #38bdf8; }
     .markdown-body pre { background: #090d16; padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1rem; }
     .markdown-body blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; color: #94a3b8; font-style: italic; }
+    .markdown-body table:not(.hwpx-preview-table) { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
+    .markdown-body table:not(.hwpx-preview-table) th,
+    .markdown-body table:not(.hwpx-preview-table) td { border: 1px solid #475569; padding: 0.45rem 0.7rem; text-align: left; }
+    .markdown-body table:not(.hwpx-preview-table) th { background: rgba(30, 41, 59, 0.85); color: #f8fafc; font-weight: 600; }
+    .hwpx-preview-sheet table:not(.hwpx-preview-table) th,
+    .hwpx-preview-sheet table:not(.hwpx-preview-table) td { border: 1px solid #64748b; color: #0f172a; }
+    .hwpx-preview-sheet table:not(.hwpx-preview-table) th { background: #eff6ff; color: #0f172a; }
 
     .katex-display {
       overflow-x: auto;
@@ -215,6 +222,62 @@
       outline-offset: 2px;
       box-shadow: inset 0 0 0 2px rgba(56, 189, 248, 0.22);
     }
+    .hwpx-slot-edited {
+      position: relative;
+      box-shadow: inset 3px 0 0 #10b981;
+      background-color: rgba(16, 185, 129, 0.06);
+    }
+    .hwpx-slot-edited.hwpx-slot-selected {
+      box-shadow: inset 3px 0 0 #10b981, inset 0 0 0 2px rgba(56, 189, 248, 0.22);
+    }
+    .hwpx-slot-edited::after {
+      content: "수정됨";
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      font-size: 10px;
+      line-height: 1;
+      padding: 2px 5px;
+      border-radius: 9999px;
+      background: #059669;
+      color: #ffffff;
+      font-weight: 600;
+      pointer-events: none;
+      z-index: 2;
+    }
+    td.hwpx-slot-edited .hwpx-slot-edited {
+      box-shadow: none;
+      background-color: transparent;
+    }
+    td.hwpx-slot-edited .hwpx-slot-edited::after {
+      display: none;
+    }
+    .hwpx-preview-footer-note {
+      font-size: 0.75rem;
+      color: #64748b;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 0.45rem;
+      margin-top: 0.85rem;
+      text-align: right;
+    }
+    .hwpx-preview-drawbox {
+      border: 1px solid #94a3b8;
+      background: rgba(248, 250, 252, 0.92);
+      border-radius: 0.5rem;
+      padding: 0.6rem 0.85rem;
+      margin: 0.45rem 0;
+    }
+    .hwpx-section-divider {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #0284c7;
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      border-radius: 9999px;
+      padding: 0.15rem 0.65rem;
+      display: inline-block;
+      margin: 0.5rem 0;
+    }
     .hwpx-slot-placeholder-hint {
       color: #64748b;
       font-style: italic;
@@ -227,7 +290,7 @@
 
     @media print {
       body { background: white !important; color: black !important; }
-      header, #leftPanel, #rightPanelHeader, #toast, #templatePreviewBanner { display: none !important; }
+      header, #leftPanel, #rightPanelHeader, #toast, #templatePreviewBanner, #mathQuickBar, #editedSlotsNavBar { display: none !important; }
       main { display: block !important; max-width: 100% !important; padding: 0 !important; }
       #rightPanel { border: none !important; box-shadow: none !important; background: white !important; }
       #rightScrollArea, #tabContentPreview { display: block !important; max-height: none !important; overflow: visible !important; padding: 0 !important; }
@@ -241,6 +304,8 @@
       .hwpx-page-bg-img { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .hwpx-slot-after { border-top: none !important; padding-top: 0 !important; }
       .hwpx-slot-clickable, .hwpx-slot-selected { outline: none !important; box-shadow: none !important; cursor: default !important; }
+      .hwpx-slot-edited { box-shadow: none !important; background-color: transparent !important; }
+      .hwpx-slot-edited::after { display: none !important; }
       .markdown-body p, .markdown-body li, .markdown-body h1, .markdown-body h2, .markdown-body h3 {
         color: #111827 !important;
       }
@@ -314,6 +379,10 @@
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           비우기
         </button>
+        <button id="btnToggleAutoSave" type="button" aria-pressed="true" class="text-xs sm:text-sm bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/70 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation" title="입력 본문 및 양식 칸별 작업 자동 저장 켜기/끄기">
+          <span id="autoSaveDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="autoSaveLabel">자동저장 ON</span>
+        </button>
       </div>
       <div class="flex items-center gap-3 text-slate-400 text-xs sm:text-sm">
         <span id="charCount">0자</span>
@@ -362,16 +431,36 @@
           <button id="btnResetActiveSlot" type="button" class="hidden text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors touch-manipulation" title="이 칸을 양식 원래 내용으로 복구">
             원래대로
           </button>
+          <button id="btnResetAllSlots" type="button" class="hidden text-xs sm:text-sm bg-slate-800 hover:bg-red-950/80 text-red-300 border border-slate-700 hover:border-red-800/60 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors touch-manipulation" title="수정한 모든 칸 초기화">
+            전체 초기화
+          </button>
         </div>
+      </div>
+      <div id="editedSlotsNavBar" class="hidden pt-1.5 border-t border-slate-800/80 flex items-center flex-wrap gap-1.5">
+        <span class="text-[11px] font-semibold text-emerald-400 shrink-0">✏️ 수정된 칸:</span>
+        <div id="editedSlotsChipList" class="flex items-center flex-wrap gap-1.5"></div>
       </div>
       <p class="text-[11px] sm:text-xs text-slate-400">
         👆 오른쪽 <b class="text-sky-300">실시간 렌더링</b>에서 표 칸이나 문단을 클릭한 뒤 여기에 입력하면 칸별로 내용이 반영됩니다.
       </p>
     </div>
 
+    <div id="mathQuickBar" class="bg-slate-900/90 border-b border-slate-800 px-3 py-1.5 flex items-center flex-wrap gap-1.5 text-xs">
+      <span class="text-[11px] text-slate-400 font-medium mr-1 shrink-0">빠른 삽입:</span>
+      <button type="button" data-snippet="$%%CURSOR%%$" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">$수식$</button>
+      <button type="button" data-snippet="$$&#10;%%CURSOR%%&#10;$$" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">$$블록$$</button>
+      <button type="button" data-snippet="\frac{%%CURSOR%%}{}" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">분수</button>
+      <button type="button" data-snippet="\sqrt{%%CURSOR%%}" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">루트</button>
+      <button type="button" data-snippet="^{%%CURSOR%%}" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">거듭제곱</button>
+      <button type="button" data-snippet="\lim_{x \to %%CURSOR%%}" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">극한</button>
+      <button type="button" data-snippet="\sum_{k=1}^{n} %%CURSOR%%" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">시그마</button>
+      <button type="button" data-snippet="\int_{a}^{b} %%CURSOR%% \,dx" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">적분</button>
+      <button type="button" data-snippet="&#10;| 항목 | 값 | 비고 |&#10;| --- | --- | --- |&#10;| %%CURSOR%% |  |  |&#10;" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-sky-950/70 hover:bg-sky-900/80 text-sky-300 border border-sky-800/70 touch-manipulation">+ 표 삽입</button>
+    </div>
+
     <div class="relative flex-1 min-h-[340px] lg:min-h-[500px]">
         <textarea id="rawInput"
-                  placeholder="AI 답변 또는 수식을 자유롭게 붙여넣으세요.&#10;• LaTeX 수식 (\frac, \begin{bmatrix}, \alpha 등) 자동 복구 및 렌더링&#10;• 한글(HWP) 수식 스크립트 (bmatrix { 1 & 0 # 0 & 1 }, {a} over {b}, sqrt {x} 등) 직접 입력도 자동 감지하여 실시간 렌더링&#10;• 한글 양식을 선택한 경우, 오른쪽 실시간 렌더링의 표 칸·문단을 클릭하고 입력할 수 있습니다."
+                  placeholder="AI 답변 또는 수식을 자유롭게 붙여넣으세요.&#10;• LaTeX 수식 (\frac, \begin{bmatrix}, \alpha 등) 자동 복구 및 렌더링&#10;• 한글 식 입력 지원: $2 분의 1 + 루트(x+1)$, $$리미트 x가 무한대로 갈 때 x 분의 1$$&#10;• 한글(HWP) 수식 스크립트 (bmatrix { 1 & 0 # 0 & 1 }, {a} over {b}, sqrt {x} 등) 자동 감지&#10;• 마크다운 표(| 항목 | 값 |) 입력 시 한글(.hwpx) 표로 자동 변환"
                   class="w-full h-full p-4 bg-slate-900/60 text-slate-200 text-sm font-mono leading-relaxed outline-none resize-none focus:ring-1 focus:ring-emerald-500/50"></textarea>
     </div>
     <div class="px-4 py-2 bg-slate-950/60 border-t border-slate-800/60 text-[11px] text-slate-500 flex items-center justify-between">
@@ -1112,9 +1201,129 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return resultLines.join('\n');
   }
 
+  function unwrapParenOrBrace(tok) {
+    if (!tok) return '';
+    if ((tok.startsWith('(') && tok.endsWith(')')) || (tok.startsWith('{') && tok.endsWith('}'))) {
+      return tok.slice(1, -1);
+    }
+    return tok;
+  }
+
+  function translateKoreanMathShorthand(mathStr) {
+    if (!mathStr || !/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(mathStr)) return mathStr;
+    const protectedBlocks = [];
+    let s = replaceBalancedCommands(mathStr, /\\(text|mathrm|textbf|textit)(?![a-zA-Z])/, 1, false, (cmd, opt, args, raw) => {
+      const tok = `\uE000KT${protectedBlocks.length}\uE001`;
+      protectedBlocks.push({ tok, raw });
+      return tok;
+    });
+    s = s.replace(/"([^"\r\n]+)"/g, (m) => {
+      const tok = `\uE000KT${protectedBlocks.length}\uE001`;
+      protectedBlocks.push({ tok, raw: m });
+      return tok;
+    });
+
+    const mapBoundVal = (val) => {
+      if (val === '무한대' || val === '무한') return '\\infty';
+      if (val === '-무한대' || val === '-무한') return '-\\infty';
+      return val;
+    };
+
+    // 1. 극한, 시그마, 정적분 범위 구문
+    s = s.replace(
+      /(?:리미트|극한)\s*([a-zA-Z0-9_]+)\s*(?:가|이)?\s*(-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*(?:로|으로)?\s*(?:갈\s*때)?\s*/g,
+      (m, v, target) => `\\lim_{${v} \\to ${mapBoundVal(target)}} `
+    );
+    s = s.replace(
+      /(?:시그마|합)\s*([a-zA-Z0-9_]+\s*=\s*[a-zA-Z0-9_+-]+)\s*(?:에서|부터)\s*(-?(?:무한대|무한)|[a-zA-Z0-9_+-]+)\s*까지\s*/g,
+      (m, lower, upper) => `\\sum_{${lower.trim()}}^{${mapBoundVal(upper)}} `
+    );
+    s = s.replace(
+      /(?:인테그랄|정적분|적분)\s*(-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*(?:에서|부터)\s*(-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*까지\s*/g,
+      (m, lower, upper) => `\\int_{${mapBoundVal(lower)}}^{${mapBoundVal(upper)}} `
+    );
+
+    // 2. 제곱근 (루트/세제곱근/네제곱근) - 거듭제곱 규칙보다 먼저 실행
+    const argAtom = '(\\{[^{}]+\\}|\\([^()]+\\)|[a-zA-Z0-9_+-]+)';
+    s = s.replace(new RegExp(`세제곱근\\s*${argAtom}`, 'g'), (m, inner) => `\\sqrt[3]{${unwrapParenOrBrace(inner)}}`);
+    s = s.replace(new RegExp(`네제곱근\\s*${argAtom}`, 'g'), (m, inner) => `\\sqrt[4]{${unwrapParenOrBrace(inner)}}`);
+    s = s.replace(new RegExp(`(?:루트|제곱근)\\s*${argAtom}`, 'g'), (m, inner) => `\\sqrt{${unwrapParenOrBrace(inner)}}`);
+
+    // 3. 거듭제곱
+    const baseAtom = '(\\{[^{}]+\\}|\\([^()]+\\)|[a-zA-Z0-9_]+)';
+    s = s.replace(new RegExp(`${baseAtom}\\s*의?\\s*세제곱(?![가-힣])`, 'g'), '$1^{3}');
+    s = s.replace(new RegExp(`${baseAtom}\\s*의?\\s*제곱(?![가-힣])`, 'g'), '$1^{2}');
+    s = s.replace(
+      new RegExp(`${baseAtom}\\s*의\\s*(\\{[^{}]+\\}|\\([^()]+\\)|[a-zA-Z0-9_+-]+)\\s*(?:제곱|승)(?![가-힣])`, 'g'),
+      (m, base, exp) => `${base}^{${unwrapParenOrBrace(exp)}}`
+    );
+
+    // 4. 분수 ("분모 분의 분자" -> \frac{분자}{분모}, 중첩 반복 지원)
+    const fracTerm = '(\\\\[a-zA-Z]+(?:\\{[^{}]*\\})+|[a-zA-Z0-9_]+\\^\\{[^{}]+\\}|\\{[^{}]+\\}|\\([^()]+\\)|[a-zA-Z0-9_.+-]+)';
+    const fracRe = new RegExp(`${fracTerm}\\s*분의\\s*${fracTerm}`);
+    for (let g = 0; g < 8; g++) {
+      if (!fracRe.test(s)) break;
+      s = s.replace(new RegExp(fracRe.source, 'g'), (m, den, num) => `\\frac{${unwrapParenOrBrace(num)}}{${unwrapParenOrBrace(den)}}`);
+    }
+
+    // 5. 한국어 연산자, 관계 기호, 그리스 문자
+    const koPairs = [
+      ['플러스마이너스|쁠마', '\\pm '],
+      ['마이너스플러스', '\\mp '],
+      ['크거나\\s*같다|이상', '\\ge '],
+      ['작거나\\s*같다|이하', '\\le '],
+      ['같지\\s*않다|다르다', '\\neq '],
+      ['거의\\s*같다|근사', '\\approx '],
+      ['곱하기', '\\times '],
+      ['나누기', '\\div '],
+      ['동치', '\\iff '],
+      ['화살표', '\\to '],
+      ['따라서|그러므로', '\\therefore '],
+      ['왜냐하면', '\\because '],
+      ['교집합', '\\cap '],
+      ['합집합', '\\cup '],
+      ['공집합', '\\emptyset '],
+      ['무한대|무한', '\\infty '],
+      ['편미분', '\\partial '],
+      ['리미트|극한', '\\lim '],
+      ['시그마', '\\sum '],
+      ['인테그랄|부정적분|적분', '\\int '],
+      ['입실론|엡실론', '\\epsilon '],
+      ['오메가', '\\omega '],
+      ['알파', '\\alpha '],
+      ['베타', '\\beta '],
+      ['감마', '\\gamma '],
+      ['델타', '\\delta '],
+      ['제타', '\\zeta '],
+      ['에타', '\\eta '],
+      ['세타|시타', '\\theta '],
+      ['람다', '\\lambda '],
+      ['파이', '\\pi '],
+      ['타우', '\\tau '],
+      ['뮤', '\\mu ']
+    ];
+    koPairs.forEach(([pat, rep]) => {
+      s = s.replace(new RegExp(`(?<![가-힣])${pat}(?![가-힣])`, 'g'), rep);
+    });
+    s = s.replace(/\s*프라임(?![가-힣])/g, "'");
+
+    for (let i = protectedBlocks.length - 1; i >= 0; i--) {
+      const { tok, raw } = protectedBlocks[i];
+      s = s.replace(tok, () => raw);
+    }
+
+    return wrapBareKoreanInLatex(s).replace(/\s{2,}/g, ' ').trim();
+  }
+
   function repairMathString(mathContent) {
     let repaired = mathContent;
     const logs = [];
+
+    const koTranslated = translateKoreanMathShorthand(repaired);
+    if (koTranslated !== repaired.trim()) {
+      repaired = koTranslated;
+      logs.push('한글 수식 표현 -> LaTeX 자동 변환');
+    }
 
     if (/\\vert\{\}?/g.test(repaired)) {
       repaired = repaired.replace(/\\vert\{\}?/g, '|');
@@ -1186,6 +1395,36 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return { cleaned, leading, trailing };
   }
 
+  const KOREAN_MATH_TOKEN_STRIP_RE = /(?:리미트|극한|시그마|합|인테그랄|정적분|부정적분|적분|세제곱근|네제곱근|제곱근|루트|의?\s*(?:세?제곱|승)|분의|플러스마이너스|쁠마|마이너스플러스|크거나\s*같다|작거나\s*같다|같지\s*않다|거의\s*같다|다르다|이상|이하|근사|곱하기|나누기|동치|화살표|따라서|그러므로|왜냐하면|교집합|합집합|공집합|무한대|무한|편미분|프라임|알파|베타|감마|델타|입실론|엡실론|제타|에타|세타|시타|람다|뮤|파이|타우|오메가)/g;
+
+  function isValidExplicitDollarMath(inner) {
+    const trimmed = (inner || '').trim();
+    if (!trimmed) return false;
+    const innerWithoutTextCmd = replaceBalancedCommands(trimmed, /\\(?:text|mathrm|textbf|textit)(?![a-zA-Z])/, 1, false, () => '');
+    const looksLikeTwoPrices = /^\d[\d,.]*\s+[a-zA-Z]{2,}/.test(trimmed);
+    if (looksLikeTwoPrices) return false;
+
+    if (!/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(innerWithoutTextCmd)) {
+      return true;
+    }
+
+    // Explicit $...$ with Korean text: allow only concise Korean math shorthand, not spanning prose/currency
+    if (/[.?!]|\r|\n/.test(innerWithoutTextCmd)) return false;
+    const strippedMath = innerWithoutTextCmd
+      .replace(/(?:리미트|극한)\s*[a-zA-Z0-9_]+\s*(?:가|이)?\s*(?:-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*(?:로|으로)?\s*(?:갈\s*때)?/g, ' ')
+      .replace(/(?:시그마|합|인테그랄|정적분|적분)\s*[a-zA-Z0-9_=+-]+\s*(?:에서|부터)\s*(?:-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*까지/g, ' ')
+      .replace(KOREAN_MATH_TOKEN_STRIP_RE, ' ');
+    const hadKoreanMathKeyword = strippedMath !== innerWithoutTextCmd;
+    const hasMathOperator = /[=+\-*/\\^_{}()<>|]/.test(strippedMath);
+    if (!hadKoreanMathKeyword && !hasMathOperator) return false;
+    if (/^\d/.test(trimmed) && !hadKoreanMathKeyword) return false;
+    if (/(?:입니다|니다|므로|되어|하면|이고|이므로|에는|에만|에서|으로|이며|이고|와|과)(?![가-힣])/.test(strippedMath)) {
+      return false;
+    }
+    const leftoverKoreanWords = strippedMath.match(/[가-힣]+/g) || [];
+    return leftoverKoreanWords.every(w => w.length <= 4) && leftoverKoreanWords.length <= 3;
+  }
+
   // --- 단일 라인 내 'Bare-LaTeX' 정밀 감지 엔진 (즉시 토큰 보호 & 중첩 중괄호 지원) ---
   function sanitizeLineBareMath(line) {
     if (!line.trim()) return line;
@@ -1248,9 +1487,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         }
         if (nextDollar !== -1) {
           const inner = l.slice(cursor + 1, nextDollar);
-          const innerWithoutTextCmd = replaceBalancedCommands(inner, /\\(?:text|mathrm|textbf|textit)(?![a-zA-Z])/, 1, false, () => '');
-          const looksLikeTwoPrices = /^\d[\d,.]*\s+[a-zA-Z]{2,}/.test(inner.trim());
-          if (inner.trim().length > 0 && !/[가-힣]/.test(innerWithoutTextCmd) && !looksLikeTwoPrices) {
+          if (isValidExplicitDollarMath(inner)) {
             scanned += protect(inner);
             cursor = nextDollar + 1;
             continue;
@@ -1876,6 +2113,19 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const defaultParaPrId = paraPrIds.has('0') ? '0' : (paraPrs[0] ? paraPrs[0].id : '0');
     const centerParaCandidate = paraPrs.find(p => p.alignHorizontal === 'CENTER');
     const defaultStyleId = styleIds.has('0') ? '0' : (styles[0] ? styles[0].id : '0');
+    let tableBorderFillId = '';
+    let tableHeaderBorderFillId = '';
+    borderFillMap.forEach((bf, id) => {
+      if (bf.hasBorder && !bf.bgColor && !tableBorderFillId) tableBorderFillId = id;
+      if (bf.hasBorder && bf.bgColor && !tableHeaderBorderFillId) tableHeaderBorderFillId = id;
+    });
+    if (!tableBorderFillId) {
+      borderFillMap.forEach((bf, id) => {
+        if (bf.hasBorder && !tableBorderFillId) tableBorderFillId = id;
+      });
+    }
+    if (!tableBorderFillId) tableBorderFillId = borderFillMap.has('3') ? '3' : '1';
+    if (!tableHeaderBorderFillId) tableHeaderBorderFillId = tableBorderFillId;
 
     return {
       charPrIds,
@@ -1888,7 +2138,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       boldCharPrId: boldCandidate ? boldCandidate.id : defaultCharPrId,
       defaultParaPrId,
       centerParaPrId: centerParaCandidate ? centerParaCandidate.id : defaultParaPrId,
-      defaultStyleId
+      defaultStyleId,
+      tableBorderFillId,
+      tableHeaderBorderFillId
     };
   }
 
@@ -2371,6 +2623,45 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     };
   }
 
+  const HWPX_BORDER_FILLS_XML = `<hh:borderFills itemCnt="4"><hh:borderFill id="1" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/></hh:borderFill><hh:borderFill id="2" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/><hc:fillBrush><hc:winBrush faceColor="none" hatchColor="#999999" alpha="0"/></hc:fillBrush></hh:borderFill><hh:borderFill id="3" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:rightBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:topBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:bottomBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:diagonal type="NONE" width="0.1 mm" color="#000000"/></hh:borderFill><hh:borderFill id="4" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:rightBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:topBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:bottomBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:diagonal type="NONE" width="0.1 mm" color="#000000"/><hc:fillBrush><hc:winBrush faceColor="#EFF6FF" hatchColor="#999999" alpha="0"/></hc:fillBrush></hh:borderFill></hh:borderFills>`;
+
+  function splitMarkdownTableCells(line) {
+    const raw = (line || '').trim();
+    if (!raw || !raw.includes('|')) return null;
+    let body = raw;
+    if (body.startsWith('|')) body = body.slice(1);
+    if (body.endsWith('|') && !body.endsWith('\\|')) body = body.slice(0, -1);
+    const cells = [];
+    let cur = '';
+    for (let i = 0; i < body.length; i++) {
+      if (body[i] === '\\' && body[i + 1] === '|') {
+        cur += '|';
+        i++;
+      } else if (body[i] === '|') {
+        cells.push(cur.trim());
+        cur = '';
+      } else {
+        cur += body[i];
+      }
+    }
+    cells.push(cur.trim());
+    return cells;
+  }
+
+  function parseMarkdownTableDelimiter(line, expectedCols) {
+    const cells = splitMarkdownTableCells(line);
+    if (!cells || cells.length === 0) return null;
+    if (expectedCols && cells.length !== expectedCols) return null;
+    const aligns = [];
+    for (const c of cells) {
+      if (!/^:?-{2,}:?$/.test(c)) return null;
+      if (c.startsWith(':') && c.endsWith(':')) aligns.push('CENTER');
+      else if (c.endsWith(':')) aligns.push('RIGHT');
+      else aligns.push('LEFT');
+    }
+    return aligns;
+  }
+
   function buildHwpxContentRuns(lineContent, opts) {
     let trimmed = (lineContent || '').trim();
     let isHeading = false;
@@ -2404,11 +2695,18 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
           runsXml += `<hp:run charPrIDRef="${escapeXml(charPrId)}"><hp:equation id="${eqId}" zOrder="${eqZOrder}" numberingType="EQUATION" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" version="Equation Version 60" baseLine="${box.baseLine}" textColor="#000000" baseUnit="1100" lineMode="CHAR" font="HYhwpEQ"><hp:sz width="${clampedWidth}" widthRelTo="ABSOLUTE" height="${box.height}" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="56" right="56" top="0" bottom="0"/><hp:shapeComment>수식입니다.</hp:shapeComment><hp:script>${cleanScript}</hp:script></hp:equation><hp:t/></hp:run>`;
           addedContentRun = true;
         } else {
-          const cleanPart = cleanHwpxTextPart(part);
-          if (cleanPart) {
-            runsXml += `<hp:run charPrIDRef="${escapeXml(charPrId)}"><hp:t>${escapeXml(cleanPart)}</hp:t></hp:run>`;
-            addedContentRun = true;
-          }
+          const boldSegs = part.split(/(\*\*[^*\n]+\*\*)/g);
+          boldSegs.forEach(seg => {
+            if (!seg) return;
+            const isBoldSpan = seg.startsWith('**') && seg.endsWith('**') && seg.length > 4;
+            const segText = isBoldSpan ? seg.slice(2, -2) : seg;
+            const segCharPrId = isBoldSpan ? opts.boldCharPrId : charPrId;
+            const cleanPart = cleanHwpxTextPart(segText);
+            if (cleanPart) {
+              runsXml += `<hp:run charPrIDRef="${escapeXml(segCharPrId)}"><hp:t>${escapeXml(cleanPart)}</hp:t></hp:run>`;
+              addedContentRun = true;
+            }
+          });
         }
       });
     }
@@ -2416,21 +2714,84 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return { runsXml, charPrId, hasDisplayEq, isHeading, addedContentRun };
   }
 
+  function buildHwpxTableFromMarkdownBlock(headerCells, alignList, bodyRows, cfg, paraId, allocSubParaId, tblSeq) {
+    const colCnt = Math.max(1, headerCells.length);
+    const allRows = [headerCells, ...bodyRows];
+    const rowCnt = allRows.length;
+    const totalWidth = cfg.maxEquationWidth > 0 ? cfg.maxEquationWidth : 42520;
+    const colWidth = Math.max(1800, Math.floor(totalWidth / colCnt));
+    const tblBorderFill = cfg.tableBorderFillId || '3';
+    const hdrBorderFill = cfg.tableHeaderBorderFillId || tblBorderFill;
+    const tblId = 1800000000 + tblSeq;
+
+    const trsXml = allRows.map((rowCells, rIdx) => {
+      const isHeader = rIdx === 0;
+      const cellBorder = isHeader ? hdrBorderFill : tblBorderFill;
+      const tdsXml = Array.from({ length: colCnt }, (_, cIdx) => {
+        const rawCell = (rowCells[cIdx] || '').trim();
+        const cellOpts = {
+          ...cfg,
+          normalCharPrId: isHeader ? cfg.boldCharPrId : cfg.normalCharPrId,
+          maxEquationWidth: Math.max(1200, colWidth - 1020)
+        };
+        const { runsXml, charPrId, addedContentRun } = buildHwpxContentRuns(rawCell, cellOpts);
+        const cellParaPr = (alignList[cIdx] === 'CENTER' || isHeader) ? cfg.centerParaPrId : cfg.normalParaPrId;
+        const fallbackRun = addedContentRun ? '' : `<hp:run charPrIDRef="${escapeXml(charPrId)}"><hp:t/></hp:run>`;
+        const cellParaXml = `<hp:p id="${allocSubParaId()}" paraPrIDRef="${escapeXml(cellParaPr)}" styleIDRef="${escapeXml(cfg.styleId)}" pageBreak="0" columnBreak="0" merged="0">${runsXml}${fallbackRun}</hp:p>`;
+        return `<hp:tc name="" header="${isHeader ? 1 : 0}" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="${escapeXml(cellBorder)}"><hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">${cellParaXml}</hp:subList><hp:cellAddr colAddr="${cIdx}" rowAddr="${rIdx}"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="${colWidth}" height="2400"/><hp:cellMargin left="510" right="510" top="141" bottom="141"/></hp:tc>`;
+      }).join('');
+      return `<hp:tr>${tdsXml}</hp:tr>`;
+    }).join('');
+
+    const tblXml = `<hp:tbl id="${tblId}" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="1" rowCnt="${rowCnt}" colCnt="${colCnt}" cellSpacing="0" borderFillIDRef="${escapeXml(tblBorderFill)}" noAdjust="0"><hp:sz width="${colWidth * colCnt}" widthRelTo="ABSOLUTE" height="${rowCnt * 2400}" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="283" right="283" top="283" bottom="283"/><hp:inMargin left="510" right="510" top="141" bottom="141"/>${trsXml}</hp:tbl>`;
+    return `<hp:run charPrIDRef="${escapeXml(cfg.normalCharPrId)}">${tblXml}<hp:t/></hp:run>`;
+  }
+
   function buildHwpxParagraphsFromLines(lines, cfg) {
     let paragraphsXml = '';
-    lines.forEach((line, idx) => {
-      const isFirst = idx === 0;
-      const isLast = idx === lines.length - 1;
-      const { runsXml, charPrId, hasDisplayEq, addedContentRun } = buildHwpxContentRuns(line, cfg);
+    let subParaIdx = Math.max(1000, lines.length + 10);
+    let tblSeq = 1;
+    const allocSubParaId = () => cfg.getParaId(subParaIdx++);
+
+    let i = 0;
+    while (i < lines.length) {
+      const isFirst = i === 0;
       const secPrefix = isFirst && cfg.firstParaSecPrefix ? cfg.firstParaSecPrefix : '';
       const pre = isFirst && cfg.firstParaInlinePrefix ? cfg.firstParaInlinePrefix : '';
+
+      const headerCells = splitMarkdownTableCells(lines[i]);
+      const alignList = headerCells && headerCells.length >= 2 && (i + 1 < lines.length)
+        ? parseMarkdownTableDelimiter(lines[i + 1], headerCells.length)
+        : null;
+
+      if (alignList) {
+        const bodyRows = [];
+        let endIdx = i + 1;
+        for (let k = i + 2; k < lines.length; k++) {
+          const rowCells = splitMarkdownTableCells(lines[k]);
+          if (!rowCells || rowCells.length === 0) break;
+          bodyRows.push(rowCells);
+          endIdx = k;
+        }
+        const isLast = endIdx === lines.length - 1;
+        const suf = isLast && cfg.lastParaInlineSuffix ? cfg.lastParaInlineSuffix : '';
+        const tblRunXml = buildHwpxTableFromMarkdownBlock(headerCells, alignList, bodyRows, cfg, null, allocSubParaId, tblSeq++);
+        const paraId = cfg.getParaId(i);
+        paragraphsXml += `<hp:p id="${paraId}" paraPrIDRef="${escapeXml(cfg.normalParaPrId)}" styleIDRef="${escapeXml(cfg.styleId)}" pageBreak="0" columnBreak="0" merged="0">${secPrefix}${pre}${tblRunXml}${suf}</hp:p>`;
+        i = endIdx + 1;
+        continue;
+      }
+
+      const isLast = i === lines.length - 1;
+      const { runsXml, charPrId, hasDisplayEq, addedContentRun } = buildHwpxContentRuns(lines[i], cfg);
       const suf = isLast && cfg.lastParaInlineSuffix ? cfg.lastParaInlineSuffix : '';
       const hasAnyContent = addedContentRun || Boolean(pre) || Boolean(suf);
       const emptyFallback = hasAnyContent ? '' : `<hp:run charPrIDRef="${escapeXml(charPrId)}"><hp:t/></hp:run>`;
       const paraPrId = hasDisplayEq && !pre && !suf ? cfg.centerParaPrId : cfg.normalParaPrId;
-      const paraId = cfg.getParaId(idx);
+      const paraId = cfg.getParaId(i);
       paragraphsXml += `<hp:p id="${paraId}" paraPrIDRef="${escapeXml(paraPrId)}" styleIDRef="${escapeXml(cfg.styleId)}" pageBreak="0" columnBreak="0" merged="0">${secPrefix}${pre}${runsXml}${suf}${emptyFallback}</hp:p>`;
-    });
+      i++;
+    }
     return paragraphsXml;
   }
 
@@ -2488,7 +2849,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const paraPrSwitchXml = `<hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch>`;
     const charShapeSuffix = `<hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/>`;
 
-    files["Contents/header.xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" version="1.4" secCnt="1"><hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/><hh:refList><hh:fontfaces itemCnt="7"><hh:fontface lang="HANGUL" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="LATIN" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="HANJA" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="JAPANESE" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="OTHER" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="SYMBOL" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="USER" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface></hh:fontfaces><hh:borderFills itemCnt="2"><hh:borderFill id="1" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/></hh:borderFill><hh:borderFill id="2" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/><hc:fillBrush><hc:winBrush faceColor="none" hatchColor="#999999" alpha="0"/></hc:fillBrush></hh:borderFill></hh:borderFills><hh:charProperties itemCnt="2"><hh:charPr id="0" height="1000" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>${charShapeSuffix}</hh:charPr><hh:charPr id="1" height="1200" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:bold/>${charShapeSuffix}</hh:charPr></hh:charProperties><hh:tabProperties itemCnt="1"><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/></hh:tabProperties><hh:numberings itemCnt="1"><hh:numbering id="1" start="0"><hh:paraHead start="1" level="1" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="DIGIT" charPrIDRef="4294967295" checkable="0">^1.</hh:paraHead></hh:numbering></hh:numberings><hh:paraProperties itemCnt="2"><hh:paraPr id="0" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/>${paraPrSwitchXml}<hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="1" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="CENTER" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/>${paraPrSwitchXml}<hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr></hh:paraProperties><hh:styles itemCnt="1"><hh:style id="0" type="PARA" name="바탕글" engName="Normal" paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0" langID="1042" lockForm="0"/></hh:styles></hh:refList><hh:compatibleDocument targetProgram="HWP201X"><hh:layoutCompatibility/></hh:compatibleDocument><hh:docOption><hh:linkinfo path="" pageInherit="0" footnoteInherit="0"/></hh:docOption><hh:metaTag>{"name":""}</hh:metaTag><hh:trackchageConfig flags="56"/></hh:head>`;
+    files["Contents/header.xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" version="1.4" secCnt="1"><hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/><hh:refList><hh:fontfaces itemCnt="7"><hh:fontface lang="HANGUL" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="LATIN" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="HANJA" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="JAPANESE" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="OTHER" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="SYMBOL" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="USER" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface></hh:fontfaces>${HWPX_BORDER_FILLS_XML}<hh:charProperties itemCnt="2"><hh:charPr id="0" height="1000" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>${charShapeSuffix}</hh:charPr><hh:charPr id="1" height="1200" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:bold/>${charShapeSuffix}</hh:charPr></hh:charProperties><hh:tabProperties itemCnt="1"><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/></hh:tabProperties><hh:numberings itemCnt="1"><hh:numbering id="1" start="0"><hh:paraHead start="1" level="1" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="DIGIT" charPrIDRef="4294967295" checkable="0">^1.</hh:paraHead></hh:numbering></hh:numberings><hh:paraProperties itemCnt="2"><hh:paraPr id="0" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/>${paraPrSwitchXml}<hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="1" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="CENTER" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/>${paraPrSwitchXml}<hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr></hh:paraProperties><hh:styles itemCnt="1"><hh:style id="0" type="PARA" name="바탕글" engName="Normal" paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0" langID="1042" lockForm="0"/></hh:styles></hh:refList><hh:compatibleDocument targetProgram="HWP201X"><hh:layoutCompatibility/></hh:compatibleDocument><hh:docOption><hh:linkinfo path="" pageInherit="0" footnoteInherit="0"/></hh:docOption><hh:metaTag>{"name":""}</hh:metaTag><hh:trackchageConfig flags="56"/></hh:head>`;
 
     // 10. Contents/section0.xml (BOTH/EVEN/ODD pageBorderFill, secPr 독립 run 분리, 수식 run 뒤 <hp:t/>)
     const rawLines = (result.tokenizedText || rawText || '').split('\n');
@@ -2501,6 +2862,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       normalParaPrId: '0',
       centerParaPrId: '1',
       styleId: '0',
+      tableBorderFillId: '3',
+      tableHeaderBorderFillId: '4',
       maxEquationWidth: 42520,
       firstParaSecPrefix: HWPX_SEC_CTRL_RUN_XML,
       getParaId: (pIdx) => (pIdx === 0 ? 0 : (1000000000 + pIdx)),
@@ -2555,6 +2918,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         normalParaPrId: slotParaPrId,
         centerParaPrId,
         styleId: slotStyleId,
+        tableBorderFillId: headerStyles.tableBorderFillId,
+        tableHeaderBorderFillId: headerStyles.tableHeaderBorderFillId,
         maxEquationWidth: targetSlot.maxContentWidth,
         getParaId: () => idGen.nextParaId(),
         nextEqIds: idGen.nextEqIds
@@ -2635,6 +3000,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       normalParaPrId: slotParaPrId,
       centerParaPrId,
       styleId: slotStyleId,
+      tableBorderFillId: headerStyles.tableBorderFillId,
+      tableHeaderBorderFillId: headerStyles.tableHeaderBorderFillId,
       maxEquationWidth: targetSlot.maxContentWidth,
       firstParaSecPrefix: `${targetSlot.secCtrlRunXml || ''}${preservedPicXml}`,
       firstParaInlinePrefix: prefixRunsXml,
@@ -2718,6 +3085,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
           normalParaPrId: headerStyles.defaultParaPrId,
           centerParaPrId: headerStyles.centerParaPrId,
           styleId: headerStyles.defaultStyleId,
+          tableBorderFillId: headerStyles.tableBorderFillId,
+          tableHeaderBorderFillId: headerStyles.tableHeaderBorderFillId,
           maxEquationWidth: 42520,
           firstParaSecPrefix: secOwner ? secOwner.secCtrlRunXml : HWPX_SEC_CTRL_RUN_XML,
           getParaId: (idx) => (idx === 0 ? 0 : idGen.nextParaId()),
@@ -2807,10 +3176,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const base = buildHwpxPackageFiles('수학 풀이 정리 양식', nowDate).files;
 
     const charShapeSuffix = `<hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/>`;
-    const tableBordersXml = `<hh:borderFills itemCnt="4"><hh:borderFill id="1" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/></hh:borderFill><hh:borderFill id="2" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/><hc:fillBrush><hc:winBrush faceColor="none" hatchColor="#999999" alpha="0"/></hc:fillBrush></hh:borderFill><hh:borderFill id="3" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:rightBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:topBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:bottomBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:diagonal type="NONE" width="0.1 mm" color="#000000"/></hh:borderFill><hh:borderFill id="4" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:rightBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:topBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:bottomBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:diagonal type="NONE" width="0.1 mm" color="#000000"/><hc:fillBrush><hc:winBrush faceColor="#EFF6FF" hatchColor="#999999" alpha="0"/></hc:fillBrush></hh:borderFill></hh:borderFills>`;
 
     base['Contents/header.xml'] = base['Contents/header.xml']
-      .replace(/<hh:borderFills\b[\s\S]*?<\/hh:borderFills>/, tableBordersXml)
       .replace(
         /<hh:charProperties itemCnt="2">([\s\S]*?)<\/hh:charProperties>/,
         `<hh:charProperties itemCnt="3">$1<hh:charPr id="2" height="1400" textColor="#0F172A" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:bold/>${charShapeSuffix}</hh:charPr></hh:charProperties>`
@@ -3008,16 +3375,14 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const sectionPaths = Object.keys(templateFiles)
       .filter(p => /^Contents\/section\d+\.xml$/i.test(p))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    const sectionPath = (cfg.sectionPath && templateFiles[cfg.sectionPath])
+    const primarySectionPath = (cfg.sectionPath && templateFiles[cfg.sectionPath])
       ? cfg.sectionPath
       : (templateFiles['Contents/section0.xml'] ? 'Contents/section0.xml' : sectionPaths[0]);
-    if (!sectionPath) {
+    if (!primarySectionPath) {
       return isMultiConfig ? (cfg.edits?.[0]?.renderedHtml || '') : cfg.renderedBodyHtml;
     }
 
-    const sectionXml = templateFiles[sectionPath];
     const headerMeta = inspectHwpxHeaderStyles(templateFiles['Contents/header.xml'] || '');
-    const structure = inspectHwpxSectionSlots(sectionXml);
     const binaryFiles = cfg.binaryFiles || options.binaryFiles || null;
     const binaryImageMap = (cfg.binaryImageMap instanceof Map)
       ? cfg.binaryImageMap
@@ -3025,550 +3390,662 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
           ? options.binaryImageMap
           : buildHwpxBinaryImageMap(templateFiles, binaryFiles || {}));
 
-    const activeSlot = structure.slots.find(s => s.slotId === cfg.activeSlotId)
-      || structure.slots.find(s => s.slotId === structure.recommendedSlotId)
-      || structure.slots[structure.slots.length - 1]
-      || null;
-    const activeSlotId = activeSlot ? activeSlot.slotId : null;
-    const activeMode = cfg.activeMode || (isMultiConfig ? null : structure.recommendedMode) || 'after';
-
-    const editsBySlotId = new Map();
-    if (isMultiConfig && Array.isArray(cfg.edits)) {
-      cfg.edits.forEach(item => {
-        if (!item) return;
-        if (item.sectionPath && item.sectionPath !== sectionPath) return;
-        const sid = item.slotId !== undefined && item.slotId !== null ? item.slotId : activeSlotId;
-        if (sid !== null && sid !== undefined) {
-          editsBySlotId.set(sid, {
-            slotId: sid,
-            renderedHtml: item.renderedHtml || '',
-            mode: item.mode || 'replace'
-          });
-        }
-      });
-    } else if (activeSlotId !== null) {
-      editsBySlotId.set(activeSlotId, {
-        slotId: activeSlotId,
-        renderedHtml: cfg.renderedBodyHtml || '',
-        mode: activeMode
-      });
-    }
-
-    // Extract optional page header text inside <hp:header>
-    const headerTexts = [];
-    let inHeaderTag = false;
-    let inHeaderTextTag = false;
-    let curHeaderBuf = '';
-    forEachXmlTag(sectionXml, {
-      onText(start, end) {
-        if (inHeaderTag && inHeaderTextTag) {
-          curHeaderBuf += decodeXmlEntities(sectionXml.slice(start, end));
-        }
-      },
-      onTag({ tagName, isClosing, isSelfClosing }) {
-        if (!isClosing) {
-          if (tagName === 'hp:header' && !isSelfClosing) {
-            inHeaderTag = true;
-            curHeaderBuf = '';
-          } else if (inHeaderTag && tagName === 'hp:t' && !isSelfClosing) {
-            inHeaderTextTag = true;
-          }
-        } else {
-          if (tagName === 'hp:t') {
-            inHeaderTextTag = false;
-          } else if (tagName === 'hp:header' && inHeaderTag) {
-            const clean = curHeaderBuf.replace(/\s+/g, ' ').trim();
-            if (clean) headerTexts.push(clean);
-            inHeaderTag = false;
-            curHeaderBuf = '';
-          }
-        }
-      }
-    });
-    const headerHtml = headerTexts.length > 0
-      ? `<div class="hwpx-preview-header-note">${escapeHtml(headerTexts[0])}</div>`
-      : '';
-
     const replaceBodyEdit = isMultiConfig
       ? (cfg.edits || []).find(e => e && e.mode === 'replace_body')
       : null;
-    if (activeMode === 'replace_body' || replaceBodyEdit || structure.slots.length === 0) {
-      const bodyOnlyHtml = replaceBodyEdit
-        ? (replaceBodyEdit.renderedHtml || '')
-        : (isMultiConfig ? (cfg.edits?.[0]?.renderedHtml || '') : cfg.renderedBodyHtml);
-      return `<div class="hwpx-preview-sheet" data-template-mode="replace_body">${headerHtml}<div class="hwpx-injected-body">${bodyOnlyHtml}</div></div>`;
-    }
 
-    const slotByStart = new Map(structure.slots.map(s => [s.start, s]));
-    const IGNORE_TAGS = new Set([
-      'hp:secPr', 'hp:header', 'hp:footer', 'hp:footNote', 'hp:endNote', 'hp:hiddenComment'
-    ]);
-    const ALIGN_MAP = { CENTER: 'center', RIGHT: 'right', JUSTIFY: 'justify', LEFT: 'left' };
-
-    let pageWidth = 59527;
-    let pageHeight = 84188;
-    const pages = [{ bgPics: [], fgParts: [] }];
-    let curPage = pages[0];
-
-    const xmlStack = [];
-    let ignoreDepth = 0;
-    let replacingParaDepth = -1;
-    let replacingParaPics = [];
-    const outputStack = [{ parts: curPage.fgParts }];
-    const tableStack = [];
-    const cellStack = [];
-    const paraStack = [];
-    let activePic = null;
-    let activeRunStyle = { bold: false, height: 1000, inT: false, inEqScript: false, eqScriptBuf: '' };
-
-    function pushOut(html) {
-      if (html) outputStack[outputStack.length - 1].parts.push(html);
-    }
-
-    function recordCellSlot(slot) {
-      if (cellStack.length > 0 && slot && !slot.hasTableChild) {
-        cellStack[cellStack.length - 1].slotIds.push(slot.slotId);
-      }
-    }
-
-    function getSlotAttrs(slot, extraClass = '') {
-      if (!slot || slot.hasTableChild) return { cls: extraClass, attrs: '' };
-      const uid = `${sectionPath}::${slot.slotId}`;
-      const isSelected = isMultiConfig && !slot.inTable && slot.slotId === activeSlotId;
-      const inSingleCell = isMultiConfig && slot.inTable && cellStack.length > 0;
-      const clsParts = ['hwpx-slot-clickable'];
-      if (extraClass) clsParts.push(extraClass);
-      if (isSelected || (inSingleCell && slot.slotId === activeSlotId && cellStack[cellStack.length - 1].slotIds.length > 1)) {
-        clsParts.push('hwpx-slot-selected');
-      }
+    function extractHeaderFooterHtml(sectionXml) {
+      const headerTexts = [];
+      const footerTexts = [];
+      let activeTag = '';
+      let inT = false;
+      let buf = '';
+      forEachXmlTag(sectionXml, {
+        onText(start, end) {
+          if (activeTag && inT) buf += decodeXmlEntities(sectionXml.slice(start, end));
+        },
+        onTag({ tagName, isClosing, isSelfClosing }) {
+          if (!isClosing) {
+            if ((tagName === 'hp:header' || tagName === 'hp:footer') && !isSelfClosing && !activeTag) {
+              activeTag = tagName;
+              buf = '';
+            } else if (activeTag && tagName === 'hp:t' && !isSelfClosing) {
+              inT = true;
+            }
+          } else {
+            if (tagName === 'hp:t') {
+              inT = false;
+            } else if (tagName === activeTag) {
+              const clean = buf.replace(/\s+/g, ' ').trim();
+              if (clean) {
+                if (activeTag === 'hp:header') headerTexts.push(clean);
+                else footerTexts.push(clean);
+              }
+              activeTag = '';
+              buf = '';
+            }
+          }
+        }
+      });
       return {
-        cls: clsParts.join(' '),
-        attrs: ` data-slot-id="${slot.slotId}" data-slot-uid="${escapeHtml(uid)}"`
+        headerHtml: headerTexts.length > 0 ? `<div class="hwpx-preview-header-note">${escapeHtml(headerTexts[0])}</div>` : '',
+        footerHtml: footerTexts.length > 0 ? `<div class="hwpx-preview-footer-note">${escapeHtml(footerTexts[0])}</div>` : ''
       };
     }
 
-    function buildReplacedSlotHtml(slot, innerHtml) {
-      const { cls, attrs } = getSlotAttrs(slot, 'hwpx-p hwpx-slot-target');
-      const ph = slot.placeholders && slot.placeholders[0];
-      if (!ph || slot.rawText.trim() === ph.full) {
-        return `<div class="${cls}"${attrs}><div class="hwpx-injected-body">${innerHtml}</div></div>`;
+    function renderSingleSection(secPath, secIdx, totalSections) {
+      const sectionXml = templateFiles[secPath];
+      const structure = inspectHwpxSectionSlots(sectionXml);
+      const isPrimarySection = secPath === primarySectionPath;
+      const activeSlot = isPrimarySection
+        ? (structure.slots.find(s => s.slotId === cfg.activeSlotId)
+            || structure.slots.find(s => s.slotId === structure.recommendedSlotId)
+            || structure.slots[structure.slots.length - 1]
+            || null)
+        : null;
+      const activeSlotId = activeSlot ? activeSlot.slotId : null;
+      const activeMode = cfg.activeMode || (isMultiConfig ? null : structure.recommendedMode) || 'after';
+
+      const editsBySlotId = new Map();
+      if (isMultiConfig && Array.isArray(cfg.edits)) {
+        cfg.edits.forEach(item => {
+          if (!item) return;
+          if (item.sectionPath && item.sectionPath !== secPath) return;
+          if (!item.sectionPath && !isPrimarySection) return;
+          const sid = item.slotId !== undefined && item.slotId !== null ? item.slotId : activeSlotId;
+          if (sid !== null && sid !== undefined) {
+            editsBySlotId.set(sid, {
+              slotId: sid,
+              renderedHtml: item.renderedHtml || '',
+              mode: item.mode || 'replace'
+            });
+          }
+        });
+      } else if (isPrimarySection && activeSlotId !== null) {
+        editsBySlotId.set(activeSlotId, {
+          slotId: activeSlotId,
+          renderedHtml: cfg.renderedBodyHtml || '',
+          mode: activeMode
+        });
       }
-      const prefix = slot.rawText.slice(0, ph.startOffset);
-      const suffix = slot.rawText.slice(ph.endOffset);
-      const preHtml = prefix ? `<span>${escapeHtml(prefix)}</span>` : '';
-      const sufHtml = suffix ? `<span>${escapeHtml(suffix)}</span>` : '';
-      return `<div class="${cls}"${attrs}>${preHtml}<div class="hwpx-injected-body">${innerHtml}</div>${sufHtml}</div>`;
-    }
 
-    function finalizeActivePic(pic) {
-      const effW = pic.curW > 0 ? pic.curW : (pic.szW > 0 ? pic.szW : pic.orgW);
-      const effH = pic.curH > 0 ? pic.curH : (pic.szH > 0 ? pic.szH : pic.orgH);
-      const itemId = pic.binaryItemIDRef || '';
-      const imgEntry = itemId ? binaryImageMap.get(itemId) : null;
-      const isPageBg = pic.textWrap === 'BEHIND_TEXT' &&
-        (pic.vertRelTo === 'PAGE' || pic.vertRelTo === 'PAPER') &&
-        (pic.horzRelTo === 'PAGE' || pic.horzRelTo === 'PAPER') &&
-        !pic.inTable;
+      const { headerHtml, footerHtml } = extractHeaderFooterHtml(sectionXml);
+      if ((activeMode === 'replace_body' || replaceBodyEdit || structure.slots.length === 0) && isPrimarySection) {
+        const bodyOnlyHtml = replaceBodyEdit
+          ? (replaceBodyEdit.renderedHtml || '')
+          : (isMultiConfig ? (cfg.edits?.[0]?.renderedHtml || '') : cfg.renderedBodyHtml);
+        return {
+          isReplaceBody: true,
+          hasMultiPages: false,
+          html: `${headerHtml}<div class="hwpx-injected-body">${bodyOnlyHtml}</div>${footerHtml}`,
+          sheetMode: 'replace_body'
+        };
+      }
 
-      if (isPageBg) {
+      const slotByStart = new Map(structure.slots.map(s => [s.start, s]));
+      const IGNORE_TAGS = new Set([
+        'hp:secPr', 'hp:header', 'hp:footer', 'hp:footNote', 'hp:endNote', 'hp:hiddenComment'
+      ]);
+      const ALIGN_MAP = { CENTER: 'center', RIGHT: 'right', JUSTIFY: 'justify', LEFT: 'left' };
+
+      let pageWidth = 59527;
+      let pageHeight = 84188;
+      const pages = [{ bgPics: [], fgParts: [] }];
+      let curPage = pages[0];
+
+      const xmlStack = [];
+      let ignoreDepth = 0;
+      let replacingParaDepth = -1;
+      let replacingParaPics = [];
+      const outputStack = [{ parts: curPage.fgParts }];
+      const tableStack = [];
+      const cellStack = [];
+      const drawTextStack = [];
+      const paraStack = [];
+      let activePic = null;
+      let activeRunStyle = { bold: false, height: 1000, color: '', inT: false, inEqScript: false, eqScriptBuf: '' };
+
+      function pushOut(html) {
+        if (html) outputStack[outputStack.length - 1].parts.push(html);
+      }
+
+      function recordCellSlot(slot) {
+        if (cellStack.length > 0 && slot && !slot.hasTableChild) {
+          cellStack[cellStack.length - 1].slotIds.push(slot.slotId);
+        }
+      }
+
+      function getSlotAttrs(slot, extraClass = '') {
+        if (!slot || slot.hasTableChild) return { cls: extraClass, attrs: '' };
+        const uid = `${secPath}::${slot.slotId}`;
+        const isSelected = isMultiConfig && isPrimarySection && !slot.inTable && slot.slotId === activeSlotId;
+        const inSingleCell = isMultiConfig && slot.inTable && cellStack.length > 0;
+        const isEdited = editsBySlotId.has(slot.slotId);
+        const clsParts = ['hwpx-slot-clickable'];
+        if (extraClass) clsParts.push(extraClass);
+        if (isEdited) clsParts.push('hwpx-slot-edited');
+        if (isSelected || (isPrimarySection && inSingleCell && slot.slotId === activeSlotId && cellStack[cellStack.length - 1].slotIds.length > 1)) {
+          clsParts.push('hwpx-slot-selected');
+        }
+        return {
+          cls: clsParts.join(' '),
+          attrs: ` data-slot-id="${slot.slotId}" data-slot-uid="${escapeHtml(uid)}"${isEdited ? ' data-slot-edited="true"' : ''}`
+        };
+      }
+
+      function buildReplacedSlotHtml(slot, innerHtml) {
+        const { cls, attrs } = getSlotAttrs(slot, 'hwpx-p hwpx-slot-target');
+        const ph = slot.placeholders && slot.placeholders[0];
+        if (!ph || slot.rawText.trim() === ph.full) {
+          return `<div class="${cls}"${attrs}><div class="hwpx-injected-body">${innerHtml}</div></div>`;
+        }
+        const prefix = slot.rawText.slice(0, ph.startOffset);
+        const suffix = slot.rawText.slice(ph.endOffset);
+        const preHtml = prefix ? `<span>${escapeHtml(prefix)}</span>` : '';
+        const sufHtml = suffix ? `<span>${escapeHtml(suffix)}</span>` : '';
+        return `<div class="${cls}"${attrs}>${preHtml}<div class="hwpx-injected-body">${innerHtml}</div>${sufHtml}</div>`;
+      }
+
+      function finalizeActivePic(pic) {
+        const effW = pic.curW > 0 ? pic.curW : (pic.szW > 0 ? pic.szW : pic.orgW);
+        const effH = pic.curH > 0 ? pic.curH : (pic.szH > 0 ? pic.szH : pic.orgH);
+        const itemId = pic.binaryItemIDRef || '';
+        const imgEntry = itemId ? binaryImageMap.get(itemId) : null;
+        const isPageBg = pic.textWrap === 'BEHIND_TEXT' &&
+          (pic.vertRelTo === 'PAGE' || pic.vertRelTo === 'PAPER') &&
+          (pic.horzRelTo === 'PAGE' || pic.horzRelTo === 'PAPER') &&
+          !pic.inTable;
+
+        if (isPageBg) {
+          if (imgEntry && imgEntry.supported && imgEntry.src) {
+            curPage.bgPics.push({
+              itemId,
+              src: imgEntry.src,
+              zOrder: pic.zOrder,
+              effW: effW || pageWidth,
+              effH: effH || pageHeight,
+              horzOffset: pic.horzOffset,
+              vertOffset: pic.vertOffset,
+              horzAlign: pic.horzAlign
+            });
+          }
+          return;
+        }
+
+        let picHtml = '';
         if (imgEntry && imgEntry.supported && imgEntry.src) {
-          curPage.bgPics.push({
-            itemId,
-            src: imgEntry.src,
-            zOrder: pic.zOrder,
-            effW: effW || pageWidth,
-            effH: effH || pageHeight,
-            horzOffset: pic.horzOffset,
-            vertOffset: pic.vertOffset,
-            horzAlign: pic.horzAlign
-          });
+          const baseW = pic.containerWidth > 0 ? pic.containerWidth : 42520;
+          const wPct = effW > 0 ? Math.min(100, Math.max(15, Math.round((effW / baseW) * 100))) : 100;
+          const cls = pic.treatAsChar ? 'hwpx-pic-wrap hwpx-pic-inline' : 'hwpx-pic-wrap';
+          picHtml = `<div class="${cls}"><img class="hwpx-pic-img" src="${escapeHtml(imgEntry.src)}" style="width:${wPct}%;max-width:100%;height:auto;" alt="${escapeHtml(itemId || '이미지')}"></div>`;
+        } else if (imgEntry && !imgEntry.supported) {
+          picHtml = `<div class="hwpx-pic-wrap"><div class="hwpx-pic-unsupported">미지원 이미지 형식 (${escapeHtml(imgEntry.ext || 'BIN')})</div></div>`;
+        } else if (itemId) {
+          picHtml = `<div class="hwpx-pic-wrap"><div class="hwpx-pic-unsupported">첨부 이미지 (${escapeHtml(itemId)})</div></div>`;
         }
-        return;
-      }
 
-      let picHtml = '';
-      if (imgEntry && imgEntry.supported && imgEntry.src) {
-        const baseW = pic.containerWidth > 0 ? pic.containerWidth : 42520;
-        const wPct = effW > 0 ? Math.min(100, Math.max(15, Math.round((effW / baseW) * 100))) : 100;
-        const cls = pic.treatAsChar ? 'hwpx-pic-wrap hwpx-pic-inline' : 'hwpx-pic-wrap';
-        picHtml = `<div class="${cls}"><img class="hwpx-pic-img" src="${escapeHtml(imgEntry.src)}" style="width:${wPct}%;max-width:100%;height:auto;" alt="${escapeHtml(itemId || '이미지')}"></div>`;
-      } else if (imgEntry && !imgEntry.supported) {
-        picHtml = `<div class="hwpx-pic-wrap"><div class="hwpx-pic-unsupported">미지원 이미지 형식 (${escapeHtml(imgEntry.ext || 'BIN')})</div></div>`;
-      } else if (itemId) {
-        picHtml = `<div class="hwpx-pic-wrap"><div class="hwpx-pic-unsupported">첨부 이미지 (${escapeHtml(itemId)})</div></div>`;
-      }
-
-      if (!picHtml) return;
-      if (pic.inReplacingPara) {
-        replacingParaPics.push(picHtml);
-      } else if (paraStack.length > 0) {
-        const pCur = paraStack[paraStack.length - 1];
-        pCur.hasVisibleContent = true;
-        pCur.parts.push(picHtml);
-      } else {
-        pushOut(picHtml);
-      }
-    }
-
-    forEachXmlTag(sectionXml, {
-      onText(start, end) {
-        if (ignoreDepth > 0 || replacingParaDepth >= 0) return;
-        if (activeRunStyle.inEqScript) {
-          activeRunStyle.eqScriptBuf += decodeXmlEntities(sectionXml.slice(start, end));
-        } else if (activeRunStyle.inT && paraStack.length > 0) {
-          const decoded = decodeXmlEntities(sectionXml.slice(start, end));
-          if (decoded) {
-            const pCur = paraStack[paraStack.length - 1];
-            pCur.hasVisibleContent = true;
-            let chunk = escapeHtml(decoded);
-            if (activeRunStyle.height >= 1300) {
-              chunk = `<span style="font-size:1.18rem;font-weight:700;">${chunk}</span>`;
-            } else if (activeRunStyle.bold) {
-              chunk = `<strong>${chunk}</strong>`;
-            }
-            pCur.parts.push(chunk);
-          }
+        if (!picHtml) return;
+        if (pic.inReplacingPara) {
+          replacingParaPics.push(picHtml);
+        } else if (paraStack.length > 0) {
+          const pCur = paraStack[paraStack.length - 1];
+          pCur.hasVisibleContent = true;
+          pCur.parts.push(picHtml);
+        } else {
+          pushOut(picHtml);
         }
-      },
-      onTag({ start, tagName, attrsStr, isClosing, isSelfClosing }) {
-        if (!isClosing) {
-          if (tagName === 'hp:pagePr') {
-            const pw = Number(getXmlAttr(attrsStr, 'width'));
-            const ph = Number(getXmlAttr(attrsStr, 'height'));
-            if (Number.isFinite(pw) && pw > 0) pageWidth = pw;
-            if (Number.isFinite(ph) && ph > 0) pageHeight = ph;
-          }
+      }
 
-          if (IGNORE_TAGS.has(tagName)) {
-            if (!isSelfClosing) {
-              ignoreDepth++;
-              xmlStack.push(tagName);
+      forEachXmlTag(sectionXml, {
+        onText(start, end) {
+          if (ignoreDepth > 0 || replacingParaDepth >= 0) return;
+          if (activeRunStyle.inEqScript) {
+            activeRunStyle.eqScriptBuf += decodeXmlEntities(sectionXml.slice(start, end));
+          } else if (activeRunStyle.inT && paraStack.length > 0) {
+            const decoded = decodeXmlEntities(sectionXml.slice(start, end));
+            if (decoded) {
+              const pCur = paraStack[paraStack.length - 1];
+              pCur.hasVisibleContent = true;
+              let chunk = escapeHtml(decoded);
+              const spanStyles = [];
+              if (activeRunStyle.height >= 1300) {
+                spanStyles.push('font-size:1.18rem', 'font-weight:700');
+              }
+              const lowColor = (activeRunStyle.color || '').toLowerCase();
+              if (lowColor && lowColor !== '#000000' && lowColor !== '#0f172a') {
+                spanStyles.push(`color:${activeRunStyle.color}`);
+              }
+              if (spanStyles.length > 0) {
+                const bodyChunk = activeRunStyle.bold && activeRunStyle.height < 1300 ? `<strong>${chunk}</strong>` : chunk;
+                chunk = `<span style="${spanStyles.join(';')};">${bodyChunk}</span>`;
+              } else if (activeRunStyle.bold) {
+                chunk = `<strong>${chunk}</strong>`;
+              }
+              pCur.parts.push(chunk);
             }
-            return;
           }
-          if (ignoreDepth > 0) {
+        },
+        onTag({ start, tagName, attrsStr, isClosing, isSelfClosing }) {
+          if (!isClosing) {
+            if (tagName === 'hp:pagePr') {
+              const pw = Number(getXmlAttr(attrsStr, 'width'));
+              const ph = Number(getXmlAttr(attrsStr, 'height'));
+              if (Number.isFinite(pw) && pw > 0) pageWidth = pw;
+              if (Number.isFinite(ph) && ph > 0) pageHeight = ph;
+            }
+
+            if (IGNORE_TAGS.has(tagName)) {
+              if (!isSelfClosing) {
+                ignoreDepth++;
+                xmlStack.push(tagName);
+              }
+              return;
+            }
+            if (ignoreDepth > 0) {
+              if (!isSelfClosing) xmlStack.push(tagName);
+              return;
+            }
+
+            if (activePic) {
+              if (tagName === 'hc:img') {
+                activePic.binaryItemIDRef = getXmlAttr(attrsStr, 'binaryItemIDRef') || activePic.binaryItemIDRef;
+              } else if (tagName === 'hp:orgSz') {
+                activePic.orgW = Number(getXmlAttr(attrsStr, 'width')) || activePic.orgW;
+                activePic.orgH = Number(getXmlAttr(attrsStr, 'height')) || activePic.orgH;
+              } else if (tagName === 'hp:curSz') {
+                const cw = Number(getXmlAttr(attrsStr, 'width'));
+                const ch = Number(getXmlAttr(attrsStr, 'height'));
+                if (Number.isFinite(cw) && cw > 0) activePic.curW = cw;
+                if (Number.isFinite(ch) && ch > 0) activePic.curH = ch;
+              } else if (tagName === 'hp:sz') {
+                const sw = Number(getXmlAttr(attrsStr, 'width'));
+                const sh = Number(getXmlAttr(attrsStr, 'height'));
+                if (Number.isFinite(sw) && sw > 0) activePic.szW = sw;
+                if (Number.isFinite(sh) && sh > 0) activePic.szH = sh;
+              } else if (tagName === 'hp:pos') {
+                activePic.treatAsChar = getXmlAttr(attrsStr, 'treatAsChar') === '1';
+                activePic.horzRelTo = getXmlAttr(attrsStr, 'horzRelTo') || '';
+                activePic.vertRelTo = getXmlAttr(attrsStr, 'vertRelTo') || '';
+                activePic.horzAlign = getXmlAttr(attrsStr, 'horzAlign') || '';
+                activePic.vertAlign = getXmlAttr(attrsStr, 'vertAlign') || '';
+                activePic.horzOffset = Number(getXmlAttr(attrsStr, 'horzOffset')) || 0;
+                activePic.vertOffset = Number(getXmlAttr(attrsStr, 'vertOffset')) || 0;
+              }
+              if (!isSelfClosing) xmlStack.push(tagName);
+              return;
+            }
+
+            if (tagName === 'hp:pic') {
+              const picObj = {
+                textWrap: getXmlAttr(attrsStr, 'textWrap') || '',
+                zOrder: Number(getXmlAttr(attrsStr, 'zOrder')) || 0,
+                inTable: cellStack.length > 0,
+                inReplacingPara: replacingParaDepth >= 0,
+                containerWidth: cellStack.length > 0 && cellStack[cellStack.length - 1].width > 1200
+                  ? Math.max(2000, cellStack[cellStack.length - 1].width - 800)
+                  : 42520,
+                binaryItemIDRef: '',
+                treatAsChar: false,
+                horzRelTo: '', vertRelTo: '', horzAlign: '', vertAlign: '', horzOffset: 0, vertOffset: 0,
+                szW: 0, szH: 0, orgW: 0, orgH: 0, curW: 0, curH: 0,
+                stackDepth: xmlStack.length + 1
+              };
+              if (isSelfClosing) {
+                finalizeActivePic(picObj);
+              } else {
+                activePic = picObj;
+                xmlStack.push(tagName);
+              }
+              return;
+            }
+
+            if (replacingParaDepth >= 0) {
+              if (!isSelfClosing) xmlStack.push(tagName);
+              return;
+            }
+
+            if (tagName === 'hp:drawText' && !isSelfClosing) {
+              const dtObj = { parts: [], stackDepth: xmlStack.length + 1 };
+              drawTextStack.push(dtObj);
+              outputStack.push(dtObj);
+            } else if (tagName === 'hp:p') {
+              const parentTag = xmlStack[xmlStack.length - 1];
+              if (parentTag === 'hs:sec' || parentTag === 'hp:subList') {
+                if (parentTag === 'hs:sec' && getXmlAttr(attrsStr, 'pageBreak') === '1' &&
+                    (curPage.fgParts.length > 0 || curPage.bgPics.length > 0)) {
+                  curPage = { bgPics: [], fgParts: [] };
+                  pages.push(curPage);
+                  outputStack[0] = { parts: curPage.fgParts };
+                }
+                const slot = slotByStart.get(start) || null;
+                recordCellSlot(slot);
+                const slotEdit = slot ? editsBySlotId.get(slot.slotId) : null;
+                const isPlaceholderUnedited = Boolean(isMultiConfig && slot && !slotEdit && slot.placeholders && slot.placeholders.length > 0);
+
+                if (slot && ((slotEdit && slotEdit.mode === 'replace') || isPlaceholderUnedited)) {
+                  const fillHtml = slotEdit
+                    ? slotEdit.renderedHtml
+                    : `<div class="hwpx-slot-placeholder-hint">클릭 후 왼쪽 입력창에 내용을 입력하세요 (${escapeHtml(slot.placeholders[0].full)})</div>`;
+                  pushOut(buildReplacedSlotHtml(slot, fillHtml));
+                  if (!isSelfClosing) {
+                    replacingParaDepth = xmlStack.length + 1;
+                    replacingParaPics = [];
+                    xmlStack.push(tagName);
+                  }
+                  return;
+                }
+
+                const paraPrId = getXmlAttr(attrsStr, 'paraPrIDRef') || '0';
+                const align = ALIGN_MAP[headerMeta.paraAlignMap.get(paraPrId)] || '';
+                if (isSelfClosing) {
+                  const { cls, attrs } = getSlotAttrs(slot, 'hwpx-p hwpx-empty-line');
+                  pushOut(`<div class="${cls}"${attrs}>&nbsp;</div>`);
+                  if (slot && slotEdit && slotEdit.mode === 'after') {
+                    pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${slot.slotId}">${slotEdit.renderedHtml}</div>`);
+                  }
+                } else {
+                  const pObj = { align, slot, slotEdit, parts: [], hasVisibleContent: false, hasTable: false, stackDepth: xmlStack.length + 1 };
+                  paraStack.push(pObj);
+                  outputStack.push(pObj);
+                }
+              }
+            } else if (tagName === 'hp:run' && !isSelfClosing) {
+              const charId = getXmlAttr(attrsStr, 'charPrIDRef') || '0';
+              const cs = headerMeta.charStyleMap.get(charId);
+              activeRunStyle = {
+                bold: Boolean(cs && cs.hasBold),
+                height: cs ? cs.height : 1000,
+                color: cs ? cs.textColor : '',
+                inT: false,
+                inEqScript: false,
+                eqScriptBuf: ''
+              };
+            } else if (tagName === 'hp:t' && !isSelfClosing) {
+              activeRunStyle.inT = true;
+            } else if (tagName === 'hp:script' && !isSelfClosing) {
+              activeRunStyle.inEqScript = true;
+              activeRunStyle.eqScriptBuf = '';
+            } else if ((tagName === 'hp:tab' || tagName === 'hp:fwSpace') && activeRunStyle.inT && paraStack.length > 0) {
+              paraStack[paraStack.length - 1].parts.push('&nbsp;&nbsp;');
+            } else if (tagName === 'hp:lineBreak' && activeRunStyle.inT && paraStack.length > 0) {
+              paraStack[paraStack.length - 1].parts.push('<br>');
+            } else if (tagName === 'hp:tbl' && !isSelfClosing) {
+              if (paraStack.length > 0) paraStack[paraStack.length - 1].hasTable = true;
+              tableStack.push({
+                rows: [],
+                parts: [],
+                width: 0,
+                horzAlign: '',
+                horzOffset: 0,
+                paraAlign: paraStack.length > 0 ? paraStack[paraStack.length - 1].align : '',
+                parentWidth: cellStack.length > 0 && cellStack[cellStack.length - 1].width > 0 ? cellStack[cellStack.length - 1].width : 0
+              });
+            } else if (tagName === 'hp:sz' && tableStack.length > 0 && xmlStack[xmlStack.length - 1] === 'hp:tbl') {
+              const tw = Number(getXmlAttr(attrsStr, 'width'));
+              if (Number.isFinite(tw) && tw > 0) tableStack[tableStack.length - 1].width = tw;
+            } else if (tagName === 'hp:pos' && tableStack.length > 0 && xmlStack[xmlStack.length - 1] === 'hp:tbl') {
+              tableStack[tableStack.length - 1].horzAlign = getXmlAttr(attrsStr, 'horzAlign') || '';
+              tableStack[tableStack.length - 1].horzOffset = Number(getXmlAttr(attrsStr, 'horzOffset')) || 0;
+            } else if (tagName === 'hp:tr' && tableStack.length > 0 && !isSelfClosing) {
+              tableStack[tableStack.length - 1].rows.push({ cells: [] });
+            } else if (tagName === 'hp:tc' && tableStack.length > 0 && !isSelfClosing) {
+              const cellObj = {
+                borderFillIDRef: getXmlAttr(attrsStr, 'borderFillIDRef') || '3',
+                colSpan: 1,
+                rowSpan: 1,
+                width: 0,
+                slotIds: [],
+                parts: []
+              };
+              cellStack.push(cellObj);
+              const curTbl = tableStack[tableStack.length - 1];
+              const curRow = curTbl.rows[curTbl.rows.length - 1];
+              if (curRow) curRow.cells.push(cellObj);
+            } else if (tagName === 'hp:cellSpan' && cellStack.length > 0) {
+              const cs = Number(getXmlAttr(attrsStr, 'colSpan'));
+              const rs = Number(getXmlAttr(attrsStr, 'rowSpan'));
+              if (Number.isFinite(cs) && cs > 1) cellStack[cellStack.length - 1].colSpan = cs;
+              if (Number.isFinite(rs) && rs > 1) cellStack[cellStack.length - 1].rowSpan = rs;
+            } else if (tagName === 'hp:cellSz' && cellStack.length > 0) {
+              const w = Number(getXmlAttr(attrsStr, 'width'));
+              if (Number.isFinite(w) && w > 0) cellStack[cellStack.length - 1].width = w;
+            } else if (tagName === 'hp:subList' && cellStack.length > 0 && drawTextStack.length === 0 && !isSelfClosing) {
+              outputStack.push(cellStack[cellStack.length - 1]);
+            }
+
             if (!isSelfClosing) xmlStack.push(tagName);
             return;
           }
 
-          if (activePic) {
-            if (tagName === 'hc:img') {
-              activePic.binaryItemIDRef = getXmlAttr(attrsStr, 'binaryItemIDRef') || activePic.binaryItemIDRef;
-            } else if (tagName === 'hp:orgSz') {
-              activePic.orgW = Number(getXmlAttr(attrsStr, 'width')) || activePic.orgW;
-              activePic.orgH = Number(getXmlAttr(attrsStr, 'height')) || activePic.orgH;
-            } else if (tagName === 'hp:curSz') {
-              const cw = Number(getXmlAttr(attrsStr, 'width'));
-              const ch = Number(getXmlAttr(attrsStr, 'height'));
-              if (Number.isFinite(cw) && cw > 0) activePic.curW = cw;
-              if (Number.isFinite(ch) && ch > 0) activePic.curH = ch;
-            } else if (tagName === 'hp:sz') {
-              const sw = Number(getXmlAttr(attrsStr, 'width'));
-              const sh = Number(getXmlAttr(attrsStr, 'height'));
-              if (Number.isFinite(sw) && sw > 0) activePic.szW = sw;
-              if (Number.isFinite(sh) && sh > 0) activePic.szH = sh;
-            } else if (tagName === 'hp:pos') {
-              activePic.treatAsChar = getXmlAttr(attrsStr, 'treatAsChar') === '1';
-              activePic.horzRelTo = getXmlAttr(attrsStr, 'horzRelTo') || '';
-              activePic.vertRelTo = getXmlAttr(attrsStr, 'vertRelTo') || '';
-              activePic.horzAlign = getXmlAttr(attrsStr, 'horzAlign') || '';
-              activePic.vertAlign = getXmlAttr(attrsStr, 'vertAlign') || '';
-              activePic.horzOffset = Number(getXmlAttr(attrsStr, 'horzOffset')) || 0;
-              activePic.vertOffset = Number(getXmlAttr(attrsStr, 'vertOffset')) || 0;
-            }
-            if (!isSelfClosing) xmlStack.push(tagName);
-            return;
-          }
+          // Closing tag
+          if (xmlStack.length > 0) xmlStack.pop();
+          const afterPopDepth = xmlStack.length;
 
-          if (tagName === 'hp:pic') {
-            const picObj = {
-              textWrap: getXmlAttr(attrsStr, 'textWrap') || '',
-              zOrder: Number(getXmlAttr(attrsStr, 'zOrder')) || 0,
-              inTable: cellStack.length > 0,
-              inReplacingPara: replacingParaDepth >= 0,
-              containerWidth: cellStack.length > 0 && cellStack[cellStack.length - 1].width > 1200
-                ? Math.max(2000, cellStack[cellStack.length - 1].width - 800)
-                : 42520,
-              binaryItemIDRef: '',
-              treatAsChar: false,
-              horzRelTo: '', vertRelTo: '', horzAlign: '', vertAlign: '', horzOffset: 0, vertOffset: 0,
-              szW: 0, szH: 0, orgW: 0, orgH: 0, curW: 0, curH: 0,
-              stackDepth: xmlStack.length + 1
-            };
-            if (isSelfClosing) {
-              finalizeActivePic(picObj);
-            } else {
-              activePic = picObj;
-              xmlStack.push(tagName);
-            }
+          if (IGNORE_TAGS.has(tagName) && ignoreDepth > 0) {
+            ignoreDepth--;
             return;
           }
+          if (ignoreDepth > 0) return;
+
+          if (activePic && tagName === 'hp:pic' && afterPopDepth === activePic.stackDepth - 1) {
+            const completed = activePic;
+            activePic = null;
+            finalizeActivePic(completed);
+            return;
+          }
+          if (activePic) return;
 
           if (replacingParaDepth >= 0) {
-            if (!isSelfClosing) xmlStack.push(tagName);
+            if (tagName === 'hp:p' && afterPopDepth === replacingParaDepth - 1) {
+              replacingParaDepth = -1;
+              if (replacingParaPics.length > 0) {
+                pushOut(replacingParaPics.join(''));
+                replacingParaPics = [];
+              }
+            }
             return;
           }
 
-          if (tagName === 'hp:p') {
-            const parentTag = xmlStack[xmlStack.length - 1];
-            if (parentTag === 'hs:sec' || parentTag === 'hp:subList') {
-              if (parentTag === 'hs:sec' && getXmlAttr(attrsStr, 'pageBreak') === '1' &&
-                  (curPage.fgParts.length > 0 || curPage.bgPics.length > 0)) {
-                curPage = { bgPics: [], fgParts: [] };
-                pages.push(curPage);
-                outputStack[0] = { parts: curPage.fgParts };
-              }
-              const slot = slotByStart.get(start) || null;
-              recordCellSlot(slot);
-              const slotEdit = slot ? editsBySlotId.get(slot.slotId) : null;
-              const isPlaceholderUnedited = Boolean(isMultiConfig && slot && !slotEdit && slot.placeholders && slot.placeholders.length > 0);
-
-              if (slot && ((slotEdit && slotEdit.mode === 'replace') || isPlaceholderUnedited)) {
-                const fillHtml = slotEdit
-                  ? slotEdit.renderedHtml
-                  : `<div class="hwpx-slot-placeholder-hint">클릭 후 왼쪽 입력창에 내용을 입력하세요 (${escapeHtml(slot.placeholders[0].full)})</div>`;
-                pushOut(buildReplacedSlotHtml(slot, fillHtml));
-                if (!isSelfClosing) {
-                  replacingParaDepth = xmlStack.length + 1;
-                  replacingParaPics = [];
-                  xmlStack.push(tagName);
-                }
-                return;
-              }
-
-              const paraPrId = getXmlAttr(attrsStr, 'paraPrIDRef') || '0';
-              const align = ALIGN_MAP[headerMeta.paraAlignMap.get(paraPrId)] || '';
-              if (isSelfClosing) {
-                const { cls, attrs } = getSlotAttrs(slot, 'hwpx-p hwpx-empty-line');
-                pushOut(`<div class="${cls}"${attrs}>&nbsp;</div>`);
-                if (slot && slotEdit && slotEdit.mode === 'after') {
-                  pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${slot.slotId}">${slotEdit.renderedHtml}</div>`);
+          if (tagName === 'hp:drawText' && drawTextStack.length > 0 &&
+              afterPopDepth === drawTextStack[drawTextStack.length - 1].stackDepth - 1) {
+            const dtObj = drawTextStack.pop();
+            if (outputStack[outputStack.length - 1] === dtObj) outputStack.pop();
+            const dtHtml = `<div class="hwpx-preview-drawbox">${dtObj.parts.join('') || '&nbsp;'}</div>`;
+            if (paraStack.length > 0) {
+              paraStack[paraStack.length - 1].hasVisibleContent = true;
+              paraStack[paraStack.length - 1].parts.push(dtHtml);
+            } else {
+              pushOut(dtHtml);
+            }
+          } else if (tagName === 'hp:t') {
+            activeRunStyle.inT = false;
+          } else if (tagName === 'hp:script' && activeRunStyle.inEqScript) {
+            activeRunStyle.inEqScript = false;
+            const scriptText = activeRunStyle.eqScriptBuf.trim();
+            if (scriptText && paraStack.length > 0) {
+              const pCur = paraStack[paraStack.length - 1];
+              pCur.hasVisibleContent = true;
+              let eqHtml = '';
+              if (typeof katex !== 'undefined') {
+                try {
+                  eqHtml = katex.renderToString(hwpToLatex(scriptText), { displayMode: false, throwOnError: false });
+                } catch (e) {
+                  eqHtml = `<code>${escapeHtml(scriptText)}</code>`;
                 }
               } else {
-                const pObj = { align, slot, slotEdit, parts: [], hasVisibleContent: false, hasTable: false, stackDepth: xmlStack.length + 1 };
-                paraStack.push(pObj);
-                outputStack.push(pObj);
+                eqHtml = `<code class="hwpx-eq-fallback">${escapeHtml(scriptText)}</code>`;
               }
+              pCur.parts.push(eqHtml);
             }
-          } else if (tagName === 'hp:run' && !isSelfClosing) {
-            const charId = getXmlAttr(attrsStr, 'charPrIDRef') || '0';
-            const cs = headerMeta.charStyleMap.get(charId);
-            activeRunStyle = {
-              bold: Boolean(cs && cs.hasBold),
-              height: cs ? cs.height : 1000,
-              inT: false,
-              inEqScript: false,
-              eqScriptBuf: ''
-            };
-          } else if (tagName === 'hp:t' && !isSelfClosing) {
-            activeRunStyle.inT = true;
-          } else if (tagName === 'hp:script' && !isSelfClosing) {
-            activeRunStyle.inEqScript = true;
             activeRunStyle.eqScriptBuf = '';
-          } else if ((tagName === 'hp:tab' || tagName === 'hp:fwSpace') && activeRunStyle.inT && paraStack.length > 0) {
-            paraStack[paraStack.length - 1].parts.push('&nbsp;&nbsp;');
-          } else if (tagName === 'hp:lineBreak' && activeRunStyle.inT && paraStack.length > 0) {
-            paraStack[paraStack.length - 1].parts.push('<br>');
-          } else if (tagName === 'hp:tbl' && !isSelfClosing) {
-            if (paraStack.length > 0) paraStack[paraStack.length - 1].hasTable = true;
-            tableStack.push({ rows: [], parts: [] });
-          } else if (tagName === 'hp:tr' && tableStack.length > 0 && !isSelfClosing) {
-            tableStack[tableStack.length - 1].rows.push({ cells: [] });
-          } else if (tagName === 'hp:tc' && tableStack.length > 0 && !isSelfClosing) {
-            const cellObj = {
-              borderFillIDRef: getXmlAttr(attrsStr, 'borderFillIDRef') || '3',
-              colSpan: 1,
-              rowSpan: 1,
-              width: 0,
-              slotIds: [],
-              parts: []
-            };
-            cellStack.push(cellObj);
-            const curTbl = tableStack[tableStack.length - 1];
-            const curRow = curTbl.rows[curTbl.rows.length - 1];
-            if (curRow) curRow.cells.push(cellObj);
-          } else if (tagName === 'hp:cellSpan' && cellStack.length > 0) {
-            const cs = Number(getXmlAttr(attrsStr, 'colSpan'));
-            const rs = Number(getXmlAttr(attrsStr, 'rowSpan'));
-            if (Number.isFinite(cs) && cs > 1) cellStack[cellStack.length - 1].colSpan = cs;
-            if (Number.isFinite(rs) && rs > 1) cellStack[cellStack.length - 1].rowSpan = rs;
-          } else if (tagName === 'hp:cellSz' && cellStack.length > 0) {
-            const w = Number(getXmlAttr(attrsStr, 'width'));
-            if (Number.isFinite(w) && w > 0) cellStack[cellStack.length - 1].width = w;
-          } else if (tagName === 'hp:subList' && cellStack.length > 0 && !isSelfClosing) {
-            outputStack.push(cellStack[cellStack.length - 1]);
-          }
-
-          if (!isSelfClosing) xmlStack.push(tagName);
-          return;
-        }
-
-        // Closing tag
-        if (xmlStack.length > 0) xmlStack.pop();
-        const afterPopDepth = xmlStack.length;
-
-        if (IGNORE_TAGS.has(tagName) && ignoreDepth > 0) {
-          ignoreDepth--;
-          return;
-        }
-        if (ignoreDepth > 0) return;
-
-        if (activePic && tagName === 'hp:pic' && afterPopDepth === activePic.stackDepth - 1) {
-          const completed = activePic;
-          activePic = null;
-          finalizeActivePic(completed);
-          return;
-        }
-        if (activePic) return;
-
-        if (replacingParaDepth >= 0) {
-          if (tagName === 'hp:p' && afterPopDepth === replacingParaDepth - 1) {
-            replacingParaDepth = -1;
-            if (replacingParaPics.length > 0) {
-              pushOut(replacingParaPics.join(''));
-              replacingParaPics = [];
+          } else if (tagName === 'hp:run') {
+            activeRunStyle = { bold: false, height: 1000, color: '', inT: false, inEqScript: false, eqScriptBuf: '' };
+          } else if (tagName === 'hp:subList' && cellStack.length > 0 && drawTextStack.length === 0) {
+            if (outputStack[outputStack.length - 1] === cellStack[cellStack.length - 1]) {
+              outputStack.pop();
             }
-          }
-          return;
-        }
-
-        if (tagName === 'hp:t') {
-          activeRunStyle.inT = false;
-        } else if (tagName === 'hp:script' && activeRunStyle.inEqScript) {
-          activeRunStyle.inEqScript = false;
-          const scriptText = activeRunStyle.eqScriptBuf.trim();
-          if (scriptText && paraStack.length > 0) {
-            const pCur = paraStack[paraStack.length - 1];
-            pCur.hasVisibleContent = true;
-            let eqHtml = '';
-            if (typeof katex !== 'undefined') {
-              try {
-                eqHtml = katex.renderToString(hwpToLatex(scriptText), { displayMode: false, throwOnError: false });
-              } catch (e) {
-                eqHtml = `<code>${escapeHtml(scriptText)}</code>`;
-              }
-            } else {
-              eqHtml = `<code class="hwpx-eq-fallback">${escapeHtml(scriptText)}</code>`;
-            }
-            pCur.parts.push(eqHtml);
-          }
-          activeRunStyle.eqScriptBuf = '';
-        } else if (tagName === 'hp:run') {
-          activeRunStyle = { bold: false, height: 1000, inT: false, inEqScript: false, eqScriptBuf: '' };
-        } else if (tagName === 'hp:subList' && cellStack.length > 0) {
-          if (outputStack[outputStack.length - 1] === cellStack[cellStack.length - 1]) {
-            outputStack.pop();
-          }
-        } else if (tagName === 'hp:tc' && cellStack.length > 0) {
-          cellStack.pop();
-        } else if (tagName === 'hp:tbl' && tableStack.length > 0) {
-          const tblObj = tableStack.pop();
-          const trsHtml = tblObj.rows.map(row => {
-            const totalW = row.cells.reduce((acc, c) => acc + (c.width || 0), 0);
-            const tdsHtml = row.cells.map(cell => {
-              const bf = headerMeta.borderFillMap.get(cell.borderFillIDRef);
-              const styles = [];
-              if (bf && !bf.hasBorder && headerMeta.borderFillMap.size > 0) {
-                styles.push('border:1px dashed #cbd5e1;');
-              } else {
-                styles.push(`border:1px solid ${bf ? bf.borderColor : '#64748b'};`);
-              }
-              if (bf && bf.bgColor) styles.push(`background-color:${bf.bgColor};`);
-              if (totalW > 0 && cell.width > 0) {
-                styles.push(`width:${Math.max(5, Math.round((cell.width / totalW) * 100))}%;`);
-              }
-              const csAttr = cell.colSpan > 1 ? ` colspan="${cell.colSpan}"` : '';
-              const rsAttr = cell.rowSpan > 1 ? ` rowspan="${cell.rowSpan}"` : '';
-              let cellAttrs = '';
-              let tdCls = '';
-              if (cell.slotIds.length === 1) {
-                const sid = cell.slotIds[0];
-                const uid = `${sectionPath}::${sid}`;
-                cellAttrs = ` data-cell-slot-uid="${escapeHtml(uid)}"`;
-                if (isMultiConfig) {
-                  tdCls = sid === activeSlotId ? ' class="hwpx-slot-clickable hwpx-slot-selected"' : ' class="hwpx-slot-clickable"';
+          } else if (tagName === 'hp:tc' && cellStack.length > 0) {
+            cellStack.pop();
+          } else if (tagName === 'hp:tbl' && tableStack.length > 0) {
+            const tblObj = tableStack.pop();
+            const trsHtml = tblObj.rows.map(row => {
+              const totalW = row.cells.reduce((acc, c) => acc + (c.width || 0), 0);
+              const tdsHtml = row.cells.map(cell => {
+                const bf = headerMeta.borderFillMap.get(cell.borderFillIDRef);
+                const styles = [];
+                if (bf && !bf.hasBorder && headerMeta.borderFillMap.size > 0) {
+                  styles.push('border:1px dashed #cbd5e1;');
+                } else {
+                  styles.push(`border:1px solid ${bf ? bf.borderColor : '#64748b'};`);
                 }
-              }
-              const cellInner = cell.parts.join('') || '&nbsp;';
-              return `<td${csAttr}${rsAttr}${tdCls}${cellAttrs} style="${styles.join('')}">${cellInner}</td>`;
+                if (bf && bf.bgColor) styles.push(`background-color:${bf.bgColor};`);
+                if (totalW > 0 && cell.width > 0) {
+                  styles.push(`width:${Math.max(5, Math.round((cell.width / totalW) * 100))}%;`);
+                }
+                const csAttr = cell.colSpan > 1 ? ` colspan="${cell.colSpan}"` : '';
+                const rsAttr = cell.rowSpan > 1 ? ` rowspan="${cell.rowSpan}"` : '';
+                let cellAttrs = '';
+                const tdClsParts = [];
+                if (cell.slotIds.length === 1) {
+                  const sid = cell.slotIds[0];
+                  const uid = `${secPath}::${sid}`;
+                  const isEditedCell = editsBySlotId.has(sid);
+                  cellAttrs = ` data-cell-slot-uid="${escapeHtml(uid)}"${isEditedCell ? ' data-slot-edited="true"' : ''}`;
+                  if (isMultiConfig) {
+                    tdClsParts.push('hwpx-slot-clickable');
+                    if (isPrimarySection && sid === activeSlotId) tdClsParts.push('hwpx-slot-selected');
+                    if (isEditedCell) tdClsParts.push('hwpx-slot-edited');
+                  } else if (isEditedCell) {
+                    tdClsParts.push('hwpx-slot-edited');
+                  }
+                }
+                const tdCls = tdClsParts.length > 0 ? ` class="${tdClsParts.join(' ')}"` : '';
+                const cellInner = cell.parts.join('') || '&nbsp;';
+                return `<td${csAttr}${rsAttr}${tdCls}${cellAttrs} style="${styles.join('')}">${cellInner}</td>`;
+              }).join('');
+              return `<tr>${tdsHtml}</tr>`;
             }).join('');
-            return `<tr>${tdsHtml}</tr>`;
-          }).join('');
-          pushOut(`<table class="hwpx-preview-table"><tbody>${trsHtml}</tbody></table>`);
-        } else if (tagName === 'hp:p' && paraStack.length > 0) {
-          const topP = paraStack[paraStack.length - 1];
-          if (afterPopDepth === topP.stackDepth - 1) {
-            paraStack.pop();
-            if (outputStack[outputStack.length - 1] === topP) outputStack.pop();
-            const inner = topP.parts.join('');
-            if (topP.hasTable) {
-              pushOut(inner);
-            } else if (!topP.hasVisibleContent && !inner.trim()) {
-              const { cls, attrs } = getSlotAttrs(topP.slot, 'hwpx-p hwpx-empty-line');
-              pushOut(`<div class="${cls}"${attrs}>&nbsp;</div>`);
-            } else {
-              const { cls, attrs } = getSlotAttrs(topP.slot, 'hwpx-p');
-              const styleAttr = topP.align ? ` style="text-align:${topP.align};"` : '';
-              pushOut(`<div class="${cls}"${attrs}${styleAttr}>${inner}</div>`);
-            }
-            if (topP.slot && topP.slotEdit && topP.slotEdit.mode === 'after') {
-              pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${topP.slot.slotId}">${topP.slotEdit.renderedHtml}</div>`);
-            }
-          }
-        }
-      }
-    });
 
-    function buildPageBgLayerHtml(bgPics) {
-      if (!bgPics || bgPics.length === 0) return '';
-      const deduped = [];
-      const fullPageSeen = new Map();
-      bgPics.forEach(pic => {
-        const isFullPageBox = pic.effW >= pageWidth * 0.8 && pic.effH >= pageHeight * 0.8;
-        if (isFullPageBox) {
-          const boxKey = `${Math.round(pic.horzOffset / 100)}_${Math.round(pic.vertOffset / 100)}_${Math.round(pic.effW / 100)}_${Math.round(pic.effH / 100)}`;
-          const prevIdx = fullPageSeen.get(boxKey);
-          if (prevIdx !== undefined) {
-            if (pic.zOrder >= deduped[prevIdx].zOrder) deduped[prevIdx] = pic;
-            return;
+            const tblStyles = [];
+            const refW = tblObj.parentWidth > 0 ? tblObj.parentWidth : Math.max(42520, Math.round(pageWidth * 0.78));
+            let wPct = 100;
+            if (tblObj.width > 0 && tblObj.width < refW * 0.92) {
+              wPct = Math.max(25, Math.min(100, Math.round((tblObj.width / refW) * 100)));
+              tblStyles.push(`width:${wPct}%;`);
+            }
+            if (tblObj.horzAlign === 'CENTER' || tblObj.paraAlign === 'center') {
+              tblStyles.push('margin-left:auto;', 'margin-right:auto;');
+            } else if (tblObj.horzAlign === 'RIGHT' || tblObj.paraAlign === 'right') {
+              tblStyles.push('margin-left:auto;', 'margin-right:0;');
+            } else if (wPct < 95 && tblObj.horzOffset > 2000) {
+              const offsetPct = Math.min(100 - wPct, Math.round((tblObj.horzOffset / pageWidth) * 100));
+              if (offsetPct > 0) tblStyles.push(`margin-left:${offsetPct}%;`);
+            }
+            const tblStyleAttr = tblStyles.length > 0 ? ` style="${tblStyles.join('')}"` : '';
+            pushOut(`<table class="hwpx-preview-table"${tblStyleAttr}><tbody>${trsHtml}</tbody></table>`);
+          } else if (tagName === 'hp:p' && paraStack.length > 0) {
+            const topP = paraStack[paraStack.length - 1];
+            if (afterPopDepth === topP.stackDepth - 1) {
+              paraStack.pop();
+              if (outputStack[outputStack.length - 1] === topP) outputStack.pop();
+              const inner = topP.parts.join('');
+              if (topP.hasTable) {
+                pushOut(inner);
+              } else if (!topP.hasVisibleContent && !inner.trim()) {
+                const { cls, attrs } = getSlotAttrs(topP.slot, 'hwpx-p hwpx-empty-line');
+                pushOut(`<div class="${cls}"${attrs}>&nbsp;</div>`);
+              } else {
+                const { cls, attrs } = getSlotAttrs(topP.slot, 'hwpx-p');
+                const styleAttr = topP.align ? ` style="text-align:${topP.align};"` : '';
+                pushOut(`<div class="${cls}"${attrs}${styleAttr}>${inner}</div>`);
+              }
+              if (topP.slot && topP.slotEdit && topP.slotEdit.mode === 'after') {
+                pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${topP.slot.slotId}">${topP.slotEdit.renderedHtml}</div>`);
+              }
+            }
           }
-          fullPageSeen.set(boxKey, deduped.length);
         }
-        deduped.push(pic);
       });
-      deduped.sort((a, b) => a.zOrder - b.zOrder);
-      const itemsHtml = deduped.map((pic, idx) => {
-        const widthPct = Math.min(100, Math.max(5, Math.round((pic.effW / pageWidth) * 1000) / 10));
-        let leftPct = Math.max(0, Math.round((pic.horzOffset / pageWidth) * 1000) / 10);
-        if (pic.horzAlign === 'CENTER') leftPct = Math.max(0, Math.round(((100 - widthPct) / 2) * 10) / 10);
-        const topPct = Math.max(0, Math.round((pic.vertOffset / pageHeight) * 1000) / 10);
-        const isFlowAnchor = idx === 0 && leftPct === 0 && topPct === 0;
-        const cls = isFlowAnchor ? 'hwpx-page-bg-item' : 'hwpx-page-bg-item hwpx-page-bg-item--offset';
-        const itemStyle = isFlowAnchor ? `width:${widthPct}%;` : `left:${leftPct}%;top:${topPct}%;width:${widthPct}%;`;
-        return `<div class="${cls}" style="${itemStyle}"><img class="hwpx-page-bg-img" src="${escapeHtml(pic.src)}" alt=""></div>`;
+
+      function buildPageBgLayerHtml(bgPics) {
+        if (!bgPics || bgPics.length === 0) return '';
+        const deduped = [];
+        const fullPageSeen = new Map();
+        bgPics.forEach(pic => {
+          const isFullPageBox = pic.effW >= pageWidth * 0.8 && pic.effH >= pageHeight * 0.8;
+          if (isFullPageBox) {
+            const boxKey = `${Math.round(pic.horzOffset / 100)}_${Math.round(pic.vertOffset / 100)}_${Math.round(pic.effW / 100)}_${Math.round(pic.effH / 100)}`;
+            const prevIdx = fullPageSeen.get(boxKey);
+            if (prevIdx !== undefined) {
+              if (pic.zOrder >= deduped[prevIdx].zOrder) deduped[prevIdx] = pic;
+              return;
+            }
+            fullPageSeen.set(boxKey, deduped.length);
+          }
+          deduped.push(pic);
+        });
+        deduped.sort((a, b) => a.zOrder - b.zOrder);
+        const itemsHtml = deduped.map((pic, idx) => {
+          const widthPct = Math.min(100, Math.max(5, Math.round((pic.effW / pageWidth) * 1000) / 10));
+          let leftPct = Math.max(0, Math.round((pic.horzOffset / pageWidth) * 1000) / 10);
+          if (pic.horzAlign === 'CENTER') leftPct = Math.max(0, Math.round(((100 - widthPct) / 2) * 10) / 10);
+          const topPct = Math.max(0, Math.round((pic.vertOffset / pageHeight) * 1000) / 10);
+          const isFlowAnchor = idx === 0 && leftPct === 0 && topPct === 0;
+          const cls = isFlowAnchor ? 'hwpx-page-bg-item' : 'hwpx-page-bg-item hwpx-page-bg-item--offset';
+          const itemStyle = isFlowAnchor ? `width:${widthPct}%;` : `left:${leftPct}%;top:${topPct}%;width:${widthPct}%;`;
+          return `<div class="${cls}" style="${itemStyle}"><img class="hwpx-page-bg-img" src="${escapeHtml(pic.src)}" alt=""></div>`;
+        }).join('');
+        return `<div class="hwpx-page-bg-layer" aria-hidden="true">${itemsHtml}</div>`;
+      }
+
+      const sheetMode = replaceBodyEdit ? 'replace_body' : (activeMode || 'multi');
+      const hasAnyPageBg = pages.some(p => p.bgPics.length > 0);
+      const secBadge = totalSections > 1 ? `<div class="hwpx-section-divider">구역 ${secIdx + 1}</div>` : '';
+      if (pages.length === 1 && !hasAnyPageBg && totalSections === 1) {
+        return {
+          isReplaceBody: false,
+          hasMultiPages: false,
+          sheetMode,
+          html: `${headerHtml}${pages[0].fgParts.join('')}${footerHtml}`
+        };
+      }
+
+      const pagesHtml = pages.map((page, pIdx) => {
+        const bgHtml = buildPageBgLayerHtml(page.bgPics);
+        const pageCls = page.bgPics.length > 0 ? 'hwpx-preview-page hwpx-preview-page--with-bg' : 'hwpx-preview-page';
+        const footerInLastPage = pIdx === pages.length - 1 ? footerHtml : '';
+        return `<div class="${pageCls}" data-page-index="${pIdx + 1}">${bgHtml}<div class="hwpx-page-fg">${pIdx === 0 ? secBadge + headerHtml : ''}${page.fgParts.join('')}${footerInLastPage}</div></div>`;
       }).join('');
-      return `<div class="hwpx-page-bg-layer" aria-hidden="true">${itemsHtml}</div>`;
+
+      return {
+        isReplaceBody: false,
+        hasMultiPages: pages.length > 1 || hasAnyPageBg,
+        sheetMode,
+        html: pagesHtml
+      };
     }
 
-    const sheetMode = replaceBodyEdit ? 'replace_body' : (activeMode || 'multi');
-    const hasAnyPageBg = pages.some(p => p.bgPics.length > 0);
-    if (pages.length === 1 && !hasAnyPageBg) {
-      return `<div class="hwpx-preview-sheet" data-template-mode="${escapeHtml(sheetMode)}">${headerHtml}${pages[0].fgParts.join('')}</div>`;
+    if (isMultiConfig && cfg.renderAllSections && sectionPaths.length > 1 && !replaceBodyEdit && cfg.activeMode !== 'replace_body') {
+      const secResults = sectionPaths.map((sp, idx) => renderSingleSection(sp, idx, sectionPaths.length));
+      const allHtml = secResults.map(r => r.html).join('');
+      return `<div class="hwpx-preview-sheet hwpx-preview-multi" data-template-mode="${escapeHtml(secResults[0].sheetMode)}">${allHtml}</div>`;
     }
 
-    const pagesHtml = pages.map((page, pIdx) => {
-      const bgHtml = buildPageBgLayerHtml(page.bgPics);
-      const pageCls = page.bgPics.length > 0 ? 'hwpx-preview-page hwpx-preview-page--with-bg' : 'hwpx-preview-page';
-      return `<div class="${pageCls}" data-page-index="${pIdx + 1}">${bgHtml}<div class="hwpx-page-fg">${page.fgParts.join('')}</div></div>`;
-    }).join('');
-
-    return `<div class="hwpx-preview-sheet hwpx-preview-multi" data-template-mode="${escapeHtml(sheetMode)}">${headerHtml}${pagesHtml}</div>`;
+    const single = renderSingleSection(primarySectionPath, 0, 1);
+    if (single.isReplaceBody) {
+      return `<div class="hwpx-preview-sheet" data-template-mode="replace_body">${single.html}</div>`;
+    }
+    if (!single.hasMultiPages) {
+      return `<div class="hwpx-preview-sheet" data-template-mode="${escapeHtml(single.sheetMode)}">${single.html}</div>`;
+    }
+    return `<div class="hwpx-preview-sheet hwpx-preview-multi" data-template-mode="${escapeHtml(single.sheetMode)}">${single.html}</div>`;
   }
 
   globalThis.__AI_LATEX_ENGINE__ = {
     SAMPLE_TEXT,
     hwpToLatex,
     latexToHwp,
+    translateKoreanMathShorthand,
     repairMathString,
     sanitizeLineBareMath,
     processText,
@@ -3604,12 +4081,163 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   const activeTemplateSlotBar = document.getElementById('activeTemplateSlotBar');
   const activeSlotSummary = document.getElementById('activeSlotSummary');
   const btnResetActiveSlot = document.getElementById('btnResetActiveSlot');
+  const btnResetAllSlots = document.getElementById('btnResetAllSlots');
+  const editedSlotsNavBar = document.getElementById('editedSlotsNavBar');
+  const editedSlotsChipList = document.getElementById('editedSlotsChipList');
+  const mathQuickBar = document.getElementById('mathQuickBar');
+  const btnToggleAutoSave = document.getElementById('btnToggleAutoSave');
+  const autoSaveDot = document.getElementById('autoSaveDot');
+  const autoSaveLabel = document.getElementById('autoSaveLabel');
   const templateModeGroup = document.getElementById('templateModeGroup');
   const btnDownloadBlankSample = document.getElementById('btnDownloadBlankSample');
   const templatePreviewBanner = document.getElementById('templatePreviewBanner');
   const templatePreviewBannerText = document.getElementById('templatePreviewBannerText');
 
-  if (localStorage.getItem(STORAGE_KEY)) {
+  const AUTO_SAVE_ENABLED_KEY = 'ai_math_autosave_enabled_v1';
+  const TEMPLATE_DRAFTS_KEY = 'ai_math_template_drafts_v1';
+  const IDB_NAME = 'ai_math_hwpx_db_v1';
+  const IDB_STORE = 'templates';
+
+  let autoSaveEnabled = true;
+  try {
+    autoSaveEnabled = localStorage.getItem(AUTO_SAVE_ENABLED_KEY) !== 'false';
+  } catch (e) {
+    autoSaveEnabled = true;
+  }
+
+  function updateAutoSaveToggleUi() {
+    btnToggleAutoSave.setAttribute('aria-pressed', autoSaveEnabled ? 'true' : 'false');
+    btnToggleAutoSave.className = autoSaveEnabled
+      ? 'text-xs sm:text-sm bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/70 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation'
+      : 'text-xs sm:text-sm bg-slate-800/90 hover:bg-slate-700 text-slate-400 border border-slate-700 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation';
+    autoSaveDot.className = autoSaveEnabled ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-slate-500';
+    autoSaveLabel.textContent = autoSaveEnabled ? '자동저장 ON' : '자동저장 OFF';
+  }
+
+  function openTemplateDb() {
+    return new Promise((resolve, reject) => {
+      if (typeof indexedDB === 'undefined') return reject(new Error('IndexedDB unsupported'));
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE, { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('IndexedDB open error'));
+    });
+  }
+
+  async function idbSaveTemplate(tplRecord) {
+    try {
+      const db = await openTemplateDb();
+      return await new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put({ ...tplRecord, persisted: true });
+        tx.oncomplete = () => { db.close(); resolve(true); };
+        tx.onerror = () => { db.close(); resolve(false); };
+      });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function idbDeleteTemplate(id) {
+    try {
+      const db = await openTemplateDb();
+      return await new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).delete(id);
+        tx.oncomplete = () => { db.close(); resolve(true); };
+        tx.onerror = () => { db.close(); resolve(false); };
+      });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function idbLoadAllTemplates() {
+    try {
+      const db = await openTemplateDb();
+      return await new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).getAll();
+        req.onsuccess = () => {
+          const list = Array.isArray(req.result) ? req.result : [];
+          db.close();
+          resolve(list.filter(t => t && typeof t.id === 'string' && typeof t.name === 'string' && typeof t.base64 === 'string'));
+        };
+        req.onerror = () => { db.close(); resolve([]); };
+      });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async function idbClearAllTemplates() {
+    try {
+      const db = await openTemplateDb();
+      return await new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).clear();
+        tx.oncomplete = () => { db.close(); resolve(true); };
+        tx.onerror = () => { db.close(); resolve(false); };
+      });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function loadTemplateDraftsMap() {
+    try {
+      const raw = localStorage.getItem(TEMPLATE_DRAFTS_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveTemplateDraft(state) {
+    if (!autoSaveEnabled || !state || !state.id) return;
+    try {
+      const map = loadTemplateDraftsMap();
+      const editsArr = Array.from(state.slotEdits.entries());
+      if (editsArr.length === 0 && !state.replaceBodyText && !state.globalMode) {
+        delete map[state.id];
+      } else {
+        map[state.id] = {
+          selectedSlotUid: state.selectedSlotUid,
+          currentMode: state.currentMode,
+          globalMode: state.globalMode,
+          replaceBodyText: state.replaceBodyText || '',
+          slotEdits: editsArr,
+          updatedAt: Date.now()
+        };
+      }
+      localStorage.setItem(TEMPLATE_DRAFTS_KEY, JSON.stringify(map));
+    } catch (e) {
+      // Ignore storage quota errors for draft snapshot
+    }
+  }
+
+  function clearTemplateDraft(tplId) {
+    if (!tplId) return;
+    try {
+      const map = loadTemplateDraftsMap();
+      if (tplId in map) {
+        delete map[tplId];
+        localStorage.setItem(TEMPLATE_DRAFTS_KEY, JSON.stringify(map));
+      }
+    } catch (e) {
+      // Ignore storage errors
+    }
+  }
+
+  updateAutoSaveToggleUi();
+  if (autoSaveEnabled && localStorage.getItem(STORAGE_KEY)) {
     btnRestoreLast.classList.remove('hidden');
   }
 
@@ -3728,7 +4356,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     });
 
     activeTemplateState.slots.forEach(slot => {
-      if (slot.sectionPath === activeSectionPath && !editedReplaceUids.has(slot.uid) && slot.equationCount > 0) {
+      if (!editedReplaceUids.has(slot.uid) && slot.equationCount > 0) {
         totalRenderedFormulas += slot.equationCount;
       }
     });
@@ -3737,6 +4365,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     renderOutput.innerHTML = renderHwpxTemplatePreviewHtml(activeTemplateState.textFiles, {
       edits,
       sectionPath: activeSectionPath,
+      renderAllSections: true,
       activeSlotId: selectedSlot ? selectedSlot.slotId : undefined,
       activeMode: activeTemplateState.currentMode,
       binaryImageMap: activeTemplateState.binaryImageMap,
@@ -3744,14 +4373,67 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     });
   }
 
+  function renderEditedSlotsNav() {
+    if (!activeTemplateState || activeTemplateState.globalMode === 'replace_body' || activeTemplateState.slotEdits.size === 0) {
+      editedSlotsNavBar.classList.add('hidden');
+      btnResetAllSlots.classList.add('hidden');
+      editedSlotsChipList.innerHTML = '';
+      return;
+    }
+
+    btnResetAllSlots.classList.remove('hidden');
+    editedSlotsNavBar.classList.remove('hidden');
+    editedSlotsChipList.innerHTML = '';
+
+    const orderedSlots = activeTemplateState.slots.filter(s => activeTemplateState.slotEdits.has(s.uid));
+    orderedSlots.forEach(slot => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.dataset.jumpUid = slot.uid;
+      const isSelected = slot.uid === activeTemplateState.selectedSlotUid;
+      chip.className = isSelected
+        ? 'px-2.5 py-1 min-h-[30px] rounded-lg text-[11px] sm:text-xs font-medium bg-sky-600 text-white border border-sky-400 transition-colors touch-manipulation'
+        : 'px-2.5 py-1 min-h-[30px] rounded-lg text-[11px] sm:text-xs font-medium bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/60 transition-colors touch-manipulation';
+      chip.textContent = slot.sectionLabel ? `${slot.sectionLabel} · ${slot.locationLabel}` : slot.locationLabel;
+      editedSlotsChipList.appendChild(chip);
+    });
+  }
+
+  function updateActiveSlotSummaryText() {
+    if (!activeTemplateState) return;
+    const activeMode = activeTemplateState.globalMode === 'replace_body'
+      ? 'replace_body'
+      : (activeTemplateState.currentMode || 'replace');
+    const selectedSlot = activeTemplateState.slots.find(s => s.uid === activeTemplateState.selectedSlotUid) || null;
+    if (activeMode === 'replace_body') {
+      activeSlotSummary.innerHTML = `편집 위치: <b class="text-sky-300">본문 전체 교체</b> (페이지 설정·머리글 유지)`;
+    } else if (selectedSlot) {
+      const phTag = selectedSlot.placeholders.length > 0
+        ? ` <span class="text-emerald-400 font-mono">(${escapeHtml(selectedSlot.placeholders[0].full)})</span>`
+        : '';
+      const editedCount = activeTemplateState.slotEdits.size;
+      const countBadge = editedCount > 0 ? ` <span class="text-xs text-slate-400">· 수정된 칸 ${editedCount}개</span>` : '';
+      activeSlotSummary.innerHTML = `편집 칸: <b class="text-sky-300">${escapeHtml(selectedSlot.locationLabel)}</b>${phTag}${countBadge}`;
+    } else {
+      activeSlotSummary.innerHTML = '편집 위치: <b class="text-sky-300">문서 본문</b>';
+    }
+  }
+
   function updateAll() {
     if (activeTemplateState) syncCurrentInputToActiveSlot();
     const val = rawInput.value;
     charCount.textContent = `${val.length}자`;
 
-    if (val.trim()) {
-      localStorage.setItem(STORAGE_KEY, val);
-      btnRestoreLast.classList.add('hidden');
+    if (autoSaveEnabled) {
+      if (val.trim()) {
+        try {
+          localStorage.setItem(STORAGE_KEY, val);
+        } catch (e) {
+          // Ignore quota errors
+        }
+        btnRestoreLast.classList.add('hidden');
+      }
+      if (activeTemplateState) saveTemplateDraft(activeTemplateState);
     }
 
     const curResult = (!activeTemplateState && val.trim()) ? processText(val) : null;
@@ -3765,17 +4447,108 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
 
     renderPreviewWithTemplateState(curResult);
+    updateActiveSlotSummaryText();
     updateActiveSlotResetVisibility();
   }
 
   function updateActiveSlotResetVisibility() {
     if (!activeTemplateState || activeTemplateState.globalMode === 'replace_body') {
       btnResetActiveSlot.classList.add('hidden');
+      renderEditedSlotsNav();
       return;
     }
     const uid = activeTemplateState.selectedSlotUid;
     btnResetActiveSlot.classList.toggle('hidden', !activeTemplateState.slotEdits.has(uid));
+    renderEditedSlotsNav();
   }
+
+  mathQuickBar.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest('.math-snip-btn');
+    if (!btn) return;
+    const rawSnippet = btn.getAttribute('data-snippet') || '';
+    if (!rawSnippet) return;
+
+    const start = rawInput.selectionStart || 0;
+    const end = rawInput.selectionEnd || 0;
+    const selected = rawInput.value.slice(start, end);
+    const markerToken = '%%CURSOR%%';
+    const markerIdx = rawSnippet.indexOf(markerToken);
+    let inserted = rawSnippet;
+    let caretOffset = rawSnippet.length;
+    if (markerIdx !== -1) {
+      const before = rawSnippet.slice(0, markerIdx);
+      const after = rawSnippet.slice(markerIdx + markerToken.length);
+      inserted = before + selected + after;
+      caretOffset = before.length + selected.length;
+    }
+
+    rawInput.value = rawInput.value.slice(0, start) + inserted + rawInput.value.slice(end);
+    rawInput.focus();
+    rawInput.setSelectionRange(start + caretOffset, start + caretOffset);
+    updateAll();
+  });
+
+  editedSlotsChipList.addEventListener('click', (e) => {
+    const chip = e.target && e.target.closest('[data-jump-uid]');
+    if (!chip || !activeTemplateState) return;
+    const uid = chip.dataset.jumpUid;
+    const slot = activeTemplateState.slots.find(s => s.uid === uid);
+    if (!slot) return;
+
+    syncCurrentInputToActiveSlot();
+    activeTemplateState.globalMode = null;
+    activeTemplateState.selectedSlotUid = uid;
+    activeTemplateState.selectedSectionPath = slot.sectionPath;
+    loadSlotIntoEditor(uid);
+    renderTemplateUi();
+
+    const targetEl = renderOutput.querySelector(`[data-slot-uid="${CSS.escape(uid)}"], [data-cell-slot-uid="${CSS.escape(uid)}"]`);
+    if (targetEl && typeof targetEl.scrollIntoView === 'function') {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    rawInput.focus();
+  });
+
+  btnToggleAutoSave.addEventListener('click', async () => {
+    autoSaveEnabled = !autoSaveEnabled;
+    try {
+      localStorage.setItem(AUTO_SAVE_ENABLED_KEY, autoSaveEnabled ? 'true' : 'false');
+    } catch (e) {
+      // Ignore storage errors
+    }
+    updateAutoSaveToggleUi();
+
+    if (!autoSaveEnabled) {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(TEMPLATE_DRAFTS_KEY);
+        localStorage.removeItem(TEMPLATE_LIST_KEY);
+        localStorage.removeItem(TEMPLATE_SELECTED_KEY);
+      } catch (e) {
+        // Ignore storage errors
+      }
+      await idbClearAllTemplates();
+      btnRestoreLast.classList.add('hidden');
+      showToast('자동 저장이 꺼졌습니다. 기존 브라우저 임시 저장 내역을 비웠습니다.');
+    } else {
+      if (rawInput.value.trim()) {
+        try {
+          localStorage.setItem(STORAGE_KEY, rawInput.value);
+        } catch (e) {
+          // Ignore quota error
+        }
+      }
+      if (activeTemplateState) {
+        saveTemplateDraft(activeTemplateState);
+        persistSelectedTemplateId(activeTemplateState.id);
+      }
+      for (const tpl of runtimeTemplates) {
+        await idbSaveTemplate(tpl);
+      }
+      persistStoredTemplates();
+      showToast('자동 저장이 켜졌습니다. 양식과 칸별 입력이 브라우저에 자동 저장됩니다.');
+    }
+  });
 
   let debounceTimer = null;
   rawInput.addEventListener('input', () => {
@@ -3914,6 +4687,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   }
 
   function persistStoredTemplates() {
+    if (!autoSaveEnabled) return false;
     try {
       const toPersist = runtimeTemplates
         .filter(t => t.persisted !== false)
@@ -3926,6 +4700,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   }
 
   function persistSelectedTemplateId(id) {
+    if (!autoSaveEnabled) return;
     try {
       localStorage.setItem(TEMPLATE_SELECTED_KEY, id || DEFAULT_TEMPLATE_ID);
     } catch (e) {
@@ -4094,7 +4869,29 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const carriedText = preserveExistingText ? rawInput.value : '';
     setActiveTemplateState(nextState);
     if (activeTemplateState) {
-      if (carriedText.trim() && activeTemplateState.selectedSlotUid) {
+      if (autoSaveEnabled) {
+        const drafts = loadTemplateDraftsMap();
+        const savedDraft = drafts[activeTemplateState.id];
+        if (savedDraft && typeof savedDraft === 'object') {
+          if (Array.isArray(savedDraft.slotEdits)) {
+            const validUids = new Set(activeTemplateState.slots.map(s => s.uid));
+            savedDraft.slotEdits.forEach(([uid, entry]) => {
+              if (validUids.has(uid) && entry && typeof entry.text === 'string') {
+                activeTemplateState.slotEdits.set(uid, { text: entry.text, mode: entry.mode || 'replace' });
+              }
+            });
+          }
+          if (savedDraft.selectedSlotUid && activeTemplateState.slots.some(s => s.uid === savedDraft.selectedSlotUid)) {
+            activeTemplateState.selectedSlotUid = savedDraft.selectedSlotUid;
+          }
+          if (savedDraft.currentMode) activeTemplateState.currentMode = savedDraft.currentMode;
+          if (savedDraft.globalMode === 'replace_body') {
+            activeTemplateState.globalMode = 'replace_body';
+            activeTemplateState.replaceBodyText = savedDraft.replaceBodyText || '';
+          }
+        }
+      }
+      if (carriedText.trim() && activeTemplateState.selectedSlotUid && !activeTemplateState.slotEdits.has(activeTemplateState.selectedSlotUid)) {
         activeTemplateState.slotEdits.set(activeTemplateState.selectedSlotUid, {
           text: carriedText,
           mode: activeTemplateState.currentMode || 'replace'
@@ -4195,23 +4992,40 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       const parsedState = await parseHwpxTemplateState(tplRecord);
       const existingIdx = runtimeTemplates.findIndex(t => t.name === file.name);
       if (existingIdx >= 0) {
+        const oldId = runtimeTemplates[existingIdx].id;
+        if (oldId !== tplRecord.id) {
+          await idbDeleteTemplate(oldId);
+          clearTemplateDraft(oldId);
+        }
         runtimeTemplates[existingIdx] = tplRecord;
       } else {
         runtimeTemplates.push(tplRecord);
       }
 
-      const persistedOk = persistStoredTemplates();
-      if (!persistedOk) {
+      let persistedOk = false;
+      if (autoSaveEnabled) {
+        const idbOk = await idbSaveTemplate(tplRecord);
+        const lsOk = persistStoredTemplates();
+        persistedOk = idbOk || lsOk;
+        if (!persistedOk) {
+          tplRecord.persisted = false;
+          persistStoredTemplates();
+        } else if (!lsOk) {
+          // Exceeded localStorage 5MB quota, keep IndexedDB copy without failing persist flag
+          tplRecord.persisted = true;
+        }
+        if (persistedOk) persistSelectedTemplateId(tplRecord.id);
+      } else {
         tplRecord.persisted = false;
-        persistStoredTemplates();
       }
 
-      if (persistedOk) persistSelectedTemplateId(tplRecord.id);
       await applyActivatedTemplateState(parsedState, !hadTemplate);
 
-      const msgSuffix = persistedOk
-        ? `오른쪽 표 칸·문단을 클릭해 입력하세요.`
-        : `오른쪽 표 칸·문단을 클릭해 입력하세요. (저장 용량 초과로 이번 세션에만 유지)`;
+      const msgSuffix = !autoSaveEnabled
+        ? `오른쪽 표 칸·문단을 클릭해 입력하세요. (자동저장 OFF - 이번 세션에만 유지)`
+        : (persistedOk
+          ? `오른쪽 표 칸·문단을 클릭해 입력하세요.`
+          : `오른쪽 표 칸·문단을 클릭해 입력하세요. (저장 용량 초과로 이번 세션에만 유지)`);
       showToast(`<b>${escapeHtml(file.name)} 양식 적용!</b> ${msgSuffix}`, true);
     } catch (err) {
       console.error('양식 불러오기 실패:', err);
@@ -4223,11 +5037,14 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     activateTemplateById(e.target.value);
   });
 
-  btnDeleteTemplate.addEventListener('click', () => {
+  btnDeleteTemplate.addEventListener('click', async () => {
     if (!activeTemplateState) return;
+    const removedId = activeTemplateState.id;
     const removedName = activeTemplateState.name;
-    runtimeTemplates = runtimeTemplates.filter(t => t.id !== activeTemplateState.id);
+    runtimeTemplates = runtimeTemplates.filter(t => t.id !== removedId);
     persistStoredTemplates();
+    await idbDeleteTemplate(removedId);
+    clearTemplateDraft(removedId);
     setActiveTemplateState(null);
     persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
     renderTemplateUi();
@@ -4274,6 +5091,21 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     loadSlotIntoEditor(uid);
     renderTemplateUi();
     showToast('선택한 칸을 양식 원래 내용으로 되돌렸습니다.');
+  });
+
+  btnResetAllSlots.addEventListener('click', () => {
+    if (!activeTemplateState) return;
+    activeTemplateState.slotEdits.clear();
+    activeTemplateState.globalMode = null;
+    activeTemplateState.replaceBodyText = '';
+    clearTemplateDraft(activeTemplateState.id);
+    if (activeTemplateState.selectedSlotUid) {
+      loadSlotIntoEditor(activeTemplateState.selectedSlotUid);
+    } else {
+      rawInput.value = '';
+    }
+    renderTemplateUi();
+    showToast('수정한 모든 칸을 양식 원래 내용으로 되돌렸습니다.');
   });
 
   // 오른쪽 실시간 렌더링 표 칸 / 문단 직접 클릭 시 편집 위치 전환
@@ -4427,17 +5259,38 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
   document.getElementById('btnDownloadHwpx').addEventListener('click', exportToHwpx);
 
-  runtimeTemplates = loadStoredTemplates();
+  runtimeTemplates = autoSaveEnabled ? loadStoredTemplates() : [];
   renderTemplateUi(false);
   let lastSelectedTplId = DEFAULT_TEMPLATE_ID;
-  try {
-    lastSelectedTplId = localStorage.getItem(TEMPLATE_SELECTED_KEY) || DEFAULT_TEMPLATE_ID;
-  } catch (e) {
-    lastSelectedTplId = DEFAULT_TEMPLATE_ID;
+  if (autoSaveEnabled) {
+    try {
+      lastSelectedTplId = localStorage.getItem(TEMPLATE_SELECTED_KEY) || DEFAULT_TEMPLATE_ID;
+    } catch (e) {
+      lastSelectedTplId = DEFAULT_TEMPLATE_ID;
+    }
   }
   if (lastSelectedTplId !== DEFAULT_TEMPLATE_ID) {
     activateTemplateById(lastSelectedTplId);
   }
+
+  (async function bootIndexedDbTemplates() {
+    if (!autoSaveEnabled) return;
+    const idbList = await idbLoadAllTemplates();
+    if (!idbList || idbList.length === 0) return;
+    let changed = false;
+    idbList.forEach(tpl => {
+      if (!runtimeTemplates.some(r => r.id === tpl.id || r.name === tpl.name)) {
+        runtimeTemplates.push({ ...tpl, persisted: true });
+        changed = true;
+      }
+    });
+    if (changed) {
+      renderTemplateUi(false);
+      if (lastSelectedTplId !== DEFAULT_TEMPLATE_ID && !activeTemplateState) {
+        await activateTemplateById(lastSelectedTplId);
+      }
+    }
+  })();
 
   document.getElementById('btnClear').addEventListener('click', () => {
     rawInput.value = '';
@@ -4453,7 +5306,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       }
     }
     updateAll();
-    if (localStorage.getItem(STORAGE_KEY)) {
+    if (autoSaveEnabled && localStorage.getItem(STORAGE_KEY)) {
       btnRestoreLast.classList.remove('hidden');
     }
     rawInput.focus();
