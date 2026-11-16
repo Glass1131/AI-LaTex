@@ -123,15 +123,39 @@
       padding-top: 0.4rem;
       border-top: 1px dashed #cbd5e1;
     }
+    .hwpx-slot-clickable {
+      cursor: pointer;
+      border-radius: 0.375rem;
+      transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .hwpx-slot-clickable:hover {
+      outline: 2px dashed rgba(14, 165, 233, 0.75);
+      outline-offset: 2px;
+    }
+    .hwpx-slot-selected {
+      outline: 2px solid #0284c7 !important;
+      outline-offset: 2px;
+      box-shadow: inset 0 0 0 2px rgba(56, 189, 248, 0.22);
+    }
+    .hwpx-slot-placeholder-hint {
+      color: #64748b;
+      font-style: italic;
+      font-size: 0.85rem;
+      padding: 0.55rem 0.8rem;
+      border: 1.5px dashed #38bdf8;
+      background: #f0f9ff;
+      border-radius: 0.5rem;
+    }
 
     @media print {
       body { background: white !important; color: black !important; }
-      header, #leftPanel, #rightTabBar, #toast, #templatePreviewBanner { display: none !important; }
+      header, #leftPanel, #rightPanelHeader, #toast, #templatePreviewBanner { display: none !important; }
       main { display: block !important; max-width: 100% !important; padding: 0 !important; }
       #rightPanel { border: none !important; box-shadow: none !important; background: white !important; }
       #rightScrollArea, #tabContentPreview { display: block !important; max-height: none !important; overflow: visible !important; padding: 0 !important; }
       .hwpx-preview-sheet { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
       .hwpx-slot-after { border-top: none !important; padding-top: 0 !important; }
+      .hwpx-slot-clickable, .hwpx-slot-selected { outline: none !important; box-shadow: none !important; cursor: default !important; }
       .markdown-body p, .markdown-body li, .markdown-body h1, .markdown-body h2, .markdown-body h3 {
         color: #111827 !important;
       }
@@ -228,42 +252,41 @@
           삭제
         </button>
       </div>
-      <button id="btnToggleSlotPicker" type="button" class="hidden text-sm font-medium bg-sky-950/60 hover:bg-sky-900/70 text-sky-300 border border-sky-800/70 px-3.5 py-2 min-h-[44px] rounded-xl transition-colors shrink-0 touch-manipulation">
-        삽입 위치 설정 ▾
+      <button id="btnDownloadBlankSample" type="button" class="hidden text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3.5 py-2 min-h-[44px] rounded-xl transition-colors shrink-0 touch-manipulation">
+        빈 예시 양식(.hwpx) 받기
       </button>
     </div>
 
-    <div id="templateSlotPanel" class="hidden bg-slate-950/70 border-b border-slate-800 px-4 py-3 space-y-3 text-xs sm:text-sm">
-      <div class="flex flex-wrap items-center justify-between gap-2.5">
-        <div id="templateSlotSummary" class="text-xs sm:text-sm text-slate-300 truncate">
-          삽입할 위치(문단·표 칸)를 선택하세요.
+    <div id="activeTemplateSlotBar" class="hidden bg-slate-950/70 border-b border-slate-800 px-4 py-2.5 space-y-2 text-xs sm:text-sm">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div id="activeSlotSummary" class="text-xs sm:text-sm text-slate-200 truncate">
+          편집 위치: 본문
         </div>
-        <div id="templateModeGroup" class="inline-flex flex-wrap rounded-xl bg-slate-900 border border-slate-800 p-1 gap-1 shrink-0">
-          <button type="button" data-insert-mode="replace" class="template-mode-btn px-3 py-2 min-h-[40px] rounded-lg text-xs sm:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 touch-manipulation">
-            내용 교체
-          </button>
-          <button type="button" data-insert-mode="after" class="template-mode-btn px-3 py-2 min-h-[40px] rounded-lg text-xs sm:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 touch-manipulation">
-            위치 뒤 추가
-          </button>
-          <button type="button" data-insert-mode="replace_body" class="template-mode-btn px-3 py-2 min-h-[40px] rounded-lg text-xs sm:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 touch-manipulation">
-            본문 전체 교체
+        <div class="flex items-center flex-wrap gap-1.5 shrink-0">
+          <div id="templateModeGroup" class="inline-flex flex-wrap rounded-xl bg-slate-900 border border-slate-800 p-1 gap-1">
+            <button type="button" data-insert-mode="replace" class="template-mode-btn px-3 py-1.5 min-h-[38px] rounded-lg text-xs sm:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 touch-manipulation">
+              이 칸 수정
+            </button>
+            <button type="button" data-insert-mode="after" class="template-mode-btn px-3 py-1.5 min-h-[38px] rounded-lg text-xs sm:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 touch-manipulation">
+              아래에 이어쓰기
+            </button>
+            <button type="button" data-insert-mode="replace_body" class="template-mode-btn px-3 py-1.5 min-h-[38px] rounded-lg text-xs sm:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 touch-manipulation">
+              본문 전체 교체
+            </button>
+          </div>
+          <button id="btnResetActiveSlot" type="button" class="hidden text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors touch-manipulation" title="이 칸을 양식 원래 내용으로 복구">
+            원래대로
           </button>
         </div>
       </div>
-      <div id="templateSlotList" class="max-h-80 overflow-y-auto space-y-1.5 pr-1"></div>
-      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
-        <span>
-          💡 양식에 <code class="text-emerald-400">{{본문}}</code> 같은 태그를 넣어두면 자동으로 해당 자리가 선택됩니다. (표 칸 내부 삽입 지원)
-        </span>
-        <button id="btnDownloadBlankSample" type="button" class="hidden text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors shrink-0 touch-manipulation">
-          빈 예시 양식(.hwpx) 받기
-        </button>
-      </div>
+      <p class="text-[11px] sm:text-xs text-slate-400">
+        👆 오른쪽 <b class="text-sky-300">실시간 렌더링</b>에서 표 칸이나 문단을 클릭한 뒤 여기에 입력하면 칸별로 내용이 반영됩니다.
+      </p>
     </div>
 
-    <div class="relative flex-1 min-h-[300px] lg:min-h-[450px]">
+    <div class="relative flex-1 min-h-[340px] lg:min-h-[500px]">
         <textarea id="rawInput"
-                  placeholder="AI 답변 또는 수식을 자유롭게 붙여넣으세요.&#10;• LaTeX 수식 (\frac, \begin{bmatrix}, \alpha 등) 자동 복구 및 렌더링&#10;• 한글(HWP) 수식 스크립트 (bmatrix { 1 & 0 # 0 & 1 }, {a} over {b}, sqrt {x} 등) 직접 입력도 자동 감지하여 실시간 렌더링&#10;• 상단 '한글(.hwpx) 다운로드' 버튼으로 줄글과 수식이 포함된 정식 한글 문서를 바로 저장할 수 있습니다."
+                  placeholder="AI 답변 또는 수식을 자유롭게 붙여넣으세요.&#10;• LaTeX 수식 (\frac, \begin{bmatrix}, \alpha 등) 자동 복구 및 렌더링&#10;• 한글(HWP) 수식 스크립트 (bmatrix { 1 & 0 # 0 & 1 }, {a} over {b}, sqrt {x} 등) 직접 입력도 자동 감지하여 실시간 렌더링&#10;• 한글 양식을 선택한 경우, 오른쪽 실시간 렌더링의 표 칸·문단을 클릭하고 입력할 수 있습니다."
                   class="w-full h-full p-4 bg-slate-900/60 text-slate-200 text-sm font-mono leading-relaxed outline-none resize-none focus:ring-1 focus:ring-emerald-500/50"></textarea>
     </div>
     <div class="px-4 py-2 bg-slate-950/60 border-t border-slate-800/60 text-[11px] text-slate-500 flex items-center justify-between">
@@ -273,30 +296,17 @@
 
   <!-- 우측: 결과 뷰어 -->
   <section id="rightPanel" class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-    <!-- 탭 바 -->
-    <div id="rightTabBar" class="bg-slate-800/80 px-2.5 py-2 border-b border-slate-800 flex items-center justify-between">
-      <div class="flex items-center flex-wrap gap-1.5">
-        <button data-tab="preview" class="tab-btn px-3.5 py-2 min-h-[42px] text-xs sm:text-sm font-semibold rounded-xl bg-slate-900 text-emerald-400 border border-slate-700/60 shadow-sm transition-all touch-manipulation">
-          실시간 렌더링
-        </button>
-        <button data-tab="hwp" class="tab-btn px-3.5 py-2 min-h-[42px] text-xs sm:text-sm font-semibold rounded-xl text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 touch-manipulation">
-          한글(HWP) 수식 목록
-          <span id="hwpCountBadge" class="bg-sky-900 text-sky-300 text-xs px-2 py-0.5 rounded-full">0</span>
-        </button>
-        <button data-tab="cleaned" class="tab-btn px-3.5 py-2 min-h-[42px] text-xs sm:text-sm font-semibold rounded-xl text-slate-400 hover:text-slate-200 transition-all touch-manipulation">
-          정제된 소스
-        </button>
-        <button data-tab="logs" class="tab-btn px-3.5 py-2 min-h-[42px] text-xs sm:text-sm font-semibold rounded-xl text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 touch-manipulation">
-          복구 로그
-          <span id="logCountBadge" class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2 py-0.5 rounded-full">0</span>
-        </button>
+    <div id="rightPanelHeader" class="bg-slate-800/80 px-4 py-2.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xs sm:text-sm font-semibold text-emerald-400">실시간 렌더링</span>
+        <span id="rightFormulaBadge" class="bg-sky-900/80 text-sky-300 border border-sky-700/60 text-xs px-2.5 py-0.5 rounded-full">수식 0개</span>
       </div>
+      <span id="templateClickHint" class="hidden text-xs text-sky-300">👆 표 칸·문단을 클릭해 입력 위치를 선택하세요</span>
     </div>
 
-    <!-- 탭 본문 -->
-    <div id="rightScrollArea" class="flex-1 relative overflow-y-auto p-4 min-h-[350px] lg:min-h-[520px] max-h-[75vh]">
-      <!-- 1. 렌더링 미리보기 -->
-      <div id="tabContentPreview" class="tab-content block">
+    <!-- 본문 -->
+    <div id="rightScrollArea" class="flex-1 relative overflow-y-auto p-4 min-h-[340px] lg:min-h-[500px] max-h-[75vh]">
+      <div id="tabContentPreview" class="block">
         <div id="templatePreviewBanner" class="hidden mb-3 px-3.5 py-2.5 bg-sky-950/60 border border-sky-800/70 rounded-xl text-xs sm:text-sm text-sky-200 flex flex-wrap items-center justify-between gap-2">
           <span id="templatePreviewBannerText">양식 미리보기 적용 중</span>
           <span class="text-[11px] text-sky-300/90">실시간 렌더링 · PDF/인쇄 · .hwpx 다운로드 모두 반영</span>
@@ -306,30 +316,6 @@
             왼쪽에 수식 또는 AI 답변을 입력하면 실시간으로 렌더링됩니다.
           </div>
         </div>
-      </div>
-
-      <!-- 2. 한글(HWP) 수식 전용 탭 -->
-      <div id="tabContentHwp" class="tab-content hidden space-y-3">
-        <div class="p-3 bg-sky-950/40 border border-sky-800/60 rounded-lg text-xs text-sky-200 flex items-start gap-2">
-          <span class="text-base">💡</span>
-          <div>
-            <p class="font-semibold mb-0.5">한글(HWP) 수식 변환 미리보기:</p>
-            <p class="text-sky-300/90 leading-relaxed">
-              상단의 <b class="text-white">한글(.hwpx) 다운로드</b> 실행 시 각 수식 개체에 자동 삽입되는 한글 수식 스크립트(EqEdit) 목록입니다.
-            </p>
-          </div>
-        </div>
-        <div id="hwpFormulaList" class="space-y-2.5"></div>
-      </div>
-
-      <!-- 3. 정제된 소스 탭 -->
-      <div id="tabContentCleaned" class="tab-content hidden">
-        <pre class="w-full h-full bg-slate-950 p-3.5 rounded-lg text-slate-300 font-mono text-xs overflow-x-auto whitespace-pre-wrap leading-relaxed border border-slate-800" id="cleanedSourceOutput"></pre>
-      </div>
-
-      <!-- 4. 복구 로그 탭 -->
-      <div id="tabContentLogs" class="tab-content hidden">
-        <div id="repairLogsList" class="space-y-2 text-xs font-mono"></div>
       </div>
     </div>
   </section>
@@ -2358,167 +2344,236 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return `${sectionXml.slice(run.start, run.openEnd)}${inner}</hp:run>`;
   }
 
-  /**
-   * Injects converted text + HWP equations into an existing HWPX template package
-   * while preserving styles, headers/footers, master pages, tables, and binary assets.
-   */
-  function applyTextToHwpxTemplateFiles(templateFiles, rawText, options = {}, nowDate = new Date()) {
-    const sectionPaths = Object.keys(templateFiles)
-      .filter(p => /^Contents\/section\d+\.xml$/i.test(p))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    const sectionPath = (options.sectionPath && templateFiles[options.sectionPath])
-      ? options.sectionPath
-      : (templateFiles['Contents/section0.xml'] ? 'Contents/section0.xml' : sectionPaths[0]);
-    if (!sectionPath) {
-      throw new Error('양식에서 Contents/section0.xml 본문을 찾을 수 없습니다.');
-    }
-
-    const sectionXml = templateFiles[sectionPath];
-    const headerStyles = inspectHwpxHeaderStyles(templateFiles['Contents/header.xml'] || '');
-    const structure = inspectHwpxSectionSlots(sectionXml);
-    if (structure.secOpenEnd < 0 || structure.secCloseStart < 0) {
-      throw new Error('양식 XML에서 <hs:sec> 영역을 찾을 수 없습니다.');
-    }
-
+  function buildSingleSlotPatchXml(sectionXml, targetSlot, rawText, mode, placeholder, headerStyles, idGen) {
     const result = processText(rawText);
     const tokenMap = new Map();
     result.mathTokens.forEach(t => tokenMap.set(t.token, t));
 
     const rawLines = (result.tokenizedText || rawText || '').split('\n');
     const lines = rawLines.length > 0 ? rawLines : [''];
-
-    let paraSeq = Math.max(2000000000, structure.maxParaId + 1);
-    let eqIdSeq = Math.max(1950000000, structure.maxEqId + 1);
-    let eqZSeq = Math.max(0, structure.maxEqZOrder + 1);
-    const nextParaId = () => paraSeq++;
-    const nextEqIds = () => ({ eqId: eqIdSeq++, eqZOrder: eqZSeq++ });
-
-    const mode = options.mode || structure.recommendedMode || 'after';
-    const targetSlot = structure.slots.find(s => s.slotId === options.slotId)
-      || structure.slots.find(s => s.slotId === structure.recommendedSlotId)
-      || structure.slots[structure.slots.length - 1]
-      || null;
-
     const validOr = (candidate, allowedSet, fallback) => (allowedSet.has(candidate) ? candidate : fallback);
-    let newSectionXml = sectionXml;
-    let appliedSlot = targetSlot;
 
-    if (mode === 'replace_body' || !targetSlot) {
-      const secOwner = structure.slots.find(s => s.hasSecPr && s.secCtrlRunXml);
-      const paragraphsXml = buildHwpxParagraphsFromLines(lines, {
+    const slotParaPrId = validOr(targetSlot.paraPrIDRef, headerStyles.paraPrIds, headerStyles.defaultParaPrId);
+    const slotStyleId = validOr(targetSlot.styleIDRef, headerStyles.styleIds, headerStyles.defaultStyleId);
+    const slotCharPrId = validOr(targetSlot.charPrIDRef, headerStyles.charPrIds, headerStyles.defaultCharPrId);
+    const boldCharPrId = headerStyles.boldCharPrId === headerStyles.defaultCharPrId && headerStyles.charPrIds.size === 1
+      ? slotCharPrId
+      : headerStyles.boldCharPrId;
+    const centerParaPrId = headerStyles.centerParaPrId === headerStyles.defaultParaPrId && !headerStyles.paraPrIds.has('1')
+      ? slotParaPrId
+      : headerStyles.centerParaPrId;
+
+    if (mode === 'after') {
+      const patchXml = buildHwpxParagraphsFromLines(lines, {
         tokenMap,
-        normalCharPrId: headerStyles.defaultCharPrId,
-        boldCharPrId: headerStyles.boldCharPrId,
-        normalParaPrId: headerStyles.defaultParaPrId,
-        centerParaPrId: headerStyles.centerParaPrId,
-        styleId: headerStyles.defaultStyleId,
-        maxEquationWidth: 42520,
-        firstParaSecPrefix: secOwner ? secOwner.secCtrlRunXml : HWPX_SEC_CTRL_RUN_XML,
-        getParaId: (idx) => (idx === 0 ? 0 : nextParaId()),
-        nextEqIds
+        normalCharPrId: slotCharPrId,
+        boldCharPrId,
+        normalParaPrId: slotParaPrId,
+        centerParaPrId,
+        styleId: slotStyleId,
+        maxEquationWidth: targetSlot.maxContentWidth,
+        getParaId: () => idGen.nextParaId(),
+        nextEqIds: idGen.nextEqIds
       });
-      newSectionXml = sectionXml.slice(0, structure.secOpenEnd) + paragraphsXml + sectionXml.slice(structure.secCloseStart);
-      appliedSlot = null;
-    } else {
-      const slotParaPrId = validOr(targetSlot.paraPrIDRef, headerStyles.paraPrIds, headerStyles.defaultParaPrId);
-      const slotStyleId = validOr(targetSlot.styleIDRef, headerStyles.styleIds, headerStyles.defaultStyleId);
-      const slotCharPrId = validOr(targetSlot.charPrIDRef, headerStyles.charPrIds, headerStyles.defaultCharPrId);
-      const boldCharPrId = headerStyles.boldCharPrId === headerStyles.defaultCharPrId && headerStyles.charPrIds.size === 1
-        ? slotCharPrId
-        : headerStyles.boldCharPrId;
-      const centerParaPrId = headerStyles.centerParaPrId === headerStyles.defaultParaPrId && !headerStyles.paraPrIds.has('1')
-        ? slotParaPrId
-        : headerStyles.centerParaPrId;
-
-      if (mode === 'after') {
-        const insertedXml = buildHwpxParagraphsFromLines(lines, {
-          tokenMap,
-          normalCharPrId: slotCharPrId,
-          boldCharPrId,
-          normalParaPrId: slotParaPrId,
-          centerParaPrId,
-          styleId: slotStyleId,
-          maxEquationWidth: targetSlot.maxContentWidth,
-          getParaId: () => nextParaId(),
-          nextEqIds
-        });
-        newSectionXml = sectionXml.slice(0, targetSlot.end) + insertedXml + sectionXml.slice(targetSlot.end);
-      } else {
-        // mode === 'replace'
-        const ph = (options.placeholder
-          ? targetSlot.placeholders.find(p => p.full === options.placeholder || p.name === options.placeholder)
-          : null) || targetSlot.placeholders[0] || null;
-
-        let prefixRunsXml = '';
-        let suffixRunsXml = '';
-        let activeCharPr = slotCharPrId;
-
-        if (ph && targetSlot.textSegs.length > 0 && targetSlot.rawText.trim() !== ph.full) {
-          const startSeg = targetSlot.textSegs.find(s => ph.startOffset >= s.textStart && ph.startOffset < s.textEnd);
-          const endSeg = targetSlot.textSegs.find(s => ph.endOffset > s.textStart && ph.endOffset <= s.textEnd);
-          if (startSeg && endSeg) {
-            activeCharPr = validOr(startSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
-            for (const run of targetSlot.runs) {
-              if (run.runIdx < startSeg.runIdx) {
-                prefixRunsXml += extractRunWithoutSecCtrl(sectionXml, run);
-              }
-            }
-            let sameRunBeforeInner = '';
-            for (const seg of targetSlot.textSegs) {
-              if (seg.runIdx === startSeg.runIdx && seg.textEnd <= ph.startOffset) {
-                sameRunBeforeInner += seg.isControlTag ? sectionXml.slice(seg.xmlStart, seg.xmlEnd) : escapeXml(seg.text);
-              }
-            }
-            const beforeText = startSeg.isControlTag ? '' : startSeg.text.slice(0, ph.startOffset - startSeg.textStart);
-            sameRunBeforeInner += escapeXml(beforeText);
-            if (sameRunBeforeInner) {
-              prefixRunsXml += `<hp:run charPrIDRef="${escapeXml(activeCharPr)}"><hp:t>${sameRunBeforeInner}</hp:t></hp:run>`;
-            }
-
-            const endRunChar = validOr(endSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
-            const afterText = endSeg.isControlTag ? '' : endSeg.text.slice(ph.endOffset - endSeg.textStart);
-            let sameRunAfterInner = escapeXml(afterText);
-            for (const seg of targetSlot.textSegs) {
-              if (seg.runIdx === endSeg.runIdx && seg.textStart >= ph.endOffset) {
-                sameRunAfterInner += seg.isControlTag ? sectionXml.slice(seg.xmlStart, seg.xmlEnd) : escapeXml(seg.text);
-              }
-            }
-            if (sameRunAfterInner) {
-              suffixRunsXml += `<hp:run charPrIDRef="${escapeXml(endRunChar)}"><hp:t>${sameRunAfterInner}</hp:t></hp:run>`;
-            }
-            for (const run of targetSlot.runs) {
-              if (run.runIdx > endSeg.runIdx) {
-                suffixRunsXml += extractRunWithoutSecCtrl(sectionXml, run);
-              }
-            }
-          }
-        } else if (ph && targetSlot.textSegs.length > 0) {
-          const startSeg = targetSlot.textSegs[0];
-          if (startSeg) activeCharPr = validOr(startSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
-        }
-
-        const replacedXml = buildHwpxParagraphsFromLines(lines, {
-          tokenMap,
-          normalCharPrId: activeCharPr,
-          boldCharPrId,
-          normalParaPrId: slotParaPrId,
-          centerParaPrId,
-          styleId: slotStyleId,
-          maxEquationWidth: targetSlot.maxContentWidth,
-          firstParaSecPrefix: targetSlot.secCtrlRunXml,
-          firstParaInlinePrefix: prefixRunsXml,
-          lastParaInlineSuffix: suffixRunsXml,
-          getParaId: (idx) => (idx === 0 && targetSlot.hasSecPr ? 0 : nextParaId()),
-          nextEqIds
-        });
-
-        newSectionXml = sectionXml.slice(0, targetSlot.start) + replacedXml + sectionXml.slice(targetSlot.end);
-      }
+      return {
+        replaceStart: targetSlot.end,
+        replaceEnd: targetSlot.end,
+        patchXml,
+        result,
+        previewSnippet: buildHwpxPreviewText(result, tokenMap)
+      };
     }
 
+    const ph = (placeholder
+      ? targetSlot.placeholders.find(p => p.full === placeholder || p.name === placeholder)
+      : null) || targetSlot.placeholders[0] || null;
+
+    let prefixRunsXml = '';
+    let suffixRunsXml = '';
+    let activeCharPr = slotCharPrId;
+
+    if (ph && targetSlot.textSegs.length > 0 && targetSlot.rawText.trim() !== ph.full) {
+      const startSeg = targetSlot.textSegs.find(s => ph.startOffset >= s.textStart && ph.startOffset < s.textEnd);
+      const endSeg = targetSlot.textSegs.find(s => ph.endOffset > s.textStart && ph.endOffset <= s.textEnd);
+      if (startSeg && endSeg) {
+        activeCharPr = validOr(startSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
+        for (const run of targetSlot.runs) {
+          if (run.runIdx < startSeg.runIdx) {
+            prefixRunsXml += extractRunWithoutSecCtrl(sectionXml, run);
+          }
+        }
+        let sameRunBeforeInner = '';
+        for (const seg of targetSlot.textSegs) {
+          if (seg.runIdx === startSeg.runIdx && seg.textEnd <= ph.startOffset) {
+            sameRunBeforeInner += seg.isControlTag ? sectionXml.slice(seg.xmlStart, seg.xmlEnd) : escapeXml(seg.text);
+          }
+        }
+        const beforeText = startSeg.isControlTag ? '' : startSeg.text.slice(0, ph.startOffset - startSeg.textStart);
+        sameRunBeforeInner += escapeXml(beforeText);
+        if (sameRunBeforeInner) {
+          prefixRunsXml += `<hp:run charPrIDRef="${escapeXml(activeCharPr)}"><hp:t>${sameRunBeforeInner}</hp:t></hp:run>`;
+        }
+
+        const endRunChar = validOr(endSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
+        const afterText = endSeg.isControlTag ? '' : endSeg.text.slice(ph.endOffset - endSeg.textStart);
+        let sameRunAfterInner = escapeXml(afterText);
+        for (const seg of targetSlot.textSegs) {
+          if (seg.runIdx === endSeg.runIdx && seg.textStart >= ph.endOffset) {
+            sameRunAfterInner += seg.isControlTag ? sectionXml.slice(seg.xmlStart, seg.xmlEnd) : escapeXml(seg.text);
+          }
+        }
+        if (sameRunAfterInner) {
+          suffixRunsXml += `<hp:run charPrIDRef="${escapeXml(endRunChar)}"><hp:t>${sameRunAfterInner}</hp:t></hp:run>`;
+        }
+        for (const run of targetSlot.runs) {
+          if (run.runIdx > endSeg.runIdx) {
+            suffixRunsXml += extractRunWithoutSecCtrl(sectionXml, run);
+          }
+        }
+      }
+    } else if (ph && targetSlot.textSegs.length > 0) {
+      const startSeg = targetSlot.textSegs[0];
+      if (startSeg) activeCharPr = validOr(startSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
+    }
+
+    const patchXml = buildHwpxParagraphsFromLines(lines, {
+      tokenMap,
+      normalCharPrId: activeCharPr,
+      boldCharPrId,
+      normalParaPrId: slotParaPrId,
+      centerParaPrId,
+      styleId: slotStyleId,
+      maxEquationWidth: targetSlot.maxContentWidth,
+      firstParaSecPrefix: targetSlot.secCtrlRunXml,
+      firstParaInlinePrefix: prefixRunsXml,
+      lastParaInlineSuffix: suffixRunsXml,
+      getParaId: (idx) => (idx === 0 && targetSlot.hasSecPr ? 0 : idGen.nextParaId()),
+      nextEqIds: idGen.nextEqIds
+    });
+
+    return {
+      replaceStart: targetSlot.start,
+      replaceEnd: targetSlot.end,
+      patchXml,
+      result,
+      previewSnippet: buildHwpxPreviewText(result, tokenMap)
+    };
+  }
+
+  /**
+   * Applies one or more per-slot edits into an HWPX template package using descending
+   * offset splicing so earlier template geometry and tables stay intact.
+   */
+  function applyEditsToHwpxTemplateFiles(templateFiles, editsList = [], options = {}, nowDate = new Date()) {
+    const sectionPaths = Object.keys(templateFiles)
+      .filter(p => /^Contents\/section\d+\.xml$/i.test(p))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const defaultSectionPath = (options.sectionPath && templateFiles[options.sectionPath])
+      ? options.sectionPath
+      : (templateFiles['Contents/section0.xml'] ? 'Contents/section0.xml' : sectionPaths[0]);
+    if (!defaultSectionPath) {
+      throw new Error('양식에서 Contents/section0.xml 본문을 찾을 수 없습니다.');
+    }
+
+    const headerStyles = inspectHwpxHeaderStyles(templateFiles['Contents/header.xml'] || '');
     const outFiles = { ...templateFiles };
-    outFiles[sectionPath] = newSectionXml;
-    const prvText = buildHwpxPreviewText(result, tokenMap);
+    const normalizedEdits = Array.isArray(editsList) ? editsList : [];
+    const editsBySection = new Map();
+
+    normalizedEdits.forEach(item => {
+      if (!item) return;
+      const sp = (item.sectionPath && outFiles[item.sectionPath]) ? item.sectionPath : defaultSectionPath;
+      if (!editsBySection.has(sp)) editsBySection.set(sp, []);
+      editsBySection.get(sp).push(item);
+    });
+    if (editsBySection.size === 0) {
+      editsBySection.set(defaultSectionPath, [{ rawText: '', mode: 'after' }]);
+    }
+
+    let lastResult = null;
+    let firstAppliedSlot = null;
+    const previewParts = [];
+
+    for (const [secPath, secEdits] of editsBySection.entries()) {
+      const sectionXml = outFiles[secPath];
+      const structure = inspectHwpxSectionSlots(sectionXml);
+      if (structure.secOpenEnd < 0 || structure.secCloseStart < 0) {
+        throw new Error(`양식 XML(${secPath})에서 <hs:sec> 영역을 찾을 수 없습니다.`);
+      }
+
+      let paraSeq = Math.max(2000000000, structure.maxParaId + 1);
+      let eqIdSeq = Math.max(1950000000, structure.maxEqId + 1);
+      let eqZSeq = Math.max(0, structure.maxEqZOrder + 1);
+      const idGen = {
+        nextParaId: () => paraSeq++,
+        nextEqIds: () => ({ eqId: eqIdSeq++, eqZOrder: eqZSeq++ })
+      };
+
+      const replaceBodyEdit = secEdits.find(e => e.mode === 'replace_body');
+      if (replaceBodyEdit || structure.slots.length === 0) {
+        const text = replaceBodyEdit ? (replaceBodyEdit.rawText || '') : (secEdits[0]?.rawText || '');
+        const result = processText(text);
+        const tokenMap = new Map();
+        result.mathTokens.forEach(t => tokenMap.set(t.token, t));
+        const rawLines = (result.tokenizedText || text || '').split('\n');
+        const lines = rawLines.length > 0 ? rawLines : [''];
+        const secOwner = structure.slots.find(s => s.hasSecPr && s.secCtrlRunXml);
+
+        const paragraphsXml = buildHwpxParagraphsFromLines(lines, {
+          tokenMap,
+          normalCharPrId: headerStyles.defaultCharPrId,
+          boldCharPrId: headerStyles.boldCharPrId,
+          normalParaPrId: headerStyles.defaultParaPrId,
+          centerParaPrId: headerStyles.centerParaPrId,
+          styleId: headerStyles.defaultStyleId,
+          maxEquationWidth: 42520,
+          firstParaSecPrefix: secOwner ? secOwner.secCtrlRunXml : HWPX_SEC_CTRL_RUN_XML,
+          getParaId: (idx) => (idx === 0 ? 0 : idGen.nextParaId()),
+          nextEqIds: idGen.nextEqIds
+        });
+        outFiles[secPath] = sectionXml.slice(0, structure.secOpenEnd) + paragraphsXml + sectionXml.slice(structure.secCloseStart);
+        lastResult = result;
+        previewParts.push(buildHwpxPreviewText(result, tokenMap));
+        continue;
+      }
+
+      // Deduplicate by slotId (last write wins) and sort bottom-up (descending start)
+      const deduped = new Map();
+      secEdits.forEach(item => {
+        const targetSlot = structure.slots.find(s => s.slotId === item.slotId)
+          || structure.slots.find(s => s.slotId === structure.recommendedSlotId)
+          || structure.slots[structure.slots.length - 1];
+        if (!targetSlot) return;
+        const resolvedMode = item.mode || (targetSlot.slotId === structure.recommendedSlotId ? structure.recommendedMode : 'replace');
+        deduped.set(targetSlot.slotId, { slot: targetSlot, item, mode: resolvedMode });
+      });
+
+      const resolvedList = [...deduped.values()].sort((a, b) => b.slot.start - a.slot.start);
+      let workingXml = sectionXml;
+      let minReplacedPos = sectionXml.length + 1;
+
+      for (const { slot, item, mode } of resolvedList) {
+        if (!firstAppliedSlot) firstAppliedSlot = slot;
+        const patch = buildSingleSlotPatchXml(
+          sectionXml,
+          slot,
+          item.rawText || '',
+          mode,
+          item.placeholder || options.placeholder,
+          headerStyles,
+          idGen
+        );
+        lastResult = patch.result;
+        if (patch.previewSnippet) previewParts.push(patch.previewSnippet);
+        if (patch.replaceEnd <= minReplacedPos) {
+          workingXml = workingXml.slice(0, patch.replaceStart) + patch.patchXml + workingXml.slice(patch.replaceEnd);
+          minReplacedPos = patch.replaceStart;
+        }
+      }
+      outFiles[secPath] = workingXml;
+    }
+
+    const prvText = previewParts.filter(Boolean).join('\n').slice(0, 1024);
     if ('Preview/PrvText.txt' in outFiles || prvText) {
       outFiles['Preview/PrvText.txt'] = prvText;
     }
@@ -2530,7 +2585,26 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       );
     }
 
-    return { files: outFiles, result, appliedSlot, sectionPath, mode };
+    return {
+      files: outFiles,
+      result: lastResult,
+      appliedSlot: firstAppliedSlot,
+      sectionPath: defaultSectionPath,
+      mode: normalizedEdits[0]?.mode || 'replace'
+    };
+  }
+
+  /**
+   * Injects converted text + HWP equations into a single slot (or body) of an existing HWPX template.
+   */
+  function applyTextToHwpxTemplateFiles(templateFiles, rawText, options = {}, nowDate = new Date()) {
+    return applyEditsToHwpxTemplateFiles(templateFiles, [{
+      sectionPath: options.sectionPath,
+      slotId: options.slotId,
+      rawText,
+      mode: options.mode,
+      placeholder: options.placeholder
+    }], options, nowDate);
   }
 
   /**
@@ -2565,28 +2639,63 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   }
 
   /**
-   * Renders an interactive / printable HTML sheet preview of a loaded HWPX template
-   * with the converted renderedBodyHtml placed at the selected slot and insertion mode.
+   * Renders an interactive / printable HTML sheet preview of a loaded HWPX template.
+   * Supports either a single body HTML string (with legacy options) or a multi-slot
+   * edits config `{ edits: [{ slotId, renderedHtml, mode }], activeSlotId, activeMode }`.
    */
-  function renderHwpxTemplatePreviewHtml(templateFiles, renderedBodyHtml, options = {}) {
+  function renderHwpxTemplatePreviewHtml(templateFiles, contentOrConfig, options = {}) {
+    const isMultiConfig = Boolean(contentOrConfig && typeof contentOrConfig === 'object');
+    const cfg = isMultiConfig
+      ? contentOrConfig
+      : {
+          renderedBodyHtml: String(contentOrConfig || ''),
+          sectionPath: options.sectionPath,
+          activeSlotId: options.slotId,
+          activeMode: options.mode
+        };
+
     const sectionPaths = Object.keys(templateFiles)
       .filter(p => /^Contents\/section\d+\.xml$/i.test(p))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    const sectionPath = (options.sectionPath && templateFiles[options.sectionPath])
-      ? options.sectionPath
+    const sectionPath = (cfg.sectionPath && templateFiles[cfg.sectionPath])
+      ? cfg.sectionPath
       : (templateFiles['Contents/section0.xml'] ? 'Contents/section0.xml' : sectionPaths[0]);
     if (!sectionPath) {
-      return renderedBodyHtml;
+      return isMultiConfig ? (cfg.edits?.[0]?.renderedHtml || '') : cfg.renderedBodyHtml;
     }
 
     const sectionXml = templateFiles[sectionPath];
     const headerMeta = inspectHwpxHeaderStyles(templateFiles['Contents/header.xml'] || '');
     const structure = inspectHwpxSectionSlots(sectionXml);
-    const mode = options.mode || structure.recommendedMode || 'after';
-    const targetSlot = structure.slots.find(s => s.slotId === options.slotId)
+
+    const activeSlot = structure.slots.find(s => s.slotId === cfg.activeSlotId)
       || structure.slots.find(s => s.slotId === structure.recommendedSlotId)
       || structure.slots[structure.slots.length - 1]
       || null;
+    const activeSlotId = activeSlot ? activeSlot.slotId : null;
+    const activeMode = cfg.activeMode || (isMultiConfig ? null : structure.recommendedMode) || 'after';
+
+    const editsBySlotId = new Map();
+    if (isMultiConfig && Array.isArray(cfg.edits)) {
+      cfg.edits.forEach(item => {
+        if (!item) return;
+        if (item.sectionPath && item.sectionPath !== sectionPath) return;
+        const sid = item.slotId !== undefined && item.slotId !== null ? item.slotId : activeSlotId;
+        if (sid !== null && sid !== undefined) {
+          editsBySlotId.set(sid, {
+            slotId: sid,
+            renderedHtml: item.renderedHtml || '',
+            mode: item.mode || 'replace'
+          });
+        }
+      });
+    } else if (activeSlotId !== null) {
+      editsBySlotId.set(activeSlotId, {
+        slotId: activeSlotId,
+        renderedHtml: cfg.renderedBodyHtml || '',
+        mode: activeMode
+      });
+    }
 
     // Extract optional page header text inside <hp:header>
     const headerTexts = [];
@@ -2623,8 +2732,14 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       ? `<div class="hwpx-preview-header-note">${escapeHtml(headerTexts[0])}</div>`
       : '';
 
-    if (mode === 'replace_body' || !targetSlot) {
-      return `<div class="hwpx-preview-sheet" data-template-mode="replace_body">${headerHtml}<div class="hwpx-injected-body">${renderedBodyHtml}</div></div>`;
+    const replaceBodyEdit = isMultiConfig
+      ? (cfg.edits || []).find(e => e && e.mode === 'replace_body')
+      : null;
+    if (activeMode === 'replace_body' || replaceBodyEdit || structure.slots.length === 0) {
+      const bodyOnlyHtml = replaceBodyEdit
+        ? (replaceBodyEdit.renderedHtml || '')
+        : (isMultiConfig ? (cfg.edits?.[0]?.renderedHtml || '') : cfg.renderedBodyHtml);
+      return `<div class="hwpx-preview-sheet" data-template-mode="replace_body">${headerHtml}<div class="hwpx-injected-body">${bodyOnlyHtml}</div></div>`;
     }
 
     const slotByStart = new Map(structure.slots.map(s => [s.start, s]));
@@ -2646,16 +2761,39 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       if (html) outputStack[outputStack.length - 1].parts.push(html);
     }
 
-    function buildInlineSlotHtml(slot) {
+    function recordCellSlot(slot) {
+      if (cellStack.length > 0 && slot && !slot.hasTableChild) {
+        cellStack[cellStack.length - 1].slotIds.push(slot.slotId);
+      }
+    }
+
+    function getSlotAttrs(slot, extraClass = '') {
+      if (!slot || slot.hasTableChild) return { cls: extraClass, attrs: '' };
+      const uid = `${sectionPath}::${slot.slotId}`;
+      const isSelected = isMultiConfig && !slot.inTable && slot.slotId === activeSlotId;
+      const inSingleCell = isMultiConfig && slot.inTable && cellStack.length > 0;
+      const clsParts = ['hwpx-slot-clickable'];
+      if (extraClass) clsParts.push(extraClass);
+      if (isSelected || (inSingleCell && slot.slotId === activeSlotId && cellStack[cellStack.length - 1].slotIds.length > 1)) {
+        clsParts.push('hwpx-slot-selected');
+      }
+      return {
+        cls: clsParts.join(' '),
+        attrs: ` data-slot-id="${slot.slotId}" data-slot-uid="${escapeHtml(uid)}"`
+      };
+    }
+
+    function buildReplacedSlotHtml(slot, innerHtml) {
+      const { cls, attrs } = getSlotAttrs(slot, 'hwpx-p hwpx-slot-target');
       const ph = slot.placeholders && slot.placeholders[0];
       if (!ph || slot.rawText.trim() === ph.full) {
-        return `<div class="hwpx-p hwpx-slot-target" data-slot-id="${slot.slotId}"><div class="hwpx-injected-body">${renderedBodyHtml}</div></div>`;
+        return `<div class="${cls}"${attrs}><div class="hwpx-injected-body">${innerHtml}</div></div>`;
       }
       const prefix = slot.rawText.slice(0, ph.startOffset);
       const suffix = slot.rawText.slice(ph.endOffset);
       const preHtml = prefix ? `<span>${escapeHtml(prefix)}</span>` : '';
       const sufHtml = suffix ? `<span>${escapeHtml(suffix)}</span>` : '';
-      return `<div class="hwpx-p hwpx-slot-target" data-slot-id="${slot.slotId}">${preHtml}<div class="hwpx-injected-body">${renderedBodyHtml}</div>${sufHtml}</div>`;
+      return `<div class="${cls}"${attrs}>${preHtml}<div class="hwpx-injected-body">${innerHtml}</div>${sufHtml}</div>`;
     }
 
     forEachXmlTag(sectionXml, {
@@ -2687,11 +2825,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
             }
             return;
           }
-          if (ignoreDepth > 0) {
-            if (!isSelfClosing) xmlStack.push(tagName);
-            return;
-          }
-          if (replacingParaDepth >= 0) {
+          if (ignoreDepth > 0 || replacingParaDepth >= 0) {
             if (!isSelfClosing) xmlStack.push(tagName);
             return;
           }
@@ -2700,23 +2834,32 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
             const parentTag = xmlStack[xmlStack.length - 1];
             if (parentTag === 'hs:sec' || parentTag === 'hp:subList') {
               const slot = slotByStart.get(start) || null;
-              if (slot && mode === 'replace' && slot.slotId === targetSlot.slotId) {
-                pushOut(buildInlineSlotHtml(slot));
+              recordCellSlot(slot);
+              const slotEdit = slot ? editsBySlotId.get(slot.slotId) : null;
+              const isPlaceholderUnedited = Boolean(isMultiConfig && slot && !slotEdit && slot.placeholders && slot.placeholders.length > 0);
+
+              if (slot && ((slotEdit && slotEdit.mode === 'replace') || isPlaceholderUnedited)) {
+                const fillHtml = slotEdit
+                  ? slotEdit.renderedHtml
+                  : `<div class="hwpx-slot-placeholder-hint">클릭 후 왼쪽 입력창에 내용을 입력하세요 (${escapeHtml(slot.placeholders[0].full)})</div>`;
+                pushOut(buildReplacedSlotHtml(slot, fillHtml));
                 if (!isSelfClosing) {
                   replacingParaDepth = xmlStack.length + 1;
                   xmlStack.push(tagName);
                 }
                 return;
               }
+
               const paraPrId = getXmlAttr(attrsStr, 'paraPrIDRef') || '0';
               const align = ALIGN_MAP[headerMeta.paraAlignMap.get(paraPrId)] || '';
               if (isSelfClosing) {
-                pushOut('<div class="hwpx-p hwpx-empty-line">&nbsp;</div>');
-                if (slot && mode === 'after' && slot.slotId === targetSlot.slotId) {
-                  pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${slot.slotId}">${renderedBodyHtml}</div>`);
+                const { cls, attrs } = getSlotAttrs(slot, 'hwpx-p hwpx-empty-line');
+                pushOut(`<div class="${cls}"${attrs}>&nbsp;</div>`);
+                if (slot && slotEdit && slotEdit.mode === 'after') {
+                  pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${slot.slotId}">${slotEdit.renderedHtml}</div>`);
                 }
               } else {
-                const pObj = { align, slot, parts: [], hasVisibleContent: false, hasTable: false, stackDepth: xmlStack.length + 1 };
+                const pObj = { align, slot, slotEdit, parts: [], hasVisibleContent: false, hasTable: false, stackDepth: xmlStack.length + 1 };
                 paraStack.push(pObj);
                 outputStack.push(pObj);
               }
@@ -2742,17 +2885,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
             paraStack[paraStack.length - 1].parts.push('<br>');
           } else if (tagName === 'hp:tbl' && !isSelfClosing) {
             if (paraStack.length > 0) paraStack[paraStack.length - 1].hasTable = true;
-            const tblObj = { rows: [], parts: [] };
-            tableStack.push(tblObj);
+            tableStack.push({ rows: [], parts: [] });
           } else if (tagName === 'hp:tr' && tableStack.length > 0 && !isSelfClosing) {
-            const rowObj = { cells: [] };
-            tableStack[tableStack.length - 1].rows.push(rowObj);
+            tableStack[tableStack.length - 1].rows.push({ cells: [] });
           } else if (tagName === 'hp:tc' && tableStack.length > 0 && !isSelfClosing) {
             const cellObj = {
               borderFillIDRef: getXmlAttr(attrsStr, 'borderFillIDRef') || '3',
               colSpan: 1,
               rowSpan: 1,
               width: 0,
+              slotIds: [],
               parts: []
             };
             cellStack.push(cellObj);
@@ -2839,8 +2981,18 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
               }
               const csAttr = cell.colSpan > 1 ? ` colspan="${cell.colSpan}"` : '';
               const rsAttr = cell.rowSpan > 1 ? ` rowspan="${cell.rowSpan}"` : '';
+              let cellAttrs = '';
+              let tdCls = '';
+              if (cell.slotIds.length === 1) {
+                const sid = cell.slotIds[0];
+                const uid = `${sectionPath}::${sid}`;
+                cellAttrs = ` data-cell-slot-uid="${escapeHtml(uid)}"`;
+                if (isMultiConfig) {
+                  tdCls = sid === activeSlotId ? ' class="hwpx-slot-clickable hwpx-slot-selected"' : ' class="hwpx-slot-clickable"';
+                }
+              }
               const cellInner = cell.parts.join('') || '&nbsp;';
-              return `<td${csAttr}${rsAttr} style="${styles.join('')}">${cellInner}</td>`;
+              return `<td${csAttr}${rsAttr}${tdCls}${cellAttrs} style="${styles.join('')}">${cellInner}</td>`;
             }).join('');
             return `<tr>${tdsHtml}</tr>`;
           }).join('');
@@ -2854,20 +3006,23 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
             if (topP.hasTable) {
               pushOut(inner);
             } else if (!topP.hasVisibleContent && !inner.trim()) {
-              pushOut('<div class="hwpx-p hwpx-empty-line">&nbsp;</div>');
+              const { cls, attrs } = getSlotAttrs(topP.slot, 'hwpx-p hwpx-empty-line');
+              pushOut(`<div class="${cls}"${attrs}>&nbsp;</div>`);
             } else {
+              const { cls, attrs } = getSlotAttrs(topP.slot, 'hwpx-p');
               const styleAttr = topP.align ? ` style="text-align:${topP.align};"` : '';
-              pushOut(`<div class="hwpx-p"${styleAttr}>${inner}</div>`);
+              pushOut(`<div class="${cls}"${attrs}${styleAttr}>${inner}</div>`);
             }
-            if (topP.slot && mode === 'after' && topP.slot.slotId === targetSlot.slotId) {
-              pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${topP.slot.slotId}">${renderedBodyHtml}</div>`);
+            if (topP.slot && topP.slotEdit && topP.slotEdit.mode === 'after') {
+              pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${topP.slot.slotId}">${topP.slotEdit.renderedHtml}</div>`);
             }
           }
         }
       }
     });
 
-    return `<div class="hwpx-preview-sheet" data-template-mode="${escapeHtml(mode)}">${headerHtml}${outputStack[0].parts.join('')}</div>`;
+    const sheetMode = replaceBodyEdit ? 'replace_body' : (activeMode || 'multi');
+    return `<div class="hwpx-preview-sheet" data-template-mode="${escapeHtml(sheetMode)}">${headerHtml}${outputStack[0].parts.join('')}</div>`;
   }
 
   globalThis.__AI_LATEX_ENGINE__ = {
@@ -2888,6 +3043,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     inspectHwpxHeaderStyles,
     inspectHwpxSectionSlots,
     applyTextToHwpxTemplateFiles,
+    applyEditsToHwpxTemplateFiles,
     renderHwpxTemplatePreviewHtml
   };
 
@@ -2895,22 +3051,18 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   // --- UI 연동 및 이벤트 핸들링 ---
   const rawInput = document.getElementById('rawInput');
   const renderOutput = document.getElementById('renderOutput');
-  const cleanedSourceOutput = document.getElementById('cleanedSourceOutput');
-  const repairLogsList = document.getElementById('repairLogsList');
-  const hwpFormulaList = document.getElementById('hwpFormulaList');
   const charCount = document.getElementById('charCount');
   const formulaCount = document.getElementById('formulaCount');
-  const logCountBadge = document.getElementById('logCountBadge');
-  const hwpCountBadge = document.getElementById('hwpCountBadge');
+  const rightFormulaBadge = document.getElementById('rightFormulaBadge');
+  const templateClickHint = document.getElementById('templateClickHint');
   const btnRestoreLast = document.getElementById('btnRestoreLast');
   const templateSelect = document.getElementById('templateSelect');
   const templateFileInput = document.getElementById('templateFileInput');
   const btnLoadTemplate = document.getElementById('btnLoadTemplate');
   const btnDeleteTemplate = document.getElementById('btnDeleteTemplate');
-  const btnToggleSlotPicker = document.getElementById('btnToggleSlotPicker');
-  const templateSlotPanel = document.getElementById('templateSlotPanel');
-  const templateSlotSummary = document.getElementById('templateSlotSummary');
-  const templateSlotList = document.getElementById('templateSlotList');
+  const activeTemplateSlotBar = document.getElementById('activeTemplateSlotBar');
+  const activeSlotSummary = document.getElementById('activeSlotSummary');
+  const btnResetActiveSlot = document.getElementById('btnResetActiveSlot');
   const templateModeGroup = document.getElementById('templateModeGroup');
   const btnDownloadBlankSample = document.getElementById('btnDownloadBlankSample');
   const templatePreviewBanner = document.getElementById('templatePreviewBanner');
@@ -2920,24 +3072,122 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     btnRestoreLast.classList.remove('hidden');
   }
 
-  function renderPreviewWithOptionalTemplate(bodyHtml) {
-    if (!activeTemplateState) {
-      templatePreviewBanner.classList.add('hidden');
-      renderOutput.innerHTML = bodyHtml;
+  function syncCurrentInputToActiveSlot() {
+    if (!activeTemplateState) return;
+    const val = rawInput.value;
+    if (activeTemplateState.globalMode === 'replace_body') {
+      activeTemplateState.replaceBodyText = val;
       return;
     }
+    const uid = activeTemplateState.selectedSlotUid;
+    if (!uid) return;
+    const slot = activeTemplateState.slots.find(s => s.uid === uid) || null;
+    if (!slot) return;
+    const existing = activeTemplateState.slotEdits.get(uid);
+    const mode = existing ? existing.mode : (activeTemplateState.currentMode || 'replace');
+    const isUntouchedLabel = mode === 'replace' && slot.placeholders.length === 0 && slot.rawText && val === slot.rawText;
+    if (isUntouchedLabel || (mode === 'after' && !val)) {
+      activeTemplateState.slotEdits.delete(uid);
+    } else if (slot.placeholders.length > 0 && !val && !existing) {
+      // Unedited empty placeholder stays unedited until user types
+    } else {
+      activeTemplateState.slotEdits.set(uid, { text: val, mode });
+    }
+  }
+
+  function getDefaultTextForSlot(slot) {
+    if (!slot) return '';
+    if (slot.placeholders && slot.placeholders.length > 0) return '';
+    return slot.rawText || '';
+  }
+
+  function loadSlotIntoEditor(uid) {
+    if (!activeTemplateState) return;
+    if (activeTemplateState.globalMode === 'replace_body') {
+      rawInput.value = activeTemplateState.replaceBodyText || '';
+      return;
+    }
+    const slot = activeTemplateState.slots.find(s => s.uid === uid) || null;
+    const saved = activeTemplateState.slotEdits.get(uid);
+    if (saved) {
+      activeTemplateState.currentMode = saved.mode;
+      rawInput.value = saved.text;
+    } else {
+      const defMode = slot && (slot.placeholders.length > 0 || !slot.rawText.trim() || !slot.hasEquationChild)
+        ? 'replace'
+        : 'after';
+      activeTemplateState.currentMode = defMode;
+      rawInput.value = defMode === 'after' ? '' : getDefaultTextForSlot(slot);
+    }
+  }
+
+  function renderPreviewWithTemplateState(curResult) {
+    if (!activeTemplateState) {
+      templatePreviewBanner.classList.add('hidden');
+      if (!rawInput.value.trim()) {
+        renderOutput.innerHTML = '<div class="text-slate-500 italic py-12 text-center text-xs">왼쪽에 수식 또는 AI 답변을 입력하면 실시간으로 렌더링됩니다.</div>';
+        rightFormulaBadge.textContent = '수식 0개';
+      } else {
+        renderOutput.innerHTML = curResult.renderedHtml;
+        rightFormulaBadge.textContent = `수식 ${curResult.totalFormulas}개`;
+      }
+      return;
+    }
+
     const selectedSlot = activeTemplateState.slots.find(s => s.uid === activeTemplateState.selectedSlotUid) || null;
-    const modeLabel = MODE_LABELS[activeTemplateState.insertMode] || '';
+    const isReplaceBody = activeTemplateState.globalMode === 'replace_body';
+    const modeLabel = isReplaceBody ? MODE_LABELS.replace_body : (MODE_LABELS[activeTemplateState.currentMode] || '이 칸 수정');
     templatePreviewBanner.classList.remove('hidden');
     templatePreviewBannerText.innerHTML = `📄 <b>${escapeHtml(activeTemplateState.name)}</b> 양식 미리보기 (${escapeHtml(modeLabel)})`;
-    renderOutput.innerHTML = renderHwpxTemplatePreviewHtml(activeTemplateState.textFiles, bodyHtml, {
+
+    if (isReplaceBody) {
+      const text = activeTemplateState.replaceBodyText || rawInput.value;
+      const bodyRes = text.trim() ? processText(text) : null;
+      const bodyHtml = bodyRes
+        ? bodyRes.renderedHtml
+        : '<div class="hwpx-slot-placeholder-hint">새 본문과 수식을 왼쪽 입력창에 입력하세요.</div>';
+      rightFormulaBadge.textContent = `수식 ${bodyRes ? bodyRes.totalFormulas : 0}개`;
+      renderOutput.innerHTML = renderHwpxTemplatePreviewHtml(activeTemplateState.textFiles, {
+        edits: [{ mode: 'replace_body', renderedHtml: bodyHtml }],
+        activeMode: 'replace_body',
+        sectionPath: selectedSlot ? selectedSlot.sectionPath : activeTemplateState.selectedSectionPath
+      });
+      return;
+    }
+
+    let totalRenderedFormulas = 0;
+    const edits = [];
+    activeTemplateState.slotEdits.forEach((entry, uid) => {
+      const slot = activeTemplateState.slots.find(s => s.uid === uid);
+      if (!slot) return;
+      let renderedHtml = '';
+      if (entry.text && entry.text.trim()) {
+        const res = processText(entry.text);
+        renderedHtml = res.renderedHtml;
+        totalRenderedFormulas += res.totalFormulas;
+      } else {
+        const phLabel = slot.placeholders[0]?.full || slot.locationLabel;
+        renderedHtml = `<div class="hwpx-slot-placeholder-hint">여기에 내용을 입력하세요 (${escapeHtml(phLabel)})</div>`;
+      }
+      edits.push({
+        sectionPath: slot.sectionPath,
+        slotId: slot.slotId,
+        renderedHtml,
+        mode: entry.mode
+      });
+    });
+
+    rightFormulaBadge.textContent = `수식 ${totalRenderedFormulas}개`;
+    renderOutput.innerHTML = renderHwpxTemplatePreviewHtml(activeTemplateState.textFiles, {
+      edits,
       sectionPath: selectedSlot ? selectedSlot.sectionPath : activeTemplateState.selectedSectionPath,
-      slotId: selectedSlot ? selectedSlot.slotId : undefined,
-      mode: activeTemplateState.insertMode
+      activeSlotId: selectedSlot ? selectedSlot.slotId : undefined,
+      activeMode: activeTemplateState.currentMode
     });
   }
 
   function updateAll() {
+    if (activeTemplateState) syncCurrentInputToActiveSlot();
     const val = rawInput.value;
     charCount.textContent = `${val.length}자`;
 
@@ -2946,81 +3196,34 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       btnRestoreLast.classList.add('hidden');
     }
 
-    if (!val.trim()) {
-      if (activeTemplateState) {
-        renderPreviewWithOptionalTemplate('<div class="text-slate-500 italic py-3 text-xs sm:text-sm border border-dashed border-sky-400 bg-sky-50 rounded-lg px-3">(여기에 변환된 본문과 수식이 삽입됩니다 — 왼쪽에 내용을 입력하거나 상단 예시를 불러와 보세요)</div>');
-      } else {
-        templatePreviewBanner.classList.add('hidden');
-        renderOutput.innerHTML = '<div class="text-slate-500 italic py-12 text-center text-xs">왼쪽에 수식 또는 AI 답변을 입력하면 실시간으로 렌더링됩니다.</div>';
-      }
-      cleanedSourceOutput.textContent = '';
-      repairLogsList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">수식 복구 로그가 없습니다.</div>';
-      hwpFormulaList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">감지된 수식이 없습니다.</div>';
+    const curResult = (!activeTemplateState && val.trim()) ? processText(val) : null;
+    if (curResult) {
+      formulaCount.textContent = `수식 ${curResult.totalFormulas}개`;
+    } else if (val.trim()) {
+      const quickRes = processText(val);
+      formulaCount.textContent = `수식 ${quickRes.totalFormulas}개`;
+    } else {
       formulaCount.textContent = '수식 0개';
-      logCountBadge.textContent = '0';
-      hwpCountBadge.textContent = '0';
+    }
+
+    renderPreviewWithTemplateState(curResult);
+    updateActiveSlotResetVisibility();
+  }
+
+  function updateActiveSlotResetVisibility() {
+    if (!activeTemplateState || activeTemplateState.globalMode === 'replace_body') {
+      btnResetActiveSlot.classList.add('hidden');
       return;
     }
-
-    const result = processText(val);
-
-    renderPreviewWithOptionalTemplate(result.renderedHtml);
-    cleanedSourceOutput.textContent = result.cleanedSource;
-    formulaCount.textContent = `수식 ${result.totalFormulas}개`;
-    logCountBadge.textContent = result.allLogs.length;
-    hwpCountBadge.textContent = result.extractedFormulas.length;
-
-    // 로그 출력
-    if (result.allLogs.length > 0) {
-      repairLogsList.innerHTML = result.allLogs.map(log => `
-          <div class="p-2.5 bg-slate-950/70 border border-slate-800 rounded-lg flex items-start gap-2">
-            <span class="text-emerald-400 font-bold">✓</span>
-            <span class="text-slate-300">${escapeHtml(log)}</span>
-          </div>
-        `).join('');
-    } else {
-      repairLogsList.innerHTML = '<div class="text-slate-400 py-6 text-center text-xs">모든 수식 문법이 정상입니다.</div>';
-    }
-
-    // HWP 목록 출력
-    if (result.extractedFormulas.length > 0) {
-      hwpFormulaList.innerHTML = result.extractedFormulas.map((f, idx) => `
-          <div class="bg-slate-950/80 border border-slate-800 hover:border-slate-700 p-3 rounded-lg flex flex-col gap-2 transition-all">
-            <div class="flex items-center justify-between text-[11px] text-slate-400">
-              <span class="font-mono text-emerald-400">#${idx + 1} (${f.isDisplay ? '블록 수식' : '인라인 수식'})</span>
-            </div>
-            <div class="font-mono text-xs bg-slate-900 p-2 rounded text-sky-200 overflow-x-auto select-all border border-slate-800/80">
-              ${escapeHtml(f.hwp)}
-            </div>
-          </div>
-        `).join('');
-    } else {
-      hwpFormulaList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">변환할 수식이 없습니다.</div>';
-    }
+    const uid = activeTemplateState.selectedSlotUid;
+    btnResetActiveSlot.classList.toggle('hidden', !activeTemplateState.slotEdits.has(uid));
   }
 
   let debounceTimer = null;
   rawInput.addEventListener('input', () => {
+    if (activeTemplateState) syncCurrentInputToActiveSlot();
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(updateAll, 80);
-  });
-
-  // 탭 전환
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('bg-slate-900', 'text-emerald-400', 'border', 'border-slate-700/60', 'shadow-sm');
-        b.classList.add('text-slate-400');
-      });
-      btn.classList.add('bg-slate-900', 'text-emerald-400', 'border', 'border-slate-700/60', 'shadow-sm');
-      btn.classList.remove('text-slate-400');
-
-      const tab = btn.dataset.tab;
-      document.getElementById('tabContentPreview').classList.toggle('hidden', tab !== 'preview');
-      document.getElementById('tabContentHwp').classList.toggle('hidden', tab !== 'hwp');
-      document.getElementById('tabContentCleaned').classList.toggle('hidden', tab !== 'cleaned');
-      document.getElementById('tabContentLogs').classList.toggle('hidden', tab !== 'logs');
-    });
   });
 
   // 토스트 알림
@@ -3072,6 +3275,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
   document.getElementById('btnLoadSample').addEventListener('click', () => {
     rawInput.value = SAMPLE_TEXT;
+    if (activeTemplateState) {
+      if (activeTemplateState.globalMode === 'replace_body') {
+        activeTemplateState.replaceBodyText = SAMPLE_TEXT;
+      } else if (activeTemplateState.selectedSlotUid) {
+        activeTemplateState.slotEdits.set(activeTemplateState.selectedSlotUid, {
+          text: SAMPLE_TEXT,
+          mode: activeTemplateState.currentMode || 'replace'
+        });
+      }
+    }
     updateAll();
     showToast("실제 오류 예시 텍스트를 불러왔습니다.");
   });
@@ -3080,6 +3293,12 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       rawInput.value = saved;
+      if (activeTemplateState && activeTemplateState.selectedSlotUid) {
+        activeTemplateState.slotEdits.set(activeTemplateState.selectedSlotUid, {
+          text: saved,
+          mode: activeTemplateState.currentMode || 'replace'
+        });
+      }
       updateAll();
       showToast("마지막 작업 내용을 복원했습니다.");
     }
@@ -3089,13 +3308,13 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     window.print();
   });
 
-  // --- 한글(.hwpx) 양식 저장·불러오기·삽입 위치 선택 관리 ---
+  // --- 한글(.hwpx) 양식 저장·불러오기·직접 클릭 편집 관리 ---
   const TEMPLATE_LIST_KEY = 'ai_latex_hwpx_templates_v1';
   const TEMPLATE_SELECTED_KEY = 'ai_latex_hwpx_selected_v1';
   const DEFAULT_TEMPLATE_ID = '__default__';
   const MODE_LABELS = {
-    replace: '내용 교체',
-    after: '위치 뒤 추가',
+    replace: '이 칸 수정',
+    after: '아래에 이어쓰기',
     replace_body: '본문 전체 교체'
   };
 
@@ -3205,8 +3424,10 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       selectedSectionPath: sectionPaths[0],
       slots: allSlots,
       selectedSlotUid: recommendedSlotUid,
-      insertMode: recommendedMode,
-      panelExpanded: true
+      currentMode: recommendedMode,
+      globalMode: null,
+      replaceBodyText: '',
+      slotEdits: new Map()
     };
   }
 
@@ -3263,66 +3484,67 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const hasTpl = Boolean(activeTemplateState);
     const isBuiltin = Boolean(activeTemplateState && activeTemplateState.isBuiltin);
     btnDeleteTemplate.classList.toggle('hidden', !hasTpl || isBuiltin);
-    btnToggleSlotPicker.classList.toggle('hidden', !hasTpl);
     btnDownloadBlankSample.classList.toggle('hidden', !isBuiltin);
-    templateSlotPanel.classList.toggle('hidden', !(hasTpl && activeTemplateState.panelExpanded));
+    activeTemplateSlotBar.classList.toggle('hidden', !hasTpl);
+    templateClickHint.classList.toggle('hidden', !hasTpl);
 
     if (!hasTpl) {
       if (refreshPreview) updateAll();
       return;
     }
 
-    const mode = activeTemplateState.insertMode;
+    const activeMode = activeTemplateState.globalMode === 'replace_body'
+      ? 'replace_body'
+      : (activeTemplateState.currentMode || 'replace');
     const selectedSlot = activeTemplateState.slots.find(s => s.uid === activeTemplateState.selectedSlotUid) || null;
-    btnToggleSlotPicker.textContent = `삽입 위치: ${MODE_LABELS[mode] || '설정'} ${activeTemplateState.panelExpanded ? '▴' : '▾'}`;
 
     templateModeGroup.querySelectorAll('.template-mode-btn').forEach(btn => {
-      const isActive = btn.dataset.insertMode === mode;
+      const isActive = btn.dataset.insertMode === activeMode;
       btn.classList.toggle('bg-sky-600', isActive);
       btn.classList.toggle('text-white', isActive);
       btn.classList.toggle('text-slate-400', !isActive);
       btn.classList.toggle('hover:text-slate-200', !isActive);
     });
 
-    if (mode === 'replace_body') {
-      templateSlotSummary.innerHTML = `<span class="text-sky-300 font-semibold">${escapeHtml(activeTemplateState.name)}</span> · 페이지 설정/머리글 유지 + <b>기존 본문 전체 교체</b>`;
+    if (activeMode === 'replace_body') {
+      activeSlotSummary.innerHTML = `편집 위치: <b class="text-sky-300">본문 전체 교체</b> (페이지 설정·머리글 유지)`;
     } else if (selectedSlot) {
       const phTag = selectedSlot.placeholders.length > 0
         ? ` <span class="text-emerald-400 font-mono">(${escapeHtml(selectedSlot.placeholders[0].full)})</span>`
         : '';
-      templateSlotSummary.innerHTML = `<span class="text-sky-300 font-semibold">${escapeHtml(activeTemplateState.name)}</span> · <b>${escapeHtml(MODE_LABELS[mode])}</b> → ${escapeHtml(selectedSlot.locationLabel)}${phTag}`;
+      const editedCount = activeTemplateState.slotEdits.size;
+      const countBadge = editedCount > 0 ? ` <span class="text-xs text-slate-400">· 수정된 칸 ${editedCount}개</span>` : '';
+      activeSlotSummary.innerHTML = `편집 칸: <b class="text-sky-300">${escapeHtml(selectedSlot.locationLabel)}</b>${phTag}${countBadge}`;
     } else {
-      templateSlotSummary.innerHTML = `<span class="text-sky-300 font-semibold">${escapeHtml(activeTemplateState.name)}</span> · 문단을 찾지 못해 본문 끝에 추가됩니다.`;
+      activeSlotSummary.innerHTML = '편집 위치: <b class="text-sky-300">문서 본문</b>';
     }
 
-    if (activeTemplateState.slots.length === 0) {
-      templateSlotList.innerHTML = '<div class="text-slate-500 text-xs py-3 text-center">선택 가능한 본문 문단이 없습니다. (본문 전체 교체 또는 뒤에 추가 사용)</div>';
-      if (refreshPreview) updateAll();
-      return;
-    }
-
-    templateSlotList.innerHTML = activeTemplateState.slots.map(slot => {
-      const isSelected = mode !== 'replace_body' && slot.uid === activeTemplateState.selectedSlotUid;
-      const rowCls = isSelected
-        ? 'bg-sky-950/70 border-sky-500/80 text-slate-100'
-        : 'bg-slate-900/70 border-slate-800 hover:border-slate-700 text-slate-300';
-      const secPrefix = slot.sectionLabel ? `[${escapeHtml(slot.sectionLabel)}] ` : '';
-      const locBadge = `<span class="shrink-0 font-mono text-[11px] sm:text-xs px-2 py-0.5 rounded-md ${slot.inTable ? 'bg-indigo-950 text-indigo-300 border border-indigo-800/70' : 'bg-slate-800 text-slate-300'}">${secPrefix}${escapeHtml(slot.locationLabel)}</span>`;
-      const phBadge = slot.placeholders.length > 0
-        ? `<span class="shrink-0 font-mono text-[11px] sm:text-xs px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800/80">${escapeHtml(slot.placeholders[0].full)}</span>`
-        : '';
-      const secBadge = slot.hasSecPr
-        ? '<span class="shrink-0 text-[11px] px-1.5 py-0.5 rounded-md bg-amber-950/70 text-amber-300 border border-amber-800/60">설정</span>'
-        : '';
-      const snippet = slot.previewText.length > 56 ? `${slot.previewText.slice(0, 56)}…` : slot.previewText;
-      return `<button type="button" data-slot-uid="${escapeHtml(slot.uid)}" class="w-full text-left px-3 py-2.5 min-h-[44px] rounded-xl border transition-colors flex items-center gap-2.5 touch-manipulation ${rowCls}">${locBadge}${phBadge}${secBadge}<span class="truncate text-xs sm:text-sm text-slate-300">${escapeHtml(snippet)}</span></button>`;
-    }).join('');
-
+    updateActiveSlotResetVisibility();
     if (refreshPreview) updateAll();
   }
 
+  async function applyActivatedTemplateState(nextState, preserveExistingText) {
+    const carriedText = preserveExistingText ? rawInput.value : '';
+    activeTemplateState = nextState;
+    if (activeTemplateState) {
+      if (carriedText.trim() && activeTemplateState.selectedSlotUid) {
+        activeTemplateState.slotEdits.set(activeTemplateState.selectedSlotUid, {
+          text: carriedText,
+          mode: activeTemplateState.currentMode || 'replace'
+        });
+      }
+      loadSlotIntoEditor(activeTemplateState.selectedSlotUid);
+    }
+    renderTemplateUi();
+  }
+
   async function activateTemplateById(id) {
+    const hadTemplate = Boolean(activeTemplateState);
     if (!id || id === DEFAULT_TEMPLATE_ID) {
+      if (activeTemplateState && activeTemplateState.selectedSlotUid) {
+        const curEdit = activeTemplateState.slotEdits.get(activeTemplateState.selectedSlotUid);
+        if (curEdit) rawInput.value = curEdit.text;
+      }
       activeTemplateState = null;
       persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
       renderTemplateUi();
@@ -3331,7 +3553,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     if (id === BUILTIN_SAMPLE_WORKSHEET_ID) {
       try {
         const sampleFiles = buildSampleWorksheetTemplateFiles(new Date());
-        activeTemplateState = buildTemplateStateFromFiles({
+        const nextState = buildTemplateStateFromFiles({
           id: BUILTIN_SAMPLE_WORKSHEET_ID,
           name: BUILTIN_SAMPLE_WORKSHEET_NAME,
           textFiles: sampleFiles,
@@ -3339,7 +3561,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
           isBuiltin: true
         });
         persistSelectedTemplateId(BUILTIN_SAMPLE_WORKSHEET_ID);
-        renderTemplateUi();
+        await applyActivatedTemplateState(nextState, !hadTemplate);
       } catch (err) {
         console.error('예시 양식 로드 오류:', err);
         activeTemplateState = null;
@@ -3357,9 +3579,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       return;
     }
     try {
-      activeTemplateState = await parseHwpxTemplateState(tpl);
+      const nextState = await parseHwpxTemplateState(tpl);
       persistSelectedTemplateId(tpl.id);
-      renderTemplateUi();
+      await applyActivatedTemplateState(nextState, !hadTemplate);
     } catch (err) {
       console.error('양식 파싱 오류:', err);
       activeTemplateState = null;
@@ -3379,6 +3601,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     if (!file) return;
 
     try {
+      const hadTemplate = Boolean(activeTemplateState);
       const buf = await file.arrayBuffer();
       const bytes = new Uint8Array(buf);
       const isOleHwp = bytes.length >= 8 &&
@@ -3416,13 +3639,12 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         persistStoredTemplates();
       }
 
-      activeTemplateState = parsedState;
       if (persistedOk) persistSelectedTemplateId(tplRecord.id);
-      renderTemplateUi();
+      await applyActivatedTemplateState(parsedState, !hadTemplate);
 
       const msgSuffix = persistedOk
-        ? `위치 ${parsedState.slots.length}개 인식됨`
-        : `위치 ${parsedState.slots.length}개 인식됨 (브라우저 저장 용량 초과로 이번 세션에만 유지)`;
+        ? `오른쪽 표 칸·문단을 클릭해 입력하세요.`
+        : `오른쪽 표 칸·문단을 클릭해 입력하세요. (저장 용량 초과로 이번 세션에만 유지)`;
       showToast(`<b>${escapeHtml(file.name)} 양식 적용!</b> ${msgSuffix}`, true);
     } catch (err) {
       console.error('양식 불러오기 실패:', err);
@@ -3445,36 +3667,71 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     showToast(`양식 '${escapeHtml(removedName)}'을(를) 목록에서 삭제했습니다.`);
   });
 
-  btnToggleSlotPicker.addEventListener('click', () => {
-    if (!activeTemplateState) return;
-    activeTemplateState.panelExpanded = !activeTemplateState.panelExpanded;
-    renderTemplateUi();
-  });
-
   templateModeGroup.addEventListener('click', (e) => {
     const btn = e.target && e.target.closest('[data-insert-mode]');
     if (!btn || !activeTemplateState) return;
     const nextMode = btn.dataset.insertMode;
-    if (MODE_LABELS[nextMode]) {
-      activeTemplateState.insertMode = nextMode;
-      renderTemplateUi();
-    }
-  });
+    if (!MODE_LABELS[nextMode]) return;
 
-  templateSlotList.addEventListener('click', (e) => {
-    const btn = e.target && e.target.closest('[data-slot-uid]');
-    if (!btn || !activeTemplateState) return;
-    const uid = btn.getAttribute('data-slot-uid');
-    const slot = activeTemplateState.slots.find(s => s.uid === uid);
-    if (!slot) return;
-    activeTemplateState.selectedSlotUid = uid;
-    activeTemplateState.selectedSectionPath = slot.sectionPath;
-    if (activeTemplateState.insertMode === 'replace_body') {
-      activeTemplateState.insertMode = (slot.placeholders.length > 0 || (!slot.hasTableChild && !slot.hasEquationChild && !slot.rawText.trim()))
-        ? 'replace'
-        : 'after';
+    syncCurrentInputToActiveSlot();
+    if (nextMode === 'replace_body') {
+      activeTemplateState.globalMode = 'replace_body';
+      if (!activeTemplateState.replaceBodyText && rawInput.value) {
+        activeTemplateState.replaceBodyText = rawInput.value;
+      }
+      rawInput.value = activeTemplateState.replaceBodyText || '';
+    } else {
+      activeTemplateState.globalMode = null;
+      activeTemplateState.currentMode = nextMode;
+      const uid = activeTemplateState.selectedSlotUid;
+      if (uid) {
+        if (!activeTemplateState.slotEdits.has(uid) && nextMode === 'after') {
+          rawInput.value = '';
+        } else if (!activeTemplateState.slotEdits.has(uid) && nextMode === 'replace') {
+          loadSlotIntoEditor(uid);
+        } else if (activeTemplateState.slotEdits.has(uid)) {
+          const cur = activeTemplateState.slotEdits.get(uid);
+          activeTemplateState.slotEdits.set(uid, { text: cur.text, mode: nextMode });
+          rawInput.value = cur.text;
+        }
+      }
     }
     renderTemplateUi();
+  });
+
+  btnResetActiveSlot.addEventListener('click', () => {
+    if (!activeTemplateState || !activeTemplateState.selectedSlotUid) return;
+    const uid = activeTemplateState.selectedSlotUid;
+    activeTemplateState.slotEdits.delete(uid);
+    activeTemplateState.globalMode = null;
+    loadSlotIntoEditor(uid);
+    renderTemplateUi();
+    showToast('선택한 칸을 양식 원래 내용으로 되돌렸습니다.');
+  });
+
+  // 오른쪽 실시간 렌더링 표 칸 / 문단 직접 클릭 시 편집 위치 전환
+  renderOutput.addEventListener('click', (e) => {
+    if (!activeTemplateState) return;
+    const sel = typeof window.getSelection === 'function' ? String(window.getSelection() || '') : '';
+    if (sel.length > 0) return;
+
+    const slotEl = e.target && (e.target.closest('[data-slot-uid]') || e.target.closest('[data-cell-slot-uid]'));
+    if (!slotEl) return;
+    const uid = slotEl.getAttribute('data-slot-uid') || slotEl.getAttribute('data-cell-slot-uid');
+    if (!uid) return;
+    const slot = activeTemplateState.slots.find(s => s.uid === uid);
+    if (!slot) return;
+
+    syncCurrentInputToActiveSlot();
+    activeTemplateState.globalMode = null;
+    activeTemplateState.selectedSlotUid = uid;
+    activeTemplateState.selectedSectionPath = slot.sectionPath;
+    loadSlotIntoEditor(uid);
+    renderTemplateUi();
+
+    rawInput.focus();
+    const len = rawInput.value.length;
+    rawInput.setSelectionRange(len, len);
   });
 
   async function downloadHwpxFilesAsZip(pkgFiles, binaryEntries, fileName) {
@@ -3528,8 +3785,19 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
   // --- 한글(.hwpx) 정식 파일 생성 및 다운로드 핸들러 ---
   async function exportToHwpx() {
-    if (!rawInput.value.trim()) {
+    if (activeTemplateState) syncCurrentInputToActiveSlot();
+
+    const usingTemplate = Boolean(activeTemplateState);
+    if (!usingTemplate && !rawInput.value.trim()) {
       showToast("다운로드할 내용이 없습니다. 먼저 본문을 입력해 주세요.");
+      return;
+    }
+    if (usingTemplate && activeTemplateState.globalMode === 'replace_body' && !rawInput.value.trim()) {
+      showToast("다운로드할 본문 내용을 먼저 입력해 주세요.");
+      return;
+    }
+    if (usingTemplate && activeTemplateState.globalMode !== 'replace_body' && activeTemplateState.slotEdits.size === 0 && !rawInput.value.trim()) {
+      showToast("다운로드할 내용이 없습니다. 원하는 칸을 클릭해 내용을 입력해 주세요.");
       return;
     }
     if (typeof JSZip === 'undefined') {
@@ -3537,7 +3805,6 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       return;
     }
 
-    const usingTemplate = Boolean(activeTemplateState);
     showToast(usingTemplate
       ? `<b>${escapeHtml(activeTemplateState.name)}</b> 양식에 적용 중...`
       : "<b>한컴독스 정품 규격 한글(.hwpx) 생성 중...</b>", true);
@@ -3549,11 +3816,27 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       let basePrefix = 'AI_Math_LaTeX';
 
       if (usingTemplate) {
-        const selectedSlot = activeTemplateState.slots.find(s => s.uid === activeTemplateState.selectedSlotUid) || null;
-        const applied = applyTextToHwpxTemplateFiles(activeTemplateState.textFiles, rawInput.value, {
-          sectionPath: selectedSlot ? selectedSlot.sectionPath : activeTemplateState.selectedSectionPath,
-          slotId: selectedSlot ? selectedSlot.slotId : undefined,
-          mode: activeTemplateState.insertMode
+        let editsList = [];
+        if (activeTemplateState.globalMode === 'replace_body') {
+          editsList = [{
+            sectionPath: activeTemplateState.selectedSectionPath,
+            rawText: activeTemplateState.replaceBodyText || rawInput.value,
+            mode: 'replace_body'
+          }];
+        } else {
+          activeTemplateState.slotEdits.forEach((entry, uid) => {
+            const slot = activeTemplateState.slots.find(s => s.uid === uid);
+            if (!slot) return;
+            editsList.push({
+              sectionPath: slot.sectionPath,
+              slotId: slot.slotId,
+              rawText: entry.text,
+              mode: entry.mode
+            });
+          });
+        }
+        const applied = applyEditsToHwpxTemplateFiles(activeTemplateState.textFiles, editsList, {
+          sectionPath: activeTemplateState.selectedSectionPath
         }, now);
         pkgFiles = applied.files;
         binaryEntries = activeTemplateState.binaryFiles || {};
@@ -3591,6 +3874,17 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
   document.getElementById('btnClear').addEventListener('click', () => {
     rawInput.value = '';
+    if (activeTemplateState) {
+      if (activeTemplateState.globalMode === 'replace_body') {
+        activeTemplateState.replaceBodyText = '';
+      } else if (activeTemplateState.selectedSlotUid) {
+        const uid = activeTemplateState.selectedSlotUid;
+        activeTemplateState.slotEdits.set(uid, {
+          text: '',
+          mode: activeTemplateState.currentMode || 'replace'
+        });
+      }
+    }
     updateAll();
     if (localStorage.getItem(STORAGE_KEY)) {
       btnRestoreLast.classList.remove('hidden');

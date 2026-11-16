@@ -451,3 +451,47 @@ test('renderHwpxTemplatePreviewHtml renders worksheet tables, borders, shading, 
   assert.ok(safePreview.includes('&lt;img src=x onerror=&quot;alert(1)&quot;&gt;메모'));
   assert.ok(inspected.slots.length > 0);
 });
+
+test('applyEditsToHwpxTemplateFiles and multi-slot renderHwpxTemplatePreviewHtml handle simultaneous cell edits', () => {
+  const sampleFiles = engine.buildSampleWorksheetTemplateFiles(new Date('2026-05-01T00:00:00Z'));
+  const inspected = engine.inspectHwpxSectionSlots(sampleFiles['Contents/section0.xml']);
+  const subjectSlot = inspected.slots.find(s => s.locationLabel === '표1 · 1행 1열');
+  const nameSlot = inspected.slots.find(s => s.locationLabel === '표1 · 1행 2열');
+  const bodySlot = inspected.slots.find(s => s.locationLabel === '표1 · 2행 1열');
+  assert.ok(subjectSlot && nameSlot && bodySlot);
+
+  // 1. Multi-slot preview HTML annotates clickable slots and renders all edited cells together
+  const previewHtml = engine.renderHwpxTemplatePreviewHtml(sampleFiles, {
+    sectionPath: 'Contents/section0.xml',
+    activeSlotId: nameSlot.slotId,
+    activeMode: 'replace',
+    edits: [
+      { sectionPath: 'Contents/section0.xml', slotId: subjectSlot.slotId, mode: 'replace', renderedHtml: '과목 / 단원: 미적분 I' },
+      { sectionPath: 'Contents/section0.xml', slotId: nameSlot.slotId, mode: 'replace', renderedHtml: '이름 / 날짜: 홍길동' },
+      { sectionPath: 'Contents/section0.xml', slotId: bodySlot.slotId, mode: 'replace', renderedHtml: '풀이: x² + y² = r²' }
+    ]
+  });
+  assert.ok(previewHtml.includes(`data-cell-slot-uid="Contents/section0.xml::${subjectSlot.slotId}"`));
+  assert.ok(previewHtml.includes(`data-cell-slot-uid="Contents/section0.xml::${nameSlot.slotId}"`));
+  assert.ok(previewHtml.includes('hwpx-slot-clickable'));
+  assert.ok(previewHtml.includes('hwpx-slot-selected'));
+  assert.ok(previewHtml.includes('과목 / 단원: 미적분 I'));
+  assert.ok(previewHtml.includes('이름 / 날짜: 홍길동'));
+  assert.ok(previewHtml.includes('풀이: x² + y² = r²'));
+  assert.ok(previewHtml.includes('검산 및 추가 메모:'));
+
+  // 2. Multi-slot HWPX export splices all edited slots cleanly in one well-formed section0.xml
+  const merged = engine.applyEditsToHwpxTemplateFiles(sampleFiles, [
+    { sectionPath: 'Contents/section0.xml', slotId: subjectSlot.slotId, mode: 'replace', rawText: '과목 / 단원: 미적분 I' },
+    { sectionPath: 'Contents/section0.xml', slotId: nameSlot.slotId, mode: 'replace', rawText: '이름 / 날짜: 홍길동' },
+    { sectionPath: 'Contents/section0.xml', slotId: bodySlot.slotId, mode: 'replace', rawText: '핵심 공식 $x^2 + y^2 = r^2$' }
+  ]);
+  const secXml = merged.files['Contents/section0.xml'];
+  assertWellFormedXml(secXml, 'Multi-slot edited section0.xml');
+  assert.ok(secXml.includes('과목 / 단원: 미적분 I'));
+  assert.ok(secXml.includes('이름 / 날짜: 홍길동'));
+  assert.ok(secXml.includes('핵심 공식 '));
+  assert.ok(secXml.includes('<hp:script>'));
+  assert.ok(!secXml.includes('{{본문}}'));
+  assert.ok(secXml.includes('검산 및 추가 메모:'));
+});
