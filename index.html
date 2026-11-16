@@ -76,12 +76,62 @@
       margin: 0.75rem 0 !important;
     }
 
+    /* 한글 양식 실시간/인쇄 미리보기 시트 */
+    .hwpx-preview-sheet {
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 0.75rem;
+      padding: 1.5rem 1.75rem;
+      box-shadow: 0 10px 25px rgba(2, 6, 23, 0.45);
+      border: 1px solid #cbd5e1;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .hwpx-preview-sheet h1, .hwpx-preview-sheet h2, .hwpx-preview-sheet h3 { color: #0f172a; }
+    .hwpx-preview-sheet p, .hwpx-preview-sheet li { color: #1e293b; }
+    .hwpx-preview-sheet code { background: #f1f5f9; color: #0369a1; }
+    .hwpx-preview-sheet pre { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; }
+    .hwpx-preview-sheet blockquote { color: #475569; border-left-color: #0284c7; }
+    .hwpx-preview-sheet .katex { color: #0f172a; }
+    .hwpx-preview-header-note {
+      font-size: 0.75rem;
+      color: #64748b;
+      border-bottom: 1px dashed #cbd5e1;
+      padding-bottom: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+    .hwpx-preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      table-layout: fixed;
+    }
+    .hwpx-preview-table td {
+      vertical-align: top;
+      padding: 0.65rem 0.85rem;
+      word-break: break-word;
+    }
+    .hwpx-p {
+      margin-bottom: 0.4rem;
+      line-height: 1.7;
+    }
+    .hwpx-empty-line {
+      min-height: 0.9rem;
+    }
+    .hwpx-slot-after {
+      margin-top: 0.5rem;
+      padding-top: 0.4rem;
+      border-top: 1px dashed #cbd5e1;
+    }
+
     @media print {
       body { background: white !important; color: black !important; }
-      header, #leftPanel, #rightTabBar, #toast { display: none !important; }
+      header, #leftPanel, #rightTabBar, #toast, #templatePreviewBanner { display: none !important; }
       main { display: block !important; max-width: 100% !important; padding: 0 !important; }
       #rightPanel { border: none !important; box-shadow: none !important; background: white !important; }
-      #tabContentPreview { display: block !important; max-height: none !important; overflow: visible !important; }
+      #rightScrollArea, #tabContentPreview { display: block !important; max-height: none !important; overflow: visible !important; padding: 0 !important; }
+      .hwpx-preview-sheet { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+      .hwpx-slot-after { border-top: none !important; padding-top: 0 !important; }
       .markdown-body p, .markdown-body li, .markdown-body h1, .markdown-body h2, .markdown-body h3 {
         color: #111827 !important;
       }
@@ -110,30 +160,30 @@
     </div>
 
     <!-- 상단 액션 버튼 -->
-    <div class="flex items-center flex-wrap gap-2">
-      <button id="btnRestoreLast" class="hidden text-xs bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-800/70 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+    <div class="flex items-center flex-wrap gap-2.5">
+      <button id="btnRestoreLast" class="hidden text-sm font-medium bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-800/70 px-3.5 py-2.5 min-h-[44px] rounded-xl transition-colors flex items-center gap-2 touch-manipulation">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
         이전 작업 복원
       </button>
 
-      <button id="btnLoadSample" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      <button id="btnLoadSample" class="text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2.5 min-h-[44px] rounded-xl transition-colors flex items-center gap-2 touch-manipulation">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
         실제 오류 예시 불러오기
       </button>
 
-      <button id="btnPrintPdf" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5" title="흰색 배경으로 인쇄 또는 PDF 저장">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      <button id="btnPrintPdf" class="text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2.5 min-h-[44px] rounded-xl transition-colors flex items-center gap-2 touch-manipulation" title="흰색 배경으로 인쇄 또는 PDF 저장">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
         PDF / 인쇄
       </button>
 
       <!-- 한글(.hwpx) 직접 다운로드 버튼 -->
-      <button id="btnDownloadHwpx" class="text-xs font-semibold bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-lg shadow-sky-600/30 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 active:scale-95" title="줄글과 수식 개체가 포함된 정식 한글 문서(.hwpx) 다운로드">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <button id="btnDownloadHwpx" class="text-sm font-semibold bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-lg shadow-sky-600/30 px-4 py-2.5 min-h-[44px] rounded-xl transition-all flex items-center gap-2 active:scale-95 touch-manipulation" title="줄글과 수식 개체가 포함된 정식 한글 문서(.hwpx) 다운로드">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
         한글(.hwpx) 다운로드
       </button>
 
-      <button id="btnCopyClean" class="text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 active:scale-95">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+      <button id="btnCopyClean" class="text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 px-4 py-2.5 min-h-[44px] rounded-xl transition-all flex items-center gap-2 active:scale-95 touch-manipulation">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
         정제본 복사
       </button>
     </div>
@@ -145,64 +195,70 @@
 
   <!-- 좌측: 입력 에디터 -->
   <section id="leftPanel" class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-    <div class="bg-slate-800/80 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs text-slate-300">
+    <div class="bg-slate-800/80 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs sm:text-sm text-slate-300">
       <div class="flex items-center gap-2.5">
           <span class="font-medium flex items-center gap-1.5 text-slate-200">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             AI 원문 입력
           </span>
-        <button id="btnClear" class="text-[11px] bg-slate-800/90 hover:bg-red-950 hover:text-red-300 text-slate-400 border border-slate-700 hover:border-red-800/60 px-2 py-0.5 rounded transition-colors flex items-center gap-1">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        <button id="btnClear" class="text-xs sm:text-sm bg-slate-800/90 hover:bg-red-950 hover:text-red-300 text-slate-300 border border-slate-700 hover:border-red-800/60 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           비우기
         </button>
       </div>
-      <div class="flex items-center gap-3 text-slate-400">
+      <div class="flex items-center gap-3 text-slate-400 text-xs sm:text-sm">
         <span id="charCount">0자</span>
         <span class="text-slate-600">|</span>
         <span id="formulaCount" class="text-emerald-400 font-medium">수식 0개</span>
       </div>
     </div>
-    <div class="bg-slate-800/40 px-4 py-2 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+    <div class="bg-slate-800/40 px-4 py-2.5 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5">
       <div class="flex items-center flex-wrap gap-2 flex-1 min-w-0">
-        <span class="text-[11px] font-semibold text-sky-400 shrink-0">한글 양식</span>
-        <select id="templateSelect" aria-label="한글 양식 선택" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 max-w-[220px] truncate outline-none focus:border-sky-500">
+        <span class="text-xs sm:text-sm font-semibold text-sky-400 shrink-0">한글 양식</span>
+        <select id="templateSelect" aria-label="한글 양식 선택" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2 min-h-[44px] max-w-full sm:max-w-[340px] truncate outline-none focus:border-sky-500 touch-manipulation">
           <option value="__default__">기본 빈 문서 (표준 A4)</option>
+          <option value="__sample_worksheet__">예시 양식 · 수학 풀이 노트 (표 + {{본문}})</option>
         </select>
         <input type="file" id="templateFileInput" accept=".hwpx,.hwp" class="hidden">
-        <button id="btnLoadTemplate" type="button" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 hover:border-sky-600/60 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 shrink-0" title="기존 한글(.hwpx) 양식 파일 불러오기">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        <button id="btnLoadTemplate" type="button" class="text-sm font-medium bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 hover:border-sky-600/60 px-3.5 py-2 min-h-[44px] rounded-xl transition-colors flex items-center gap-1.5 shrink-0 touch-manipulation" title="기존 한글(.hwpx) 양식 파일 불러오기">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
           양식 불러오기
         </button>
-        <button id="btnDeleteTemplate" type="button" class="hidden text-[11px] bg-slate-800/90 hover:bg-red-950 text-slate-400 hover:text-red-300 border border-slate-700 hover:border-red-800/60 px-2 py-1 rounded-lg transition-colors shrink-0" title="선택한 양식 삭제">
+        <button id="btnDeleteTemplate" type="button" class="hidden text-sm font-medium bg-slate-800/90 hover:bg-red-950 text-slate-300 hover:text-red-300 border border-slate-700 hover:border-red-800/60 px-3.5 py-2 min-h-[44px] rounded-xl transition-colors shrink-0 touch-manipulation" title="선택한 양식 삭제">
           삭제
         </button>
       </div>
-      <button id="btnToggleSlotPicker" type="button" class="hidden text-[11px] bg-sky-950/60 hover:bg-sky-900/70 text-sky-300 border border-sky-800/70 px-2.5 py-1 rounded-lg transition-colors shrink-0">
+      <button id="btnToggleSlotPicker" type="button" class="hidden text-sm font-medium bg-sky-950/60 hover:bg-sky-900/70 text-sky-300 border border-sky-800/70 px-3.5 py-2 min-h-[44px] rounded-xl transition-colors shrink-0 touch-manipulation">
         삽입 위치 설정 ▾
       </button>
     </div>
 
-    <div id="templateSlotPanel" class="hidden bg-slate-950/70 border-b border-slate-800 px-4 py-3 space-y-2.5 text-xs">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div id="templateSlotSummary" class="text-[11px] text-slate-300 truncate">
+    <div id="templateSlotPanel" class="hidden bg-slate-950/70 border-b border-slate-800 px-4 py-3 space-y-3 text-xs sm:text-sm">
+      <div class="flex flex-wrap items-center justify-between gap-2.5">
+        <div id="templateSlotSummary" class="text-xs sm:text-sm text-slate-300 truncate">
           삽입할 위치(문단·표 칸)를 선택하세요.
         </div>
-        <div id="templateModeGroup" class="inline-flex rounded-lg bg-slate-900 border border-slate-800 p-0.5 shrink-0">
-          <button type="button" data-insert-mode="replace" class="template-mode-btn px-2 py-1 rounded-md text-[11px] font-medium transition-colors text-slate-400 hover:text-slate-200">
+        <div id="templateModeGroup" class="inline-flex flex-wrap rounded-xl bg-slate-900 border border-slate-800 p-1 gap-1 shrink-0">
+          <button type="button" data-insert-mode="replace" class="template-mode-btn px-3 py-2 min-h-[40px] rounded-lg text-xs sm:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 touch-manipulation">
             내용 교체
           </button>
-          <button type="button" data-insert-mode="after" class="template-mode-btn px-2 py-1 rounded-md text-[11px] font-medium transition-colors text-slate-400 hover:text-slate-200">
+          <button type="button" data-insert-mode="after" class="template-mode-btn px-3 py-2 min-h-[40px] rounded-lg text-xs sm:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 touch-manipulation">
             위치 뒤 추가
           </button>
-          <button type="button" data-insert-mode="replace_body" class="template-mode-btn px-2 py-1 rounded-md text-[11px] font-medium transition-colors text-slate-400 hover:text-slate-200">
+          <button type="button" data-insert-mode="replace_body" class="template-mode-btn px-3 py-2 min-h-[40px] rounded-lg text-xs sm:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 touch-manipulation">
             본문 전체 교체
           </button>
         </div>
       </div>
-      <div id="templateSlotList" class="max-h-40 overflow-y-auto space-y-1 pr-1"></div>
-      <p class="text-[11px] text-slate-500">
-        💡 양식에 <code class="text-emerald-400">{{본문}}</code> 같은 태그를 넣어두면 자동으로 해당 자리가 선택됩니다. (표 칸 내부 삽입 지원)
-      </p>
+      <div id="templateSlotList" class="max-h-80 overflow-y-auto space-y-1.5 pr-1"></div>
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+        <span>
+          💡 양식에 <code class="text-emerald-400">{{본문}}</code> 같은 태그를 넣어두면 자동으로 해당 자리가 선택됩니다. (표 칸 내부 삽입 지원)
+        </span>
+        <button id="btnDownloadBlankSample" type="button" class="hidden text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors shrink-0 touch-manipulation">
+          빈 예시 양식(.hwpx) 받기
+        </button>
+      </div>
     </div>
 
     <div class="relative flex-1 min-h-[300px] lg:min-h-[450px]">
@@ -218,29 +274,33 @@
   <!-- 우측: 결과 뷰어 -->
   <section id="rightPanel" class="flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
     <!-- 탭 바 -->
-    <div id="rightTabBar" class="bg-slate-800/80 px-2 py-1.5 border-b border-slate-800 flex items-center justify-between">
-      <div class="flex items-center gap-1">
-        <button data-tab="preview" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 text-emerald-400 border border-slate-700/60 shadow-sm transition-all">
+    <div id="rightTabBar" class="bg-slate-800/80 px-2.5 py-2 border-b border-slate-800 flex items-center justify-between">
+      <div class="flex items-center flex-wrap gap-1.5">
+        <button data-tab="preview" class="tab-btn px-3.5 py-2 min-h-[42px] text-xs sm:text-sm font-semibold rounded-xl bg-slate-900 text-emerald-400 border border-slate-700/60 shadow-sm transition-all touch-manipulation">
           실시간 렌더링
         </button>
-        <button data-tab="hwp" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1">
+        <button data-tab="hwp" class="tab-btn px-3.5 py-2 min-h-[42px] text-xs sm:text-sm font-semibold rounded-xl text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 touch-manipulation">
           한글(HWP) 수식 목록
-          <span id="hwpCountBadge" class="bg-sky-900 text-sky-300 text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+          <span id="hwpCountBadge" class="bg-sky-900 text-sky-300 text-xs px-2 py-0.5 rounded-full">0</span>
         </button>
-        <button data-tab="cleaned" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+        <button data-tab="cleaned" class="tab-btn px-3.5 py-2 min-h-[42px] text-xs sm:text-sm font-semibold rounded-xl text-slate-400 hover:text-slate-200 transition-all touch-manipulation">
           정제된 소스
         </button>
-        <button data-tab="logs" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1">
+        <button data-tab="logs" class="tab-btn px-3.5 py-2 min-h-[42px] text-xs sm:text-sm font-semibold rounded-xl text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 touch-manipulation">
           복구 로그
-          <span id="logCountBadge" class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+          <span id="logCountBadge" class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2 py-0.5 rounded-full">0</span>
         </button>
       </div>
     </div>
 
     <!-- 탭 본문 -->
-    <div class="flex-1 relative overflow-y-auto p-4 min-h-[350px] lg:min-h-[520px] max-h-[75vh]">
+    <div id="rightScrollArea" class="flex-1 relative overflow-y-auto p-4 min-h-[350px] lg:min-h-[520px] max-h-[75vh]">
       <!-- 1. 렌더링 미리보기 -->
       <div id="tabContentPreview" class="tab-content block">
+        <div id="templatePreviewBanner" class="hidden mb-3 px-3.5 py-2.5 bg-sky-950/60 border border-sky-800/70 rounded-xl text-xs sm:text-sm text-sky-200 flex flex-wrap items-center justify-between gap-2">
+          <span id="templatePreviewBannerText">양식 미리보기 적용 중</span>
+          <span class="text-[11px] text-sky-300/90">실시간 렌더링 · PDF/인쇄 · .hwpx 다운로드 모두 반영</span>
+        </div>
         <div id="renderOutput" class="markdown-body text-slate-200 text-sm leading-relaxed">
           <div class="text-slate-500 italic py-12 text-center text-xs">
             왼쪽에 수식 또는 AI 답변을 입력하면 실시간으로 렌더링됩니다.
@@ -1596,9 +1656,13 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
   }
 
+  function sanitizeCssHexColor(val, fallback) {
+    return /^#[0-9a-fA-F]{6}$/.test(val || '') ? val : fallback;
+  }
+
   /**
-   * Reads valid charPr, paraPr, and style IDs from a template's Contents/header.xml
-   * so inserted paragraphs only reference styles that exist in that template.
+   * Reads valid charPr, paraPr, style IDs, and preview metadata (borders/fills/alignments)
+   * from a template's Contents/header.xml.
    */
   function inspectHwpxHeaderStyles(headerXml) {
     const charPrs = [];
@@ -1607,9 +1671,13 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const charPrIds = new Set();
     const paraPrIds = new Set();
     const styleIds = new Set();
+    const charStyleMap = new Map();
+    const paraAlignMap = new Map();
+    const borderFillMap = new Map();
 
     let activeCharPr = null;
     let activeParaPr = null;
+    let activeBorderFill = null;
 
     if (headerXml) {
       forEachXmlTag(headerXml, {
@@ -1620,11 +1688,13 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
               const obj = {
                 id,
                 height: Number(getXmlAttr(attrsStr, 'height')) || 1000,
-                hasBold: false
+                hasBold: false,
+                textColor: sanitizeCssHexColor(getXmlAttr(attrsStr, 'textColor'), '#0f172a')
               };
               if (isSelfClosing) {
                 charPrIds.add(id);
                 charPrs.push(obj);
+                charStyleMap.set(id, obj);
               } else {
                 activeCharPr = obj;
               }
@@ -1636,11 +1706,31 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
               if (isSelfClosing) {
                 paraPrIds.add(id);
                 paraPrs.push(obj);
+                paraAlignMap.set(id, '');
               } else {
                 activeParaPr = obj;
               }
             } else if (tagName === 'hh:align' && activeParaPr) {
               activeParaPr.alignHorizontal = getXmlAttr(attrsStr, 'horizontal') || '';
+            } else if (tagName === 'hh:borderFill') {
+              const id = getXmlAttr(attrsStr, 'id') || '1';
+              const bfObj = { id, hasBorder: false, borderColor: '#64748b', bgColor: '' };
+              if (isSelfClosing) {
+                borderFillMap.set(id, bfObj);
+              } else {
+                activeBorderFill = bfObj;
+              }
+            } else if (activeBorderFill && (tagName === 'hh:leftBorder' || tagName === 'hh:rightBorder' || tagName === 'hh:topBorder' || tagName === 'hh:bottomBorder')) {
+              const bType = getXmlAttr(attrsStr, 'type') || 'NONE';
+              if (bType !== 'NONE') {
+                activeBorderFill.hasBorder = true;
+                activeBorderFill.borderColor = sanitizeCssHexColor(getXmlAttr(attrsStr, 'color'), activeBorderFill.borderColor);
+              }
+            } else if (activeBorderFill && tagName === 'hc:winBrush') {
+              const faceColor = getXmlAttr(attrsStr, 'faceColor') || '';
+              if (/^#[0-9a-fA-F]{6}$/.test(faceColor)) {
+                activeBorderFill.bgColor = faceColor;
+              }
             } else if (tagName === 'hh:style') {
               const id = getXmlAttr(attrsStr, 'id') || '0';
               styleIds.add(id);
@@ -1654,11 +1744,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
             if (tagName === 'hh:charPr' && activeCharPr) {
               charPrIds.add(activeCharPr.id);
               charPrs.push(activeCharPr);
+              charStyleMap.set(activeCharPr.id, activeCharPr);
               activeCharPr = null;
             } else if (tagName === 'hh:paraPr' && activeParaPr) {
               paraPrIds.add(activeParaPr.id);
               paraPrs.push(activeParaPr);
+              paraAlignMap.set(activeParaPr.id, activeParaPr.alignHorizontal);
               activeParaPr = null;
+            } else if (tagName === 'hh:borderFill' && activeBorderFill) {
+              borderFillMap.set(activeBorderFill.id, activeBorderFill);
+              activeBorderFill = null;
             }
           }
         }
@@ -1677,6 +1772,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       charPrIds,
       paraPrIds,
       styleIds,
+      charStyleMap,
+      paraAlignMap,
+      borderFillMap,
       defaultCharPrId,
       boldCharPrId: boldCandidate ? boldCandidate.id : defaultCharPrId,
       defaultParaPrId,
@@ -2435,6 +2533,343 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return { files: outFiles, result, appliedSlot, sectionPath, mode };
   }
 
+  /**
+   * Builds a built-in OWPML worksheet HWPX template ("수학 풀이 정리 양식")
+   * containing a styled 2-row header/body table with a {{본문}} placeholder cell.
+   */
+  function buildSampleWorksheetTemplateFiles(nowDate = new Date()) {
+    const base = buildHwpxPackageFiles('수학 풀이 정리 양식', nowDate).files;
+
+    const charShapeSuffix = `<hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#C0C0C0" offsetX="10" offsetY="10"/>`;
+    const tableBordersXml = `<hh:borderFills itemCnt="4"><hh:borderFill id="1" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/></hh:borderFill><hh:borderFill id="2" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/><hc:fillBrush><hc:winBrush faceColor="none" hatchColor="#999999" alpha="0"/></hc:fillBrush></hh:borderFill><hh:borderFill id="3" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:rightBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:topBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:bottomBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:diagonal type="NONE" width="0.1 mm" color="#000000"/></hh:borderFill><hh:borderFill id="4" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/><hh:leftBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:rightBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:topBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:bottomBorder type="SOLID" width="0.12 mm" color="#64748B"/><hh:diagonal type="NONE" width="0.1 mm" color="#000000"/><hc:fillBrush><hc:winBrush faceColor="#EFF6FF" hatchColor="#999999" alpha="0"/></hc:fillBrush></hh:borderFill></hh:borderFills>`;
+
+    base['Contents/header.xml'] = base['Contents/header.xml']
+      .replace(/<hh:borderFills\b[\s\S]*?<\/hh:borderFills>/, tableBordersXml)
+      .replace(
+        /<hh:charProperties itemCnt="2">([\s\S]*?)<\/hh:charProperties>/,
+        `<hh:charProperties itemCnt="3">$1<hh:charPr id="2" height="1400" textColor="#0F172A" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:bold/>${charShapeSuffix}</hh:charPr></hh:charProperties>`
+      );
+
+    base['Contents/content.hpf'] = base['Contents/content.hpf']
+      .replace('<opf:title>AI Math Document</opf:title>', '<opf:title>수학 풀이 정리 양식</opf:title>');
+
+    base['Preview/PrvText.txt'] = '수학 풀이 정리 양식\n과목 / 단원: | 이름 / 날짜:\n{{본문}}';
+
+    const titlePara = `<hp:p id="0" paraPrIDRef="1" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">${HWPX_SEC_CTRL_RUN_XML}<hp:run charPrIDRef="2"><hp:t>수학 풀이 정리 양식</hp:t></hp:run></hp:p>`;
+    const tablePara = `<hp:p id="10" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="0"><hp:tbl id="50" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="1" rowCnt="2" colCnt="2" cellSpacing="0" borderFillIDRef="3" noAdjust="0"><hp:sz width="42520" widthRelTo="ABSOLUTE" height="24600" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="283" right="283" top="283" bottom="283"/><hp:inMargin left="510" right="510" top="141" bottom="141"/><hp:tr><hp:tc name="" header="0" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="4"><hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="TOP" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0"><hp:p id="11" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="1"><hp:t>과목 / 단원: </hp:t></hp:run></hp:p></hp:subList><hp:cellAddr colAddr="0" rowAddr="0"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="21260" height="2600"/><hp:cellMargin left="510" right="510" top="141" bottom="141"/></hp:tc><hp:tc name="" header="0" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="4"><hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="TOP" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0"><hp:p id="12" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="1"><hp:t>이름 / 날짜: </hp:t></hp:run></hp:p></hp:subList><hp:cellAddr colAddr="1" rowAddr="0"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="21260" height="2600"/><hp:cellMargin left="510" right="510" top="141" bottom="141"/></hp:tc></hp:tr><hp:tr><hp:tc name="" header="0" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="3"><hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="TOP" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0"><hp:p id="13" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="0"><hp:t>{{본문}}</hp:t></hp:run></hp:p></hp:subList><hp:cellAddr colAddr="0" rowAddr="1"/><hp:cellSpan colSpan="2" rowSpan="1"/><hp:cellSz width="42520" height="22000"/><hp:cellMargin left="510" right="510" top="283" bottom="283"/></hp:tc></hp:tr></hp:tbl><hp:t/></hp:run></hp:p>`;
+    const notePara = `<hp:p id="20" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="0"><hp:t>검산 및 추가 메모:</hp:t></hp:run></hp:p>`;
+
+    base['Contents/section0.xml'] = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hs:sec xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0">${titlePara}${tablePara}${notePara}</hs:sec>`;
+
+    return base;
+  }
+
+  /**
+   * Renders an interactive / printable HTML sheet preview of a loaded HWPX template
+   * with the converted renderedBodyHtml placed at the selected slot and insertion mode.
+   */
+  function renderHwpxTemplatePreviewHtml(templateFiles, renderedBodyHtml, options = {}) {
+    const sectionPaths = Object.keys(templateFiles)
+      .filter(p => /^Contents\/section\d+\.xml$/i.test(p))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const sectionPath = (options.sectionPath && templateFiles[options.sectionPath])
+      ? options.sectionPath
+      : (templateFiles['Contents/section0.xml'] ? 'Contents/section0.xml' : sectionPaths[0]);
+    if (!sectionPath) {
+      return renderedBodyHtml;
+    }
+
+    const sectionXml = templateFiles[sectionPath];
+    const headerMeta = inspectHwpxHeaderStyles(templateFiles['Contents/header.xml'] || '');
+    const structure = inspectHwpxSectionSlots(sectionXml);
+    const mode = options.mode || structure.recommendedMode || 'after';
+    const targetSlot = structure.slots.find(s => s.slotId === options.slotId)
+      || structure.slots.find(s => s.slotId === structure.recommendedSlotId)
+      || structure.slots[structure.slots.length - 1]
+      || null;
+
+    // Extract optional page header text inside <hp:header>
+    const headerTexts = [];
+    let inHeaderTag = false;
+    let inHeaderTextTag = false;
+    let curHeaderBuf = '';
+    forEachXmlTag(sectionXml, {
+      onText(start, end) {
+        if (inHeaderTag && inHeaderTextTag) {
+          curHeaderBuf += decodeXmlEntities(sectionXml.slice(start, end));
+        }
+      },
+      onTag({ tagName, isClosing, isSelfClosing }) {
+        if (!isClosing) {
+          if (tagName === 'hp:header' && !isSelfClosing) {
+            inHeaderTag = true;
+            curHeaderBuf = '';
+          } else if (inHeaderTag && tagName === 'hp:t' && !isSelfClosing) {
+            inHeaderTextTag = true;
+          }
+        } else {
+          if (tagName === 'hp:t') {
+            inHeaderTextTag = false;
+          } else if (tagName === 'hp:header' && inHeaderTag) {
+            const clean = curHeaderBuf.replace(/\s+/g, ' ').trim();
+            if (clean) headerTexts.push(clean);
+            inHeaderTag = false;
+            curHeaderBuf = '';
+          }
+        }
+      }
+    });
+    const headerHtml = headerTexts.length > 0
+      ? `<div class="hwpx-preview-header-note">${escapeHtml(headerTexts[0])}</div>`
+      : '';
+
+    if (mode === 'replace_body' || !targetSlot) {
+      return `<div class="hwpx-preview-sheet" data-template-mode="replace_body">${headerHtml}<div class="hwpx-injected-body">${renderedBodyHtml}</div></div>`;
+    }
+
+    const slotByStart = new Map(structure.slots.map(s => [s.start, s]));
+    const IGNORE_TAGS = new Set([
+      'hp:secPr', 'hp:header', 'hp:footer', 'hp:footNote', 'hp:endNote', 'hp:hiddenComment'
+    ]);
+    const ALIGN_MAP = { CENTER: 'center', RIGHT: 'right', JUSTIFY: 'justify', LEFT: 'left' };
+
+    const xmlStack = [];
+    let ignoreDepth = 0;
+    let replacingParaDepth = -1;
+    const outputStack = [{ parts: [] }];
+    const tableStack = [];
+    const cellStack = [];
+    const paraStack = [];
+    let activeRunStyle = { bold: false, height: 1000, inT: false, inEqScript: false, eqScriptBuf: '' };
+
+    function pushOut(html) {
+      if (html) outputStack[outputStack.length - 1].parts.push(html);
+    }
+
+    function buildInlineSlotHtml(slot) {
+      const ph = slot.placeholders && slot.placeholders[0];
+      if (!ph || slot.rawText.trim() === ph.full) {
+        return `<div class="hwpx-p hwpx-slot-target" data-slot-id="${slot.slotId}"><div class="hwpx-injected-body">${renderedBodyHtml}</div></div>`;
+      }
+      const prefix = slot.rawText.slice(0, ph.startOffset);
+      const suffix = slot.rawText.slice(ph.endOffset);
+      const preHtml = prefix ? `<span>${escapeHtml(prefix)}</span>` : '';
+      const sufHtml = suffix ? `<span>${escapeHtml(suffix)}</span>` : '';
+      return `<div class="hwpx-p hwpx-slot-target" data-slot-id="${slot.slotId}">${preHtml}<div class="hwpx-injected-body">${renderedBodyHtml}</div>${sufHtml}</div>`;
+    }
+
+    forEachXmlTag(sectionXml, {
+      onText(start, end) {
+        if (ignoreDepth > 0 || replacingParaDepth >= 0) return;
+        if (activeRunStyle.inEqScript) {
+          activeRunStyle.eqScriptBuf += decodeXmlEntities(sectionXml.slice(start, end));
+        } else if (activeRunStyle.inT && paraStack.length > 0) {
+          const decoded = decodeXmlEntities(sectionXml.slice(start, end));
+          if (decoded) {
+            const pCur = paraStack[paraStack.length - 1];
+            pCur.hasVisibleContent = true;
+            let chunk = escapeHtml(decoded);
+            if (activeRunStyle.height >= 1300) {
+              chunk = `<span style="font-size:1.18rem;font-weight:700;">${chunk}</span>`;
+            } else if (activeRunStyle.bold) {
+              chunk = `<strong>${chunk}</strong>`;
+            }
+            pCur.parts.push(chunk);
+          }
+        }
+      },
+      onTag({ start, tagName, attrsStr, isClosing, isSelfClosing }) {
+        if (!isClosing) {
+          if (IGNORE_TAGS.has(tagName)) {
+            if (!isSelfClosing) {
+              ignoreDepth++;
+              xmlStack.push(tagName);
+            }
+            return;
+          }
+          if (ignoreDepth > 0) {
+            if (!isSelfClosing) xmlStack.push(tagName);
+            return;
+          }
+          if (replacingParaDepth >= 0) {
+            if (!isSelfClosing) xmlStack.push(tagName);
+            return;
+          }
+
+          if (tagName === 'hp:p') {
+            const parentTag = xmlStack[xmlStack.length - 1];
+            if (parentTag === 'hs:sec' || parentTag === 'hp:subList') {
+              const slot = slotByStart.get(start) || null;
+              if (slot && mode === 'replace' && slot.slotId === targetSlot.slotId) {
+                pushOut(buildInlineSlotHtml(slot));
+                if (!isSelfClosing) {
+                  replacingParaDepth = xmlStack.length + 1;
+                  xmlStack.push(tagName);
+                }
+                return;
+              }
+              const paraPrId = getXmlAttr(attrsStr, 'paraPrIDRef') || '0';
+              const align = ALIGN_MAP[headerMeta.paraAlignMap.get(paraPrId)] || '';
+              if (isSelfClosing) {
+                pushOut('<div class="hwpx-p hwpx-empty-line">&nbsp;</div>');
+                if (slot && mode === 'after' && slot.slotId === targetSlot.slotId) {
+                  pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${slot.slotId}">${renderedBodyHtml}</div>`);
+                }
+              } else {
+                const pObj = { align, slot, parts: [], hasVisibleContent: false, hasTable: false, stackDepth: xmlStack.length + 1 };
+                paraStack.push(pObj);
+                outputStack.push(pObj);
+              }
+            }
+          } else if (tagName === 'hp:run' && !isSelfClosing) {
+            const charId = getXmlAttr(attrsStr, 'charPrIDRef') || '0';
+            const cs = headerMeta.charStyleMap.get(charId);
+            activeRunStyle = {
+              bold: Boolean(cs && cs.hasBold),
+              height: cs ? cs.height : 1000,
+              inT: false,
+              inEqScript: false,
+              eqScriptBuf: ''
+            };
+          } else if (tagName === 'hp:t' && !isSelfClosing) {
+            activeRunStyle.inT = true;
+          } else if (tagName === 'hp:script' && !isSelfClosing) {
+            activeRunStyle.inEqScript = true;
+            activeRunStyle.eqScriptBuf = '';
+          } else if ((tagName === 'hp:tab' || tagName === 'hp:fwSpace') && activeRunStyle.inT && paraStack.length > 0) {
+            paraStack[paraStack.length - 1].parts.push('&nbsp;&nbsp;');
+          } else if (tagName === 'hp:lineBreak' && activeRunStyle.inT && paraStack.length > 0) {
+            paraStack[paraStack.length - 1].parts.push('<br>');
+          } else if (tagName === 'hp:tbl' && !isSelfClosing) {
+            if (paraStack.length > 0) paraStack[paraStack.length - 1].hasTable = true;
+            const tblObj = { rows: [], parts: [] };
+            tableStack.push(tblObj);
+          } else if (tagName === 'hp:tr' && tableStack.length > 0 && !isSelfClosing) {
+            const rowObj = { cells: [] };
+            tableStack[tableStack.length - 1].rows.push(rowObj);
+          } else if (tagName === 'hp:tc' && tableStack.length > 0 && !isSelfClosing) {
+            const cellObj = {
+              borderFillIDRef: getXmlAttr(attrsStr, 'borderFillIDRef') || '3',
+              colSpan: 1,
+              rowSpan: 1,
+              width: 0,
+              parts: []
+            };
+            cellStack.push(cellObj);
+            const curTbl = tableStack[tableStack.length - 1];
+            const curRow = curTbl.rows[curTbl.rows.length - 1];
+            if (curRow) curRow.cells.push(cellObj);
+          } else if (tagName === 'hp:cellSpan' && cellStack.length > 0) {
+            const cs = Number(getXmlAttr(attrsStr, 'colSpan'));
+            const rs = Number(getXmlAttr(attrsStr, 'rowSpan'));
+            if (Number.isFinite(cs) && cs > 1) cellStack[cellStack.length - 1].colSpan = cs;
+            if (Number.isFinite(rs) && rs > 1) cellStack[cellStack.length - 1].rowSpan = rs;
+          } else if (tagName === 'hp:cellSz' && cellStack.length > 0) {
+            const w = Number(getXmlAttr(attrsStr, 'width'));
+            if (Number.isFinite(w) && w > 0) cellStack[cellStack.length - 1].width = w;
+          } else if (tagName === 'hp:subList' && cellStack.length > 0 && !isSelfClosing) {
+            outputStack.push(cellStack[cellStack.length - 1]);
+          }
+
+          if (!isSelfClosing) xmlStack.push(tagName);
+          return;
+        }
+
+        // Closing tag
+        if (xmlStack.length > 0) xmlStack.pop();
+        const afterPopDepth = xmlStack.length;
+
+        if (IGNORE_TAGS.has(tagName) && ignoreDepth > 0) {
+          ignoreDepth--;
+          return;
+        }
+        if (ignoreDepth > 0) return;
+
+        if (replacingParaDepth >= 0) {
+          if (tagName === 'hp:p' && afterPopDepth === replacingParaDepth - 1) {
+            replacingParaDepth = -1;
+          }
+          return;
+        }
+
+        if (tagName === 'hp:t') {
+          activeRunStyle.inT = false;
+        } else if (tagName === 'hp:script' && activeRunStyle.inEqScript) {
+          activeRunStyle.inEqScript = false;
+          const scriptText = activeRunStyle.eqScriptBuf.trim();
+          if (scriptText && paraStack.length > 0) {
+            const pCur = paraStack[paraStack.length - 1];
+            pCur.hasVisibleContent = true;
+            let eqHtml = '';
+            if (typeof katex !== 'undefined') {
+              try {
+                eqHtml = katex.renderToString(hwpToLatex(scriptText), { displayMode: false, throwOnError: false });
+              } catch (e) {
+                eqHtml = `<code>${escapeHtml(scriptText)}</code>`;
+              }
+            } else {
+              eqHtml = `<code class="hwpx-eq-fallback">${escapeHtml(scriptText)}</code>`;
+            }
+            pCur.parts.push(eqHtml);
+          }
+          activeRunStyle.eqScriptBuf = '';
+        } else if (tagName === 'hp:run') {
+          activeRunStyle = { bold: false, height: 1000, inT: false, inEqScript: false, eqScriptBuf: '' };
+        } else if (tagName === 'hp:subList' && cellStack.length > 0) {
+          if (outputStack[outputStack.length - 1] === cellStack[cellStack.length - 1]) {
+            outputStack.pop();
+          }
+        } else if (tagName === 'hp:tc' && cellStack.length > 0) {
+          cellStack.pop();
+        } else if (tagName === 'hp:tbl' && tableStack.length > 0) {
+          const tblObj = tableStack.pop();
+          const trsHtml = tblObj.rows.map(row => {
+            const totalW = row.cells.reduce((acc, c) => acc + (c.width || 0), 0);
+            const tdsHtml = row.cells.map(cell => {
+              const bf = headerMeta.borderFillMap.get(cell.borderFillIDRef);
+              const styles = [];
+              if (bf && !bf.hasBorder && headerMeta.borderFillMap.size > 0) {
+                styles.push('border:1px dashed #cbd5e1;');
+              } else {
+                styles.push(`border:1px solid ${bf ? bf.borderColor : '#64748b'};`);
+              }
+              if (bf && bf.bgColor) styles.push(`background-color:${bf.bgColor};`);
+              if (totalW > 0 && cell.width > 0) {
+                styles.push(`width:${Math.max(5, Math.round((cell.width / totalW) * 100))}%;`);
+              }
+              const csAttr = cell.colSpan > 1 ? ` colspan="${cell.colSpan}"` : '';
+              const rsAttr = cell.rowSpan > 1 ? ` rowspan="${cell.rowSpan}"` : '';
+              const cellInner = cell.parts.join('') || '&nbsp;';
+              return `<td${csAttr}${rsAttr} style="${styles.join('')}">${cellInner}</td>`;
+            }).join('');
+            return `<tr>${tdsHtml}</tr>`;
+          }).join('');
+          pushOut(`<table class="hwpx-preview-table"><tbody>${trsHtml}</tbody></table>`);
+        } else if (tagName === 'hp:p' && paraStack.length > 0) {
+          const topP = paraStack[paraStack.length - 1];
+          if (afterPopDepth === topP.stackDepth - 1) {
+            paraStack.pop();
+            if (outputStack[outputStack.length - 1] === topP) outputStack.pop();
+            const inner = topP.parts.join('');
+            if (topP.hasTable) {
+              pushOut(inner);
+            } else if (!topP.hasVisibleContent && !inner.trim()) {
+              pushOut('<div class="hwpx-p hwpx-empty-line">&nbsp;</div>');
+            } else {
+              const styleAttr = topP.align ? ` style="text-align:${topP.align};"` : '';
+              pushOut(`<div class="hwpx-p"${styleAttr}>${inner}</div>`);
+            }
+            if (topP.slot && mode === 'after' && topP.slot.slotId === targetSlot.slotId) {
+              pushOut(`<div class="hwpx-slot-after hwpx-injected-body" data-slot-id="${topP.slot.slotId}">${renderedBodyHtml}</div>`);
+            }
+          }
+        }
+      }
+    });
+
+    return `<div class="hwpx-preview-sheet" data-template-mode="${escapeHtml(mode)}">${headerHtml}${outputStack[0].parts.join('')}</div>`;
+  }
+
   globalThis.__AI_LATEX_ENGINE__ = {
     SAMPLE_TEXT,
     hwpToLatex,
@@ -2449,9 +2884,11 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     escapeXml,
     estimateHwpEquationBox,
     buildHwpxPackageFiles,
+    buildSampleWorksheetTemplateFiles,
     inspectHwpxHeaderStyles,
     inspectHwpxSectionSlots,
-    applyTextToHwpxTemplateFiles
+    applyTextToHwpxTemplateFiles,
+    renderHwpxTemplatePreviewHtml
   };
 
   if (typeof document !== 'undefined') {
@@ -2475,9 +2912,29 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   const templateSlotSummary = document.getElementById('templateSlotSummary');
   const templateSlotList = document.getElementById('templateSlotList');
   const templateModeGroup = document.getElementById('templateModeGroup');
+  const btnDownloadBlankSample = document.getElementById('btnDownloadBlankSample');
+  const templatePreviewBanner = document.getElementById('templatePreviewBanner');
+  const templatePreviewBannerText = document.getElementById('templatePreviewBannerText');
 
   if (localStorage.getItem(STORAGE_KEY)) {
     btnRestoreLast.classList.remove('hidden');
+  }
+
+  function renderPreviewWithOptionalTemplate(bodyHtml) {
+    if (!activeTemplateState) {
+      templatePreviewBanner.classList.add('hidden');
+      renderOutput.innerHTML = bodyHtml;
+      return;
+    }
+    const selectedSlot = activeTemplateState.slots.find(s => s.uid === activeTemplateState.selectedSlotUid) || null;
+    const modeLabel = MODE_LABELS[activeTemplateState.insertMode] || '';
+    templatePreviewBanner.classList.remove('hidden');
+    templatePreviewBannerText.innerHTML = `📄 <b>${escapeHtml(activeTemplateState.name)}</b> 양식 미리보기 (${escapeHtml(modeLabel)})`;
+    renderOutput.innerHTML = renderHwpxTemplatePreviewHtml(activeTemplateState.textFiles, bodyHtml, {
+      sectionPath: selectedSlot ? selectedSlot.sectionPath : activeTemplateState.selectedSectionPath,
+      slotId: selectedSlot ? selectedSlot.slotId : undefined,
+      mode: activeTemplateState.insertMode
+    });
   }
 
   function updateAll() {
@@ -2490,7 +2947,12 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
 
     if (!val.trim()) {
-      renderOutput.innerHTML = '<div class="text-slate-500 italic py-12 text-center text-xs">왼쪽에 수식 또는 AI 답변을 입력하면 실시간으로 렌더링됩니다.</div>';
+      if (activeTemplateState) {
+        renderPreviewWithOptionalTemplate('<div class="text-slate-500 italic py-3 text-xs sm:text-sm border border-dashed border-sky-400 bg-sky-50 rounded-lg px-3">(여기에 변환된 본문과 수식이 삽입됩니다 — 왼쪽에 내용을 입력하거나 상단 예시를 불러와 보세요)</div>');
+      } else {
+        templatePreviewBanner.classList.add('hidden');
+        renderOutput.innerHTML = '<div class="text-slate-500 italic py-12 text-center text-xs">왼쪽에 수식 또는 AI 답변을 입력하면 실시간으로 렌더링됩니다.</div>';
+      }
       cleanedSourceOutput.textContent = '';
       repairLogsList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">수식 복구 로그가 없습니다.</div>';
       hwpFormulaList.innerHTML = '<div class="text-slate-500 py-6 text-center text-xs">감지된 수식이 없습니다.</div>';
@@ -2502,7 +2964,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
     const result = processText(val);
 
-    renderOutput.innerHTML = result.renderedHtml;
+    renderPreviewWithOptionalTemplate(result.renderedHtml);
     cleanedSourceOutput.textContent = result.cleanedSource;
     formulaCount.textContent = `수식 ${result.totalFormulas}개`;
     logCountBadge.textContent = result.allLogs.length;
@@ -2695,25 +3157,10 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return path === 'mimetype' || /\.(?:xml|hpf|rdf|txt)$/i.test(path);
   }
 
-  async function parseHwpxTemplateState(tpl) {
-    if (typeof JSZip === 'undefined') {
-      throw new Error('JSZip 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
-    }
-    const bytes = base64ToUint8(tpl.base64);
-    const zip = await JSZip.loadAsync(bytes);
-    const textFiles = {};
-    const binaryFiles = {};
-    const entries = Object.entries(zip.files);
+  const BUILTIN_SAMPLE_WORKSHEET_ID = '__sample_worksheet__';
+  const BUILTIN_SAMPLE_WORKSHEET_NAME = '예시_수학_풀이_양식.hwpx';
 
-    await Promise.all(entries.map(async ([path, entry]) => {
-      if (entry.dir) return;
-      if (isTextZipEntry(path)) {
-        textFiles[path] = await entry.async('string');
-      } else {
-        binaryFiles[path] = await entry.async('uint8array');
-      }
-    }));
-
+  function buildTemplateStateFromFiles({ id, name, textFiles, binaryFiles = {}, isBuiltin = false }) {
     const sectionPaths = Object.keys(textFiles)
       .filter(p => /^Contents\/section\d+\.xml$/i.test(p))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -2749,8 +3196,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
 
     return {
-      id: tpl.id,
-      name: tpl.name,
+      id,
+      name,
+      isBuiltin,
       textFiles,
       binaryFiles,
       sectionPaths,
@@ -2762,7 +3210,35 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     };
   }
 
-  function renderTemplateUi() {
+  async function parseHwpxTemplateState(tpl) {
+    if (typeof JSZip === 'undefined') {
+      throw new Error('JSZip 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+    }
+    const bytes = base64ToUint8(tpl.base64);
+    const zip = await JSZip.loadAsync(bytes);
+    const textFiles = {};
+    const binaryFiles = {};
+    const entries = Object.entries(zip.files);
+
+    await Promise.all(entries.map(async ([path, entry]) => {
+      if (entry.dir) return;
+      if (isTextZipEntry(path)) {
+        textFiles[path] = await entry.async('string');
+      } else {
+        binaryFiles[path] = await entry.async('uint8array');
+      }
+    }));
+
+    return buildTemplateStateFromFiles({
+      id: tpl.id,
+      name: tpl.name,
+      textFiles,
+      binaryFiles,
+      isBuiltin: false
+    });
+  }
+
+  function renderTemplateUi(refreshPreview = true) {
     const currentId = activeTemplateState ? activeTemplateState.id : DEFAULT_TEMPLATE_ID;
     templateSelect.innerHTML = '';
 
@@ -2770,6 +3246,11 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     defaultOpt.value = DEFAULT_TEMPLATE_ID;
     defaultOpt.textContent = '기본 빈 문서 (표준 A4)';
     templateSelect.appendChild(defaultOpt);
+
+    const sampleOpt = document.createElement('option');
+    sampleOpt.value = BUILTIN_SAMPLE_WORKSHEET_ID;
+    sampleOpt.textContent = '예시 양식 · 수학 풀이 노트 (표 + {{본문}})';
+    templateSelect.appendChild(sampleOpt);
 
     runtimeTemplates.forEach(tpl => {
       const opt = document.createElement('option');
@@ -2780,11 +3261,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     templateSelect.value = currentId;
 
     const hasTpl = Boolean(activeTemplateState);
-    btnDeleteTemplate.classList.toggle('hidden', !hasTpl);
+    const isBuiltin = Boolean(activeTemplateState && activeTemplateState.isBuiltin);
+    btnDeleteTemplate.classList.toggle('hidden', !hasTpl || isBuiltin);
     btnToggleSlotPicker.classList.toggle('hidden', !hasTpl);
+    btnDownloadBlankSample.classList.toggle('hidden', !isBuiltin);
     templateSlotPanel.classList.toggle('hidden', !(hasTpl && activeTemplateState.panelExpanded));
 
-    if (!hasTpl) return;
+    if (!hasTpl) {
+      if (refreshPreview) updateAll();
+      return;
+    }
 
     const mode = activeTemplateState.insertMode;
     const selectedSlot = activeTemplateState.slots.find(s => s.uid === activeTemplateState.selectedSlotUid) || null;
@@ -2810,7 +3296,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
 
     if (activeTemplateState.slots.length === 0) {
-      templateSlotList.innerHTML = '<div class="text-slate-500 text-[11px] py-2 text-center">선택 가능한 본문 문단이 없습니다. (본문 전체 교체 또는 뒤에 추가 사용)</div>';
+      templateSlotList.innerHTML = '<div class="text-slate-500 text-xs py-3 text-center">선택 가능한 본문 문단이 없습니다. (본문 전체 교체 또는 뒤에 추가 사용)</div>';
+      if (refreshPreview) updateAll();
       return;
     }
 
@@ -2820,16 +3307,18 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         ? 'bg-sky-950/70 border-sky-500/80 text-slate-100'
         : 'bg-slate-900/70 border-slate-800 hover:border-slate-700 text-slate-300';
       const secPrefix = slot.sectionLabel ? `[${escapeHtml(slot.sectionLabel)}] ` : '';
-      const locBadge = `<span class="shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded ${slot.inTable ? 'bg-indigo-950 text-indigo-300 border border-indigo-800/70' : 'bg-slate-800 text-slate-300'}">${secPrefix}${escapeHtml(slot.locationLabel)}</span>`;
+      const locBadge = `<span class="shrink-0 font-mono text-[11px] sm:text-xs px-2 py-0.5 rounded-md ${slot.inTable ? 'bg-indigo-950 text-indigo-300 border border-indigo-800/70' : 'bg-slate-800 text-slate-300'}">${secPrefix}${escapeHtml(slot.locationLabel)}</span>`;
       const phBadge = slot.placeholders.length > 0
-        ? `<span class="shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/80">${escapeHtml(slot.placeholders[0].full)}</span>`
+        ? `<span class="shrink-0 font-mono text-[11px] sm:text-xs px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800/80">${escapeHtml(slot.placeholders[0].full)}</span>`
         : '';
       const secBadge = slot.hasSecPr
-        ? '<span class="shrink-0 text-[10px] px-1 py-0.5 rounded bg-amber-950/70 text-amber-300 border border-amber-800/60">설정</span>'
+        ? '<span class="shrink-0 text-[11px] px-1.5 py-0.5 rounded-md bg-amber-950/70 text-amber-300 border border-amber-800/60">설정</span>'
         : '';
       const snippet = slot.previewText.length > 56 ? `${slot.previewText.slice(0, 56)}…` : slot.previewText;
-      return `<button type="button" data-slot-uid="${escapeHtml(slot.uid)}" class="w-full text-left px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-2 ${rowCls}">${locBadge}${phBadge}${secBadge}<span class="truncate text-[11px] text-slate-300">${escapeHtml(snippet)}</span></button>`;
+      return `<button type="button" data-slot-uid="${escapeHtml(slot.uid)}" class="w-full text-left px-3 py-2.5 min-h-[44px] rounded-xl border transition-colors flex items-center gap-2.5 touch-manipulation ${rowCls}">${locBadge}${phBadge}${secBadge}<span class="truncate text-xs sm:text-sm text-slate-300">${escapeHtml(snippet)}</span></button>`;
     }).join('');
+
+    if (refreshPreview) updateAll();
   }
 
   async function activateTemplateById(id) {
@@ -2837,6 +3326,27 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       activeTemplateState = null;
       persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
       renderTemplateUi();
+      return;
+    }
+    if (id === BUILTIN_SAMPLE_WORKSHEET_ID) {
+      try {
+        const sampleFiles = buildSampleWorksheetTemplateFiles(new Date());
+        activeTemplateState = buildTemplateStateFromFiles({
+          id: BUILTIN_SAMPLE_WORKSHEET_ID,
+          name: BUILTIN_SAMPLE_WORKSHEET_NAME,
+          textFiles: sampleFiles,
+          binaryFiles: {},
+          isBuiltin: true
+        });
+        persistSelectedTemplateId(BUILTIN_SAMPLE_WORKSHEET_ID);
+        renderTemplateUi();
+      } catch (err) {
+        console.error('예시 양식 로드 오류:', err);
+        activeTemplateState = null;
+        persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
+        renderTemplateUi();
+        showToast('예시 양식을 불러오는 중 오류가 발생했습니다.');
+      }
       return;
     }
     const tpl = runtimeTemplates.find(t => t.id === id);
@@ -2967,6 +3477,55 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     renderTemplateUi();
   });
 
+  async function downloadHwpxFilesAsZip(pkgFiles, binaryEntries, fileName) {
+    if (typeof JSZip === 'undefined') {
+      throw new Error('JSZip 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+    }
+    const zip = new JSZip();
+
+    // 1. mimetype 최상단 엔트리 무압축(STORE) 저장
+    zip.file("mimetype", pkgFiles["mimetype"] || "application/hwp+zip", { compression: "STORE" });
+
+    // 2. 나머지 XML/텍스트 파일 저장 (DEFLATE)
+    Object.entries(pkgFiles).forEach(([path, data]) => {
+      if (path !== "mimetype") {
+        zip.file(path, data, { compression: "DEFLATE" });
+      }
+    });
+
+    // 3. 양식에 포함된 이미지/바이너리 리소스(BinData/* 등) 원본 그대로 보존
+    Object.entries(binaryEntries || {}).forEach(([path, uint8]) => {
+      zip.file(path, uint8, { compression: "DEFLATE" });
+    });
+
+    const content = await zip.generateAsync({
+      type: 'blob',
+      mimeType: 'application/hwp+zip',
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 }
+    });
+
+    const downloadUrl = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(downloadUrl);
+  }
+
+  btnDownloadBlankSample.addEventListener('click', async () => {
+    try {
+      const files = buildSampleWorksheetTemplateFiles(new Date());
+      await downloadHwpxFilesAsZip(files, {}, BUILTIN_SAMPLE_WORKSHEET_NAME);
+      showToast(`<b>${escapeHtml(BUILTIN_SAMPLE_WORKSHEET_NAME)}</b> 빈 예시 양식 다운로드 완료!`, true);
+    } catch (err) {
+      console.error('예시 양식 다운로드 에러:', err);
+      showToast('예시 양식 생성 중 오류가 발생했습니다: ' + escapeHtml(err && err.message ? err.message : String(err)));
+    }
+  });
+
   // --- 한글(.hwpx) 정식 파일 생성 및 다운로드 핸들러 ---
   async function exportToHwpx() {
     if (!rawInput.value.trim()) {
@@ -3004,40 +3563,10 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         pkgFiles = buildHwpxPackageFiles(rawInput.value, now).files;
       }
 
-      const zip = new JSZip();
-
-      // 1. mimetype 최상단 엔트리 무압축(STORE) 저장
-      zip.file("mimetype", pkgFiles["mimetype"] || "application/hwp+zip", { compression: "STORE" });
-
-      // 2. 나머지 XML/텍스트 파일 저장 (DEFLATE)
-      Object.entries(pkgFiles).forEach(([path, data]) => {
-        if (path !== "mimetype") {
-          zip.file(path, data, { compression: "DEFLATE" });
-        }
-      });
-
-      // 3. 양식에 포함된 이미지/바이너리 리소스(BinData/* 등) 원본 그대로 보존
-      Object.entries(binaryEntries).forEach(([path, uint8]) => {
-        zip.file(path, uint8, { compression: "DEFLATE" });
-      });
-
-      const content = await zip.generateAsync({
-        type: 'blob',
-        mimeType: 'application/hwp+zip',
-        compression: "DEFLATE",
-        compressionOptions: { level: 6 }
-      });
       const dateStr = now.getFullYear() + ('0' + (now.getMonth() + 1)).slice(-2) + ('0' + now.getDate()).slice(-2) + '_' + ('0' + now.getHours()).slice(-2) + ('0' + now.getMinutes()).slice(-2);
       const fileName = `${basePrefix}_${dateStr}.hwpx`;
 
-      const downloadUrl = URL.createObjectURL(content);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
+      await downloadHwpxFilesAsZip(pkgFiles, binaryEntries, fileName);
 
       showToast(`<b>${escapeHtml(fileName)} 다운로드 완료!</b> 한컴독스 및 한글에서 열어보세요.`, true);
     } catch (err) {
@@ -3049,7 +3578,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   document.getElementById('btnDownloadHwpx').addEventListener('click', exportToHwpx);
 
   runtimeTemplates = loadStoredTemplates();
-  renderTemplateUi();
+  renderTemplateUi(false);
   let lastSelectedTplId = DEFAULT_TEMPLATE_ID;
   try {
     lastSelectedTplId = localStorage.getItem(TEMPLATE_SELECTED_KEY) || DEFAULT_TEMPLATE_ID;

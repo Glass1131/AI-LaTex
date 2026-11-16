@@ -389,3 +389,65 @@ test('HWPX template inspection and text/equation insertion support placeholders,
   assert.ok(!minSec.includes('charPrIDRef="1"'), 'Must not reference nonexistent charPr 1');
   assert.ok(!minSec.includes('paraPrIDRef="1"'), 'Must not reference nonexistent paraPr 1');
 });
+
+test('buildSampleWorksheetTemplateFiles creates a valid sample HWPX template with bordered table and {{본문}} slot', () => {
+  const sampleFiles = engine.buildSampleWorksheetTemplateFiles(new Date('2026-05-01T00:00:00Z'));
+  assertWellFormedXml(sampleFiles['Contents/header.xml'], 'Sample worksheet header.xml');
+  assertWellFormedXml(sampleFiles['Contents/section0.xml'], 'Sample worksheet section0.xml');
+  assertWellFormedXml(sampleFiles['Contents/content.hpf'], 'Sample worksheet content.hpf');
+  assert.ok(sampleFiles['Contents/header.xml'].includes('<hh:borderFills itemCnt="4">'));
+
+  const inspected = engine.inspectHwpxSectionSlots(sampleFiles['Contents/section0.xml']);
+  assert.ok(inspected.slots.some(s => s.locationLabel === '표1 · 2행 1열' && s.placeholders[0]?.full === '{{본문}}'));
+  const target = inspected.slots.find(s => s.slotId === inspected.recommendedSlotId);
+  assert.equal(target.locationLabel, '표1 · 2행 1열');
+  assert.equal(inspected.recommendedMode, 'replace');
+
+  const merged = engine.applyTextToHwpxTemplateFiles(sampleFiles, engine.SAMPLE_TEXT);
+  assertWellFormedXml(merged.files['Contents/section0.xml'], 'Merged sample worksheet section0.xml');
+  assert.ok(!merged.files['Contents/section0.xml'].includes('{{본문}}'));
+  assert.ok(merged.files['Contents/section0.xml'].includes('수학 풀이 정리 양식'));
+  assert.ok(merged.files['Contents/section0.xml'].includes('과목 / 단원:'));
+  assert.ok(merged.files['Contents/section0.xml'].includes('<hp:script>'));
+});
+
+test('renderHwpxTemplatePreviewHtml renders worksheet tables, borders, shading, and live body into preview/print HTML safely', () => {
+  const sampleFiles = engine.buildSampleWorksheetTemplateFiles(new Date('2026-05-01T00:00:00Z'));
+  const bodyHtml = '<p>변환된 수식 <strong>테스트</strong></p>';
+
+  // 1. Default replace mode puts bodyHtml into the {{본문}} table cell cleanly
+  const previewReplace = engine.renderHwpxTemplatePreviewHtml(sampleFiles, bodyHtml);
+  assert.ok(previewReplace.includes('class="hwpx-preview-sheet"'));
+  assert.ok(previewReplace.includes('<table class="hwpx-preview-table"'));
+  assert.ok(previewReplace.includes('수학 풀이 정리 양식'));
+  assert.ok(previewReplace.includes('과목 / 단원:'));
+  assert.ok(previewReplace.includes('background-color:#EFF6FF;'), 'Header row borderFill shading must render');
+  assert.ok(previewReplace.includes('colspan="2"'), 'Merged body cell must keep colspan="2"');
+  assert.ok(!previewReplace.includes('{{본문}}'), '{{본문}} placeholder should be replaced by rendered bodyHtml');
+  assert.ok(previewReplace.includes(bodyHtml));
+
+  // 2. Append mode keeps original slot and appends rendered bodyHtml after it
+  const inspected = engine.inspectHwpxSectionSlots(sampleFiles['Contents/section0.xml']);
+  const previewAfter = engine.renderHwpxTemplatePreviewHtml(sampleFiles, bodyHtml, { slotId: 0, mode: 'after' });
+  assert.ok(previewAfter.includes('수학 풀이 정리 양식'));
+  assert.ok(previewAfter.indexOf('수학 풀이 정리 양식') < previewAfter.indexOf(bodyHtml));
+  assert.ok(previewAfter.indexOf(bodyHtml) < previewAfter.indexOf('과목 / 단원:'));
+
+  // 3. replace_body shows sheet wrapper without old table
+  const previewBodyOnly = engine.renderHwpxTemplatePreviewHtml(sampleFiles, bodyHtml, { mode: 'replace_body' });
+  assert.ok(previewBodyOnly.includes('data-template-mode="replace_body"'));
+  assert.ok(!previewBodyOnly.includes('<table class="hwpx-preview-table"'));
+  assert.ok(previewBodyOnly.includes(bodyHtml));
+
+  // 4. XSS safety: HTML chars in template text & rogue tags in XML must never render as active HTML
+  const maliciousXml = sampleFiles['Contents/section0.xml']
+    .replace('검산 및 추가 메모:', '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;메모<script>alert(2)</script>');
+  const safePreview = engine.renderHwpxTemplatePreviewHtml(
+    { ...sampleFiles, 'Contents/section0.xml': maliciousXml },
+    bodyHtml
+  );
+  assert.ok(!safePreview.includes('<img src=x'));
+  assert.ok(!safePreview.includes('<script>'));
+  assert.ok(safePreview.includes('&lt;img src=x onerror=&quot;alert(1)&quot;&gt;메모'));
+  assert.ok(inspected.slots.length > 0);
+});
