@@ -495,3 +495,74 @@ test('applyEditsToHwpxTemplateFiles and multi-slot renderHwpxTemplatePreviewHtml
   assert.ok(!secXml.includes('{{본문}}'));
   assert.ok(secXml.includes('검산 및 추가 메모:'));
 });
+
+test('hwpToLatex handles uppercase keywords, prime, vert, Korean text, and latexToHwp \\sim', () => {
+  assert.equal(
+    engine.hwpToLatex('f prime  (x)=0.2x ^{2} -0.65x+1.91'),
+    "f' (x)=0.2x ^{2} -0.65x+1.91"
+  );
+  assert.equal(engine.hwpToLatex('(A SIM  E)'), '(A \\sim E)');
+  assert.equal(
+    engine.hwpToLatex('vert 실제값-f(x) vert  APPROX  0.08361'),
+    '\\vert \\text{실제값}-f(x) \\vert \\approx 0.08361'
+  );
+  assert.equal(
+    engine.hwpToLatex('{a} OVER {b} TIMES SQRT {x} -> INF'),
+    '\\frac{a}{b} \\times \\sqrt{x} \\to \\infty'
+  );
+  assert.equal(engine.latexToHwp('A \\sim E'), 'A sim E');
+});
+
+test('renderHwpxTemplatePreviewHtml renders inline photos, BEHIND_TEXT form layers, and preserves pictures/equations on inspect', () => {
+  const nsAttrs = 'xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:opf="http://www.idpf.org/2007/opf/"';
+  const tinyPng = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13]);
+  const tinyJpg = new Uint8Array([255, 216, 255, 224, 0, 16, 74, 70]);
+  const tinyWmf = new Uint8Array([1, 0, 9, 0]);
+
+  const headerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head ${nsAttrs}><hh:refList><hh:charProperties itemCnt="1"><hh:charPr id="0" height="1000"/></hh:charProperties><hh:paraProperties itemCnt="1"><hh:paraPr id="0"><hh:align horizontal="LEFT"/></hh:paraPr></hh:paraProperties><hh:borderFills itemCnt="1"><hh:borderFill id="3"><hh:leftBorder type="SOLID" color="#64748B"/><hh:rightBorder type="SOLID" color="#64748B"/><hh:topBorder type="SOLID" color="#64748B"/><hh:bottomBorder type="SOLID" color="#64748B"/></hh:borderFill></hh:borderFills><hh:styles itemCnt="1"><hh:style id="0" paraPrIDRef="0" charPrIDRef="0"/></hh:styles></hh:refList></hh:head>`;
+  const hpfXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><opf:package ${nsAttrs}><opf:manifest><opf:item id="bg1" href="BinData/bg1.png" media-type="image/png"/><opf:item id="pic1" href="BinData/photo.jpg" media-type="image/jpg"/><opf:item id="vec1" href="BinData/legacy.wmf" media-type="image/wmf"/></opf:manifest></opf:package>`;
+  const picBg = (id, z) => `<hp:pic id="${id}" zOrder="${z}" textWrap="BEHIND_TEXT"><hp:orgSz width="59527" height="84188"/><hp:curSz width="0" height="0"/><hc:img binaryItemIDRef="bg1"/><hp:sz width="59527" height="84188"/><hp:pos treatAsChar="0" vertRelTo="PAGE" horzRelTo="PAGE" vertOffset="0" horzOffset="0"/></hp:pic>`;
+  const picCell = `<hp:pic id="200" zOrder="5" textWrap="SQUARE"><hp:orgSz width="40000" height="20000"/><hp:curSz width="20000" height="10000"/><hc:img binaryItemIDRef="pic1"/><hp:sz width="20000" height="10000"/><hp:pos treatAsChar="0" vertRelTo="PARA" horzRelTo="PARA" vertOffset="0" horzOffset="0"/></hp:pic>`;
+  const picWmf = `<hp:pic id="201" zOrder="6" textWrap="SQUARE"><hp:orgSz width="10000" height="5000"/><hp:curSz width="0" height="0"/><hc:img binaryItemIDRef="vec1"/><hp:sz width="10000" height="5000"/><hp:pos treatAsChar="1" vertRelTo="PARA" horzRelTo="PARA" vertOffset="0" horzOffset="0"/></hp:pic>`;
+  const secXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hs:sec ${nsAttrs}><hp:p id="1" paraPrIDRef="0" pageBreak="0"><hp:run charPrIDRef="0"><hp:secPr><hp:pagePr width="59527" height="84188"/></hp:secPr>${picBg(100, 1)}${picBg(101, 2)}<hp:t>머리 제목</hp:t></hp:run></hp:p><hp:p id="2" paraPrIDRef="0" pageBreak="0"><hp:run charPrIDRef="0"><hp:tbl><hp:tr><hp:tc borderFillIDRef="3"><hp:subList><hp:p id="3" paraPrIDRef="0"><hp:run charPrIDRef="0">${picCell}</hp:run></hp:p></hp:subList><hp:cellSz width="40000" height="10000"/></hp:tc><hp:tc borderFillIDRef="3"><hp:subList><hp:p id="4" paraPrIDRef="0"><hp:run charPrIDRef="0"><hp:t>값: </hp:t><hp:equation><hp:script>vert x vert APPROX 2</hp:script></hp:equation></hp:run></hp:p></hp:subList><hp:cellSz width="20000" height="10000"/></hp:tc></hp:tr></hp:tbl></hp:run></hp:p><hp:p id="5" paraPrIDRef="0" pageBreak="1"><hp:run charPrIDRef="0">${picWmf}<hp:t>다음 페이지</hp:t></hp:run></hp:p></hs:sec>`;
+
+  const files = {
+    'Contents/header.xml': headerXml,
+    'Contents/content.hpf': hpfXml,
+    'Contents/section0.xml': secXml
+  };
+  const binaryFiles = {
+    'BinData/bg1.png': tinyPng,
+    'BinData/photo.jpg': tinyJpg,
+    'BinData/legacy.wmf': tinyWmf
+  };
+
+  // 1. Inspect extracts equations cleanly and tracks hasPicChild
+  const inspected = engine.inspectHwpxSectionSlots(secXml);
+  const eqSlot = inspected.slots.find(s => s.equationCount > 0);
+  assert.ok(eqSlot);
+  assert.equal(eqSlot.editorText, '값: $\\vert x \\vert \\approx 2$');
+  const bgSlot = inspected.slots.find(s => s.slotId === 0);
+  assert.equal(bgSlot.hasPicChild, true);
+
+  // 2. Preview renders multi-page form layers (deduplicated per page) + photo img + WMF fallback
+  const html = engine.renderHwpxTemplatePreviewHtml(files, {
+    edits: [],
+    binaryFiles,
+    activeSlotId: eqSlot.slotId,
+    activeMode: 'replace'
+  });
+  assert.equal((html.match(/class="hwpx-preview-page/g) || []).length, 2);
+  assert.equal((html.match(/class="hwpx-page-bg-img"/g) || []).length, 1, 'Overlapping identical page backgrounds must be deduplicated');
+  assert.ok(html.includes('data:image/png;base64,'), 'Page background PNG should resolve via content.hpf');
+  assert.ok(html.includes('class="hwpx-pic-img" src="data:image/jpeg;base64,'), 'Table cell photo should normalize image/jpg to image/jpeg');
+  assert.ok(html.includes('hwpx-pic-unsupported') && html.includes('WMF'), 'Legacy WMF should render clean fallback notice');
+
+  // 3. Replacing text inside slot 0 preserves its attached <hp:pic> and <hp:secPr>
+  const patched = engine.applyEditsToHwpxTemplateFiles(files, [
+    { sectionPath: 'Contents/section0.xml', slotId: 0, mode: 'replace', rawText: '바뀐 제목' }
+  ]);
+  assertWellFormedXml(patched.files['Contents/section0.xml'], 'Patched pic-preserving section0.xml');
+  assert.ok(patched.files['Contents/section0.xml'].includes('binaryItemIDRef="bg1"'));
+  assert.ok(patched.files['Contents/section0.xml'].includes('바뀐 제목'));
+});

@@ -87,6 +87,72 @@
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
+    .hwpx-preview-sheet.hwpx-preview-multi {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .hwpx-preview-page {
+      position: relative;
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 0.75rem;
+      padding: 1.35rem 1.5rem;
+      box-shadow: 0 10px 25px rgba(2, 6, 23, 0.45);
+      border: 1px solid #cbd5e1;
+      overflow: hidden;
+    }
+    .hwpx-preview-page--with-bg {
+      aspect-ratio: 210 / 297;
+    }
+    .hwpx-page-bg-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .hwpx-page-bg-item {
+      position: absolute;
+      pointer-events: none;
+    }
+    .hwpx-page-bg-img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .hwpx-page-fg {
+      position: relative;
+      z-index: 1;
+    }
+    .hwpx-pic-wrap {
+      margin: 0.35rem 0;
+      max-width: 100%;
+    }
+    .hwpx-pic-inline {
+      display: inline-block;
+      vertical-align: middle;
+      margin: 0 0.2rem;
+    }
+    .hwpx-pic-img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 0.25rem;
+    }
+    .hwpx-pic-unsupported {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: #64748b;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 0.375rem;
+      padding: 0.35rem 0.65rem;
+    }
     .hwpx-preview-sheet h1, .hwpx-preview-sheet h2, .hwpx-preview-sheet h3 { color: #0f172a; }
     .hwpx-preview-sheet p, .hwpx-preview-sheet li { color: #1e293b; }
     .hwpx-preview-sheet code { background: #f1f5f9; color: #0369a1; }
@@ -153,7 +219,12 @@
       main { display: block !important; max-width: 100% !important; padding: 0 !important; }
       #rightPanel { border: none !important; box-shadow: none !important; background: white !important; }
       #rightScrollArea, #tabContentPreview { display: block !important; max-height: none !important; overflow: visible !important; padding: 0 !important; }
-      .hwpx-preview-sheet { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+      .hwpx-preview-sheet, .hwpx-preview-page { border: none !important; box-shadow: none !important; border-radius: 0 !important; }
+      .hwpx-preview-sheet:not(.hwpx-preview-multi) { padding: 0 !important; }
+      .hwpx-preview-sheet.hwpx-preview-multi { gap: 0 !important; }
+      .hwpx-preview-page { break-after: page; page-break-after: always; padding: 0.5rem 0.75rem !important; }
+      .hwpx-preview-page:last-child { break-after: auto; page-break-after: auto; }
+      .hwpx-page-bg-img { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .hwpx-slot-after { border-top: none !important; padding-top: 0 !important; }
       .hwpx-slot-clickable, .hwpx-slot-selected { outline: none !important; box-shadow: none !important; cursor: default !important; }
       .markdown-body p, .markdown-body li, .markdown-body h1, .markdown-body h2, .markdown-body h3 {
@@ -429,7 +500,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     let s = str;
     let guard = 0;
     while (guard < 16) {
-      const overRe = /(?<![\\a-zA-Z])over(?![a-zA-Z])/g;
+      const overRe = /(?<![\\a-zA-Z])over(?![a-zA-Z])/gi;
       const match = overRe.exec(s);
       if (!match) break;
 
@@ -490,6 +561,28 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return s;
   }
 
+  function wrapBareKoreanInLatex(str) {
+    const protectedText = [];
+    const protectPattern = /\\(text|mathrm|textbf|textit)(?![a-zA-Z])/;
+    let out = replaceBalancedCommands(str, protectPattern, 1, false, (cmd, opt, args, raw) => {
+      const tok = `\uE000HTX${protectedText.length}\uE001`;
+      protectedText.push({ tok, raw });
+      return tok;
+    });
+    out = out.replace(/"([^"\r\n]+)"/g, (m, inner) => `\\text{${inner}}`);
+    out = replaceBalancedCommands(out, /\\(text)(?![a-zA-Z])/, 1, false, (cmd, opt, args, raw) => {
+      const tok = `\uE000HTX${protectedText.length}\uE001`;
+      protectedText.push({ tok, raw });
+      return tok;
+    });
+    out = out.replace(/[가-힣ㄱ-ㅎㅏ-ㅣ]+(?:[ \t]+[가-힣ㄱ-ㅎㅏ-ㅣ]+)*/g, (m) => `\\text{${m}}`);
+    for (let i = protectedText.length - 1; i >= 0; i--) {
+      const { tok, raw } = protectedText[i];
+      out = out.replace(tok, () => raw);
+    }
+    return out;
+  }
+
   // --- [신규] 한글(HWP) 수식 스크립트 -> LaTeX 자동 변환기 ---
   function hwpToLatex(hwp) {
     if (!hwp) return '';
@@ -498,10 +591,10 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     // HWP 행렬/정렬 블록: 중첩 중괄호를 안전하게 추적하여 \begin{...} ... \end{...} 변환
     let matResult = '';
     let matLastIdx = 0;
-    const hwpMatRe = /(?<![\\a-zA-Z0-9_])(pmatrix|bmatrix|dmatrix|matrix|cases|eqalign)\s*\{/g;
+    const hwpMatRe = /(?<![\\a-zA-Z0-9_])(pmatrix|bmatrix|dmatrix|matrix|cases|eqalign)\s*\{/gi;
     let matMatch;
     while ((matMatch = hwpMatRe.exec(s)) !== null) {
-      const type = matMatch[1];
+      const type = matMatch[1].toLowerCase();
       const braceIdx = matMatch.index + matMatch[0].length - 1;
       const grp = extractBalancedGroup(s, braceIdx, '{', '}');
       if (grp) {
@@ -525,12 +618,12 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       prev = s;
       let out = '';
       let cursor = 0;
-      const rootRe = /(?<![\\a-zA-Z])root(?![a-zA-Z])\s*\{/g;
+      const rootRe = /(?<![\\a-zA-Z])root(?![a-zA-Z])\s*\{/gi;
       let rm;
       while ((rm = rootRe.exec(s)) !== null) {
         const degGrp = extractBalancedGroup(s, rm.index + rm[0].length - 1, '{', '}');
         if (!degGrp) continue;
-        const afterOf = s.slice(degGrp.endIndex).match(/^\s+of\b\s*/);
+        const afterOf = s.slice(degGrp.endIndex).match(/^\s+of\b\s*/i);
         if (!afterOf) continue;
         const valStart = degGrp.endIndex + afterOf[0].length;
         const valGrp = extractBalancedGroup(s, valStart, '{', '}');
@@ -548,21 +641,33 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         }
       }
       s = out + s.slice(cursor);
-      s = replaceBalancedCommands(s, /(?<![\\a-zA-Z])(sqrt)(?![a-zA-Z])/, 1, false, (cmd, opt, args) => `\\sqrt{${args[0]}}`);
+      s = replaceBalancedCommands(s, /(?<![\\a-zA-Z])(sqrt)(?![a-zA-Z])/i, 1, false, (cmd, opt, args) => `\\sqrt{${args[0]}}`);
       guard++;
     } while (s !== prev && guard < 8);
 
-    // 괄호 스케일링 및 중괄호 키워드
-    s = s.replace(/(?<![\\a-zA-Z])(?:left|LEFT)\s+(?:lbrace|LBRACE)(?![a-zA-Z])/g, '\\left\\{')
-         .replace(/(?<![\\a-zA-Z])(?:right|RIGHT)\s+(?:rbrace|RBRACE)(?![a-zA-Z])/g, '\\right\\}')
-         .replace(/(?<![\\a-zA-Z])(?:lbrace|LBRACE)(?![a-zA-Z])/g, '\\{')
-         .replace(/(?<![\\a-zA-Z])(?:rbrace|RBRACE)(?![a-zA-Z])/g, '\\}')
-         .replace(/(?<![\\a-zA-Z])(?:Vert|VERT)(?![a-zA-Z])/g, '\\|');
+    // 미분 기호 prime / 로만체 접두어 rm
+    s = s.replace(/\^\s*\{?\s*(?<![\\a-zA-Z])prime(?![a-zA-Z])\s*\}?/gi, "'")
+         .replace(/[ \t]*(?<![\\a-zA-Z])prime(?![a-zA-Z])/gi, "'")
+         .replace(/(?<![\\a-zA-Z])rm[ \t]+(?="|[\uAC00-\uD7A3])/gi, '');
 
-    // 연산자 및 기호 (비단어 문자 경계 주의: <=, =>, <=> 등 \b 미사용)
-    s = s.replace(/<=>|(?<![\\a-zA-Z])LRARROW(?![a-zA-Z])/g, '\\iff ')
-         .replace(/=>|(?<![\\a-zA-Z])Rightarrow(?![a-zA-Z])/g, '\\implies ')
-         .replace(/(?<![\\a-zA-Z])Leftarrow(?![a-zA-Z])/g, '\\Longleftarrow ')
+    // 괄호 스케일링, 절댓값(vert) 및 중괄호 키워드
+    s = s.replace(/(?<![\\a-zA-Z])left\s+lbrace(?![a-zA-Z])/gi, '\\left\\{')
+         .replace(/(?<![\\a-zA-Z])right\s+rbrace(?![a-zA-Z])/gi, '\\right\\}')
+         .replace(/(?<![\\a-zA-Z])left\s+(?:Vert|VERT)(?![a-zA-Z])/gi, '\\left\\|')
+         .replace(/(?<![\\a-zA-Z])right\s+(?:Vert|VERT)(?![a-zA-Z])/gi, '\\right\\|')
+         .replace(/(?<![\\a-zA-Z])left\s+vert(?![a-zA-Z])/g, '\\left\\vert ')
+         .replace(/(?<![\\a-zA-Z])right\s+vert(?![a-zA-Z])/g, '\\right\\vert ')
+         .replace(/(?<![\\a-zA-Z])left\s*([(\[|])/gi, '\\left$1')
+         .replace(/(?<![\\a-zA-Z])right\s*([)\]|])/gi, '\\right$1')
+         .replace(/(?<![\\a-zA-Z])lbrace(?![a-zA-Z])/gi, '\\{')
+         .replace(/(?<![\\a-zA-Z])rbrace(?![a-zA-Z])/gi, '\\}')
+         .replace(/(?<![\\a-zA-Z])(?:Vert|VERT)(?![a-zA-Z])/g, '\\|')
+         .replace(/(?<![\\a-zA-Z])vert(?![a-zA-Z])/g, '\\vert ');
+
+    // 연산자 및 기호 (한컴 수식 편집기 대소문자 무시 + 비단어 경계 주의)
+    s = s.replace(/<=>|(?<![\\a-zA-Z])LRARROW(?![a-zA-Z])/gi, '\\iff ')
+         .replace(/=>|(?<![\\a-zA-Z])Rightarrow(?![a-zA-Z])/gi, '\\implies ')
+         .replace(/(?<![\\a-zA-Z])Leftarrow(?![a-zA-Z])/gi, '\\Longleftarrow ')
          .replace(/->/g, '\\to ')
          .replace(/<-/g, '\\gets ')
          .replace(/<=/g, '\\le ')
@@ -570,25 +675,27 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
          .replace(/!=/g, '\\neq ')
          .replace(/\+-/g, '\\pm ')
          .replace(/-\+/g, '\\mp ')
-         .replace(/(?<![\\a-zA-Z])not\s+in(?![a-zA-Z])/g, '\\notin ')
-         .replace(/(?<![\\a-zA-Z])dint(?![a-zA-Z])/g, '\\iint ')
-         .replace(/(?<![\\a-zA-Z])tint(?![a-zA-Z])/g, '\\iiint ')
-         .replace(/(?<![\\a-zA-Z])times(?![a-zA-Z])/g, '\\times ')
-         .replace(/(?<![\\a-zA-Z])divide(?![a-zA-Z])/g, '\\div ')
-         .replace(/(?<![\\a-zA-Z])cdot(?![a-zA-Z])/g, '\\cdot ')
-         .replace(/(?<![\\a-zA-Z])cdots(?![a-zA-Z])/g, '\\cdots ')
-         .replace(/(?<![\\a-zA-Z])ldots(?![a-zA-Z])/g, '\\ldots ')
-         .replace(/(?<![\\a-zA-Z])inf(?![a-zA-Z])/g, '\\infty ')
-         .replace(/(?<![\\a-zA-Z])approx(?![a-zA-Z])/g, '\\approx ')
-         .replace(/(?<![\\a-zA-Z])equiv(?![a-zA-Z])/g, '\\equiv ')
-         .replace(/(?<![\\a-zA-Z])in(?![a-zA-Z])/g, '\\in ')
-         .replace(/(?<![\\a-zA-Z])subset(?![a-zA-Z])/g, '\\subset ')
-         .replace(/(?<![\\a-zA-Z])cup(?![a-zA-Z])/g, '\\cup ')
-         .replace(/(?<![\\a-zA-Z])cap(?![a-zA-Z])/g, '\\cap ')
-         .replace(/(?<![\\a-zA-Z])emptyset(?![a-zA-Z])/g, '\\emptyset ')
-         .replace(/(?<![\\a-zA-Z])therefore(?![a-zA-Z])/g, '\\therefore ')
-         .replace(/(?<![\\a-zA-Z])because(?![a-zA-Z])/g, '\\because ');
+         .replace(/(?<![\\a-zA-Z])not\s+in(?![a-zA-Z])/gi, '\\notin ')
+         .replace(/(?<![\\a-zA-Z])dint(?![a-zA-Z])/gi, '\\iint ')
+         .replace(/(?<![\\a-zA-Z])tint(?![a-zA-Z])/gi, '\\iiint ')
+         .replace(/(?<![\\a-zA-Z])times(?![a-zA-Z])/gi, '\\times ')
+         .replace(/(?<![\\a-zA-Z])divide(?![a-zA-Z])/gi, '\\div ')
+         .replace(/(?<![\\a-zA-Z])cdot(?![a-zA-Z])/gi, '\\cdot ')
+         .replace(/(?<![\\a-zA-Z])cdots(?![a-zA-Z])/gi, '\\cdots ')
+         .replace(/(?<![\\a-zA-Z])ldots(?![a-zA-Z])/gi, '\\ldots ')
+         .replace(/(?<![\\a-zA-Z])inf(?![a-zA-Z])/gi, '\\infty ')
+         .replace(/(?<![\\a-zA-Z])approx(?![a-zA-Z])/gi, '\\approx ')
+         .replace(/(?<![\\a-zA-Z])sim(?![a-zA-Z])/gi, '\\sim ')
+         .replace(/(?<![\\a-zA-Z])equiv(?![a-zA-Z])/gi, '\\equiv ')
+         .replace(/(?<![\\a-zA-Z])in(?![a-zA-Z])/gi, '\\in ')
+         .replace(/(?<![\\a-zA-Z])subset(?![a-zA-Z])/gi, '\\subset ')
+         .replace(/(?<![\\a-zA-Z])cup(?![a-zA-Z])/gi, '\\cup ')
+         .replace(/(?<![\\a-zA-Z])cap(?![a-zA-Z])/gi, '\\cap ')
+         .replace(/(?<![\\a-zA-Z])emptyset(?![a-zA-Z])/gi, '\\emptyset ')
+         .replace(/(?<![\\a-zA-Z])therefore(?![a-zA-Z])/gi, '\\therefore ')
+         .replace(/(?<![\\a-zA-Z])because(?![a-zA-Z])/gi, '\\because ');
 
+    s = wrapBareKoreanInLatex(s);
     return s.replace(/\s{2,}/g, ' ').trim();
   }
 
@@ -656,7 +763,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   function replaceBalancedCommands(str, cmdRegex, argCount, allowOptionalBracket, replacer) {
     let result = '';
     let lastIndex = 0;
-    const regex = new RegExp(cmdRegex.source, 'g');
+    const flags = cmdRegex.flags.includes('g') ? cmdRegex.flags : (cmdRegex.flags + 'g');
+    const regex = new RegExp(cmdRegex.source, flags);
     let match;
 
     while ((match = regex.exec(str)) !== null) {
@@ -872,6 +980,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     s = s.replace(/\\ldots(?![a-zA-Z])/g, 'ldots');
     s = s.replace(/\\infty(?![a-zA-Z])/g, 'inf');
     s = s.replace(/\\approx(?![a-zA-Z])/g, 'approx');
+    s = s.replace(/\\sim(?![a-zA-Z])/g, 'sim');
     s = s.replace(/\\equiv(?![a-zA-Z])/g, 'equiv');
     s = s.replace(/\\in(?![a-zA-Z])/g, 'in');
     s = s.replace(/\\notin(?![a-zA-Z])/g, 'not in');
@@ -929,7 +1038,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     'upsilon', 'phi', 'chi', 'psi', 'Gamma', 'Delta', 'Theta', 'Lambda',
     'Xi', 'Pi', 'Sigma', 'Phi', 'Psi', 'Omega',
     'begin', 'end', 'left', 'right', 'text', 'mathrm', 'textbf', 'textit',
-    'vert', 'Vert', 'lbrace', 'rbrace', 'cdots', 'ldots', 'equiv', 'in',
+    'vert', 'Vert', 'lbrace', 'rbrace', 'cdots', 'ldots', 'equiv', 'sim', 'prime', 'in',
     'notin', 'subset', 'cup', 'cap', 'emptyset', 'therefore', 'because',
     'Longrightarrow', 'Longleftrightarrow', 'rightarrow', 'leftarrow', 'gets',
     'vec', 'overrightarrow', 'overline', 'bar', 'hat', 'dot',
@@ -1848,18 +1957,27 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       }
 
       const secCtrlSlices = [];
+      const picSlices = [];
       for (const r of para.runs) {
         for (const sc of r.secCtrlSlices) {
           secCtrlSlices.push(sectionXml.slice(sc.start, sc.end));
+        }
+        for (const ps of r.picSlices) {
+          picSlices.push({
+            runIdx: r.runIdx,
+            xml: `<hp:run charPrIDRef="${escapeXml(r.charPrIDRef || charPrIDRef)}">${sectionXml.slice(ps.start, ps.end)}</hp:run>`
+          });
         }
       }
       const secCtrlRunXml = secCtrlSlices.length > 0
         ? `<hp:run charPrIDRef="${escapeXml(para.secCtrlCharPrId || charPrIDRef)}">${secCtrlSlices.join('')}</hp:run>`
         : '';
+      const picRunXml = picSlices.map(p => p.xml).join('');
+      const editorText = para.editorStream.join('');
 
       const trimmedPreview = rawText.replace(/\s+/g, ' ').trim();
       const previewText = trimmedPreview ||
-        (para.hasTableChild ? '(표 포함)' : (para.hasEquationChild ? '(수식 포함)' : '(빈 문단)'));
+        (para.hasTableChild ? '(표 포함)' : (para.hasEquationChild ? '(수식 포함)' : (para.hasPicChild ? '(사진/서식 포함)' : '(빈 문단)')));
 
       slots[para.slotId] = {
         slotId: para.slotId,
@@ -1877,11 +1995,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         isDrawText,
         hasTableChild: para.hasTableChild,
         hasEquationChild: para.hasEquationChild,
+        equationCount: para.equationCount,
+        hasPicChild: para.hasPicChild,
         hasSecPr: para.hasSecPr,
         secCtrlRunXml,
+        picSlices,
+        picRunXml,
         runs: para.runs,
         textSegs,
         rawText,
+        editorText,
         previewText,
         placeholders,
         locationLabel,
@@ -1893,19 +2016,29 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       onText(start, end) {
         if (ignoreDepth > 0 || paraStack.length === 0) return;
         const p = paraStack[paraStack.length - 1];
+        if (p.inEqScript) {
+          p.eqScriptBuf += decodeXmlEntities(sectionXml.slice(start, end));
+          return;
+        }
         if (!p.activeT) return;
         const text = decodeXmlEntities(sectionXml.slice(start, end));
         if (text) {
           p.activeT.segments.push({ xmlStart: start, xmlEnd: end, text, isControlTag: false });
+          p.editorStream.push(text);
         }
       },
       onCdata(start, end) {
         if (ignoreDepth > 0 || paraStack.length === 0) return;
         const p = paraStack[paraStack.length - 1];
+        if (p.inEqScript) {
+          p.eqScriptBuf += sectionXml.slice(start, end);
+          return;
+        }
         if (!p.activeT) return;
         const text = sectionXml.slice(start, end);
         if (text) {
           p.activeT.segments.push({ xmlStart: start, xmlEnd: end, text, isControlTag: false });
+          p.editorStream.push(text);
         }
       },
       onTag({ start, end, tagName, attrsStr, isClosing, isSelfClosing }) {
@@ -1930,6 +2063,14 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
                 ar.hasSecCtrl = true;
               } else {
                 ar.capturingSecCtrl = { start, stackDepth: xmlDepthStack.length + 1, isSecPr: tagName === 'hp:secPr' };
+              }
+            } else if (ar && xmlDepthStack.length === ar.stackDepth && tagName === 'hp:pic') {
+              curP.hasPicChild = true;
+              if (isSelfClosing) {
+                ar.picSlices.push({ start, end });
+                ar.hasPic = true;
+              } else {
+                ar.capturingPic = { start, stackDepth: xmlDepthStack.length + 1 };
               }
             }
           }
@@ -2008,6 +2149,11 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
                 hasSecPr: false,
                 hasTableChild: false,
                 hasEquationChild: false,
+                equationCount: 0,
+                hasPicChild: false,
+                inEqScript: false,
+                eqScriptBuf: '',
+                editorStream: [],
                 activeT: null,
                 maxContentWidth: parentContainer ? parentContainer.maxContentWidth : 42520
               };
@@ -2030,6 +2176,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
                 hasSecCtrl: false,
                 capturingSecCtrl: null,
                 secCtrlSlices: [],
+                hasPic: false,
+                capturingPic: null,
+                picSlices: [],
                 tList: []
               };
               if (isSelfClosing) {
@@ -2042,6 +2191,12 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
             const curP = paraStack[paraStack.length - 1];
             if (curP.activeRun && xmlDepthStack.length === curP.activeRun.stackDepth) {
               curP.hasEquationChild = true;
+            }
+          } else if (tagName === 'hp:script' && paraStack.length > 0 && !isSelfClosing) {
+            const curP = paraStack[paraStack.length - 1];
+            if (curP.hasEquationChild || curP.activeRun) {
+              curP.inEqScript = true;
+              curP.eqScriptBuf = '';
             }
           } else if (tagName === 'hp:t' && paraStack.length > 0) {
             const curP = paraStack[paraStack.length - 1];
@@ -2068,6 +2223,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
               text: ' ',
               isControlTag: true
             });
+            paraStack[paraStack.length - 1].editorStream.push(' ');
           }
 
           if (!isSelfClosing) xmlDepthStack.push(tagName);
@@ -2096,11 +2252,25 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
             }
             ar.capturingSecCtrl = null;
           }
+          if (ar && ar.capturingPic && afterPopDepth === ar.capturingPic.stackDepth - 1) {
+            ar.picSlices.push({ start: ar.capturingPic.start, end });
+            ar.hasPic = true;
+            ar.capturingPic = null;
+          }
         }
 
         if (ignoreDepth > 0) return;
 
-        if (tagName === 'hp:t' && paraStack.length > 0) {
+        if (tagName === 'hp:script' && paraStack.length > 0 && paraStack[paraStack.length - 1].inEqScript) {
+          const curP = paraStack[paraStack.length - 1];
+          curP.inEqScript = false;
+          const latex = hwpToLatex(curP.eqScriptBuf);
+          if (latex) {
+            curP.editorStream.push(`$${latex}$`);
+          }
+          curP.equationCount++;
+          curP.eqScriptBuf = '';
+        } else if (tagName === 'hp:t' && paraStack.length > 0) {
           const curP = paraStack[paraStack.length - 1];
           if (curP.activeT && curP.activeRun && afterPopDepth === curP.activeRun.stackDepth) {
             curP.activeT.closeStart = start;
@@ -2164,14 +2334,14 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const recommendedSlot =
       finalizedSlots.find(s => s.placeholders.some(p => preferredRe.test(p.full))) ||
       finalizedSlots.find(s => s.placeholders.length > 0) ||
-      finalizedSlots.find(s => s.inTable && !s.hasTableChild && !s.hasEquationChild && !s.rawText.trim()) ||
-      [...finalizedSlots].reverse().find(s => !s.inTable && !s.hasTableChild) ||
+      finalizedSlots.find(s => s.inTable && !s.hasTableChild && !s.hasEquationChild && !s.hasPicChild && !s.rawText.trim()) ||
+      [...finalizedSlots].reverse().find(s => !s.inTable && !s.hasTableChild && !s.hasPicChild) ||
       finalizedSlots[0] ||
       null;
 
     const recommendedMode = recommendedSlot &&
       (recommendedSlot.placeholders.length > 0 ||
-        (!recommendedSlot.hasTableChild && !recommendedSlot.hasEquationChild && !recommendedSlot.rawText.trim()))
+        (!recommendedSlot.hasTableChild && !recommendedSlot.hasEquationChild && !recommendedSlot.hasPicChild && !recommendedSlot.rawText.trim()))
       ? 'replace'
       : 'after';
 
@@ -2391,6 +2561,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     let prefixRunsXml = '';
     let suffixRunsXml = '';
     let activeCharPr = slotCharPrId;
+    const usedPicRuns = new Set();
 
     if (ph && targetSlot.textSegs.length > 0 && targetSlot.rawText.trim() !== ph.full) {
       const startSeg = targetSlot.textSegs.find(s => ph.startOffset >= s.textStart && ph.startOffset < s.textEnd);
@@ -2400,6 +2571,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         for (const run of targetSlot.runs) {
           if (run.runIdx < startSeg.runIdx) {
             prefixRunsXml += extractRunWithoutSecCtrl(sectionXml, run);
+            usedPicRuns.add(run.runIdx);
           }
         }
         let sameRunBeforeInner = '';
@@ -2428,6 +2600,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         for (const run of targetSlot.runs) {
           if (run.runIdx > endSeg.runIdx) {
             suffixRunsXml += extractRunWithoutSecCtrl(sectionXml, run);
+            usedPicRuns.add(run.runIdx);
           }
         }
       }
@@ -2435,6 +2608,11 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       const startSeg = targetSlot.textSegs[0];
       if (startSeg) activeCharPr = validOr(startSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
     }
+
+    const preservedPicXml = (targetSlot.picSlices || [])
+      .filter(ps => !usedPicRuns.has(ps.runIdx))
+      .map(ps => ps.xml)
+      .join('');
 
     const patchXml = buildHwpxParagraphsFromLines(lines, {
       tokenMap,
@@ -2444,7 +2622,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       centerParaPrId,
       styleId: slotStyleId,
       maxEquationWidth: targetSlot.maxContentWidth,
-      firstParaSecPrefix: targetSlot.secCtrlRunXml,
+      firstParaSecPrefix: `${targetSlot.secCtrlRunXml || ''}${preservedPicXml}`,
       firstParaInlinePrefix: prefixRunsXml,
       lastParaInlineSuffix: suffixRunsXml,
       getParaId: (idx) => (idx === 0 && targetSlot.hasSecPr ? 0 : idGen.nextParaId()),
@@ -2638,6 +2816,163 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return base;
   }
 
+  const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+  function uint8ToBase64(bytes) {
+    if (!bytes || bytes.length === 0) return '';
+    if (typeof btoa === 'function') {
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+    let out = '';
+    for (let i = 0; i < bytes.length; i += 3) {
+      const b0 = bytes[i];
+      const b1 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+      const b2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+      const triplet = (b0 << 16) | (b1 << 8) | b2;
+      out += BASE64_CHARS[(triplet >> 18) & 63];
+      out += BASE64_CHARS[(triplet >> 12) & 63];
+      out += i + 1 < bytes.length ? BASE64_CHARS[(triplet >> 6) & 63] : '=';
+      out += i + 2 < bytes.length ? BASE64_CHARS[triplet & 63] : '=';
+    }
+    return out;
+  }
+
+  function base64ToUint8(b64) {
+    if (!b64) return new Uint8Array(0);
+    if (typeof atob === 'function') {
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+    const clean = b64.replace(/[^A-Za-z0-9+/=]/g, '');
+    const out = [];
+    for (let i = 0; i < clean.length; i += 4) {
+      const c0 = BASE64_CHARS.indexOf(clean[i]);
+      const c1 = BASE64_CHARS.indexOf(clean[i + 1]);
+      const c2 = clean[i + 2] === '=' ? -1 : BASE64_CHARS.indexOf(clean[i + 2]);
+      const c3 = clean[i + 3] === '=' ? -1 : BASE64_CHARS.indexOf(clean[i + 3]);
+      if (c0 < 0 || c1 < 0) continue;
+      out.push((c0 << 2) | (c1 >> 4));
+      if (c2 >= 0) out.push(((c1 & 15) << 4) | (c2 >> 2));
+      if (c3 >= 0) out.push(((c2 & 3) << 6) | c3);
+    }
+    return new Uint8Array(out);
+  }
+
+  function normalizeHwpxImageMime(rawMime, pathHint = '') {
+    const lowerMime = String(rawMime || '').split(';')[0].trim().toLowerCase();
+    const extMatch = String(pathHint || '').toLowerCase().match(/\.([a-z0-9]+)$/);
+    const ext = extMatch ? extMatch[1] : '';
+    let mime = lowerMime;
+    if (!mime || mime === 'application/octet-stream') {
+      if (ext === 'png') mime = 'image/png';
+      else if (ext === 'jpg' || ext === 'jpeg') mime = 'image/jpeg';
+      else if (ext === 'gif') mime = 'image/gif';
+      else if (ext === 'webp') mime = 'image/webp';
+      else if (ext === 'svg') mime = 'image/svg+xml';
+      else if (ext === 'bmp') mime = 'image/bmp';
+      else if (ext === 'wmf') mime = 'image/x-wmf';
+      else if (ext === 'emf') mime = 'image/x-emf';
+    }
+    if (mime === 'image/jpg') mime = 'image/jpeg';
+    const supported = /^image\/(?:png|jpeg|gif|webp|bmp|svg\+xml)$/.test(mime);
+    return { mime, ext: ext.toUpperCase() || (mime ? mime.split('/').pop().toUpperCase() : 'BIN'), supported };
+  }
+
+  function parseContentHpfImageManifest(contentHpfXml) {
+    const byId = new Map();
+    if (!contentHpfXml) return byId;
+    forEachXmlTag(contentHpfXml, {
+      onTag({ tagName, attrsStr, isClosing }) {
+        if (isClosing || tagName !== 'opf:item') return;
+        const id = getXmlAttr(attrsStr, 'id');
+        const href = getXmlAttr(attrsStr, 'href');
+        const mediaType = getXmlAttr(attrsStr, 'media-type');
+        if (id && href) {
+          byId.set(id, { id, href: href.replace(/^\/+/, ''), mediaType });
+        }
+      }
+    });
+    return byId;
+  }
+
+  function findBinaryEntryByHref(binaryFiles, href) {
+    if (!binaryFiles || !href) return null;
+    if (binaryFiles[href]) return { path: href, bytes: binaryFiles[href] };
+    const norm = href.replace(/^\/+/, '').toLowerCase();
+    for (const [k, v] of Object.entries(binaryFiles)) {
+      if (k.replace(/^\/+/, '').toLowerCase() === norm) {
+        return { path: k, bytes: v };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Builds a map keyed by binaryItemIDRef (`image1`, ...) resolving HWPX BinData assets
+   * to reusable image URLs (via `createUrlFn` Blob URLs or Base64 data URIs).
+   */
+  function buildHwpxBinaryImageMap(templateFiles, binaryFiles = {}, createUrlFn = null) {
+    const manifest = parseContentHpfImageManifest((templateFiles && templateFiles['Contents/content.hpf']) || '');
+    const result = new Map();
+    if (!binaryFiles || typeof binaryFiles !== 'object') return result;
+
+    manifest.forEach((meta, itemId) => {
+      const hit = findBinaryEntryByHref(binaryFiles, meta.href);
+      if (!hit || !hit.bytes) return;
+      const { mime, ext, supported } = normalizeHwpxImageMime(meta.mediaType, hit.path);
+      if (!supported) {
+        result.set(itemId, { itemId, path: hit.path, mime, ext, supported: false, isObjectUrl: false, src: '' });
+        return;
+      }
+      let src = '';
+      let isObjectUrl = false;
+      if (typeof createUrlFn === 'function') {
+        try {
+          src = createUrlFn(hit.bytes, mime);
+          isObjectUrl = Boolean(src);
+        } catch (e) {
+          src = '';
+        }
+      }
+      if (!src) {
+        src = `data:${mime};base64,${uint8ToBase64(hit.bytes)}`;
+      }
+      result.set(itemId, { itemId, path: hit.path, mime, ext, supported: true, isObjectUrl, src });
+    });
+
+    // Fallback: index any BinData/<stem>.* missing from manifest
+    Object.entries(binaryFiles).forEach(([path, bytes]) => {
+      const m = path.match(/^BinData\/([^./]+)\.[a-z0-9]+$/i);
+      if (!m || result.has(m[1])) return;
+      const { mime, ext, supported } = normalizeHwpxImageMime('', path);
+      let src = '';
+      let isObjectUrl = false;
+      if (supported) {
+        if (typeof createUrlFn === 'function') {
+          try {
+            src = createUrlFn(bytes, mime);
+            isObjectUrl = Boolean(src);
+          } catch (e) {
+            src = '';
+          }
+        }
+        if (!src) src = `data:${mime};base64,${uint8ToBase64(bytes)}`;
+      }
+      result.set(m[1], { itemId: m[1], path, mime, ext, supported, isObjectUrl, src });
+    });
+
+    return result;
+  }
+
   /**
    * Renders an interactive / printable HTML sheet preview of a loaded HWPX template.
    * Supports either a single body HTML string (with legacy options) or a multi-slot
@@ -2651,7 +2986,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
           renderedBodyHtml: String(contentOrConfig || ''),
           sectionPath: options.sectionPath,
           activeSlotId: options.slotId,
-          activeMode: options.mode
+          activeMode: options.mode,
+          binaryImageMap: options.binaryImageMap,
+          binaryFiles: options.binaryFiles
         };
 
     const sectionPaths = Object.keys(templateFiles)
@@ -2667,6 +3004,12 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const sectionXml = templateFiles[sectionPath];
     const headerMeta = inspectHwpxHeaderStyles(templateFiles['Contents/header.xml'] || '');
     const structure = inspectHwpxSectionSlots(sectionXml);
+    const binaryFiles = cfg.binaryFiles || options.binaryFiles || null;
+    const binaryImageMap = (cfg.binaryImageMap instanceof Map)
+      ? cfg.binaryImageMap
+      : ((options.binaryImageMap instanceof Map)
+          ? options.binaryImageMap
+          : buildHwpxBinaryImageMap(templateFiles, binaryFiles || {}));
 
     const activeSlot = structure.slots.find(s => s.slotId === cfg.activeSlotId)
       || structure.slots.find(s => s.slotId === structure.recommendedSlotId)
@@ -2748,13 +3091,20 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     ]);
     const ALIGN_MAP = { CENTER: 'center', RIGHT: 'right', JUSTIFY: 'justify', LEFT: 'left' };
 
+    let pageWidth = 59527;
+    let pageHeight = 84188;
+    const pages = [{ bgPics: [], fgParts: [] }];
+    let curPage = pages[0];
+
     const xmlStack = [];
     let ignoreDepth = 0;
     let replacingParaDepth = -1;
-    const outputStack = [{ parts: [] }];
+    let replacingParaPics = [];
+    const outputStack = [{ parts: curPage.fgParts }];
     const tableStack = [];
     const cellStack = [];
     const paraStack = [];
+    let activePic = null;
     let activeRunStyle = { bold: false, height: 1000, inT: false, inEqScript: false, eqScriptBuf: '' };
 
     function pushOut(html) {
@@ -2796,6 +3146,56 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       return `<div class="${cls}"${attrs}>${preHtml}<div class="hwpx-injected-body">${innerHtml}</div>${sufHtml}</div>`;
     }
 
+    function finalizeActivePic(pic) {
+      const effW = pic.curW > 0 ? pic.curW : (pic.szW > 0 ? pic.szW : pic.orgW);
+      const effH = pic.curH > 0 ? pic.curH : (pic.szH > 0 ? pic.szH : pic.orgH);
+      const itemId = pic.binaryItemIDRef || '';
+      const imgEntry = itemId ? binaryImageMap.get(itemId) : null;
+      const isPageBg = pic.textWrap === 'BEHIND_TEXT' &&
+        (pic.vertRelTo === 'PAGE' || pic.vertRelTo === 'PAPER') &&
+        (pic.horzRelTo === 'PAGE' || pic.horzRelTo === 'PAPER') &&
+        !pic.inTable;
+
+      if (isPageBg) {
+        if (imgEntry && imgEntry.supported && imgEntry.src) {
+          curPage.bgPics.push({
+            itemId,
+            src: imgEntry.src,
+            zOrder: pic.zOrder,
+            effW: effW || pageWidth,
+            effH: effH || pageHeight,
+            horzOffset: pic.horzOffset,
+            vertOffset: pic.vertOffset,
+            horzAlign: pic.horzAlign
+          });
+        }
+        return;
+      }
+
+      let picHtml = '';
+      if (imgEntry && imgEntry.supported && imgEntry.src) {
+        const baseW = pic.containerWidth > 0 ? pic.containerWidth : 42520;
+        const wPct = effW > 0 ? Math.min(100, Math.max(15, Math.round((effW / baseW) * 100))) : 100;
+        const cls = pic.treatAsChar ? 'hwpx-pic-wrap hwpx-pic-inline' : 'hwpx-pic-wrap';
+        picHtml = `<div class="${cls}"><img class="hwpx-pic-img" src="${escapeHtml(imgEntry.src)}" style="width:${wPct}%;max-width:100%;height:auto;" alt="${escapeHtml(itemId || '이미지')}"></div>`;
+      } else if (imgEntry && !imgEntry.supported) {
+        picHtml = `<div class="hwpx-pic-wrap"><div class="hwpx-pic-unsupported">미지원 이미지 형식 (${escapeHtml(imgEntry.ext || 'BIN')})</div></div>`;
+      } else if (itemId) {
+        picHtml = `<div class="hwpx-pic-wrap"><div class="hwpx-pic-unsupported">첨부 이미지 (${escapeHtml(itemId)})</div></div>`;
+      }
+
+      if (!picHtml) return;
+      if (pic.inReplacingPara) {
+        replacingParaPics.push(picHtml);
+      } else if (paraStack.length > 0) {
+        const pCur = paraStack[paraStack.length - 1];
+        pCur.hasVisibleContent = true;
+        pCur.parts.push(picHtml);
+      } else {
+        pushOut(picHtml);
+      }
+    }
+
     forEachXmlTag(sectionXml, {
       onText(start, end) {
         if (ignoreDepth > 0 || replacingParaDepth >= 0) return;
@@ -2818,6 +3218,13 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       },
       onTag({ start, tagName, attrsStr, isClosing, isSelfClosing }) {
         if (!isClosing) {
+          if (tagName === 'hp:pagePr') {
+            const pw = Number(getXmlAttr(attrsStr, 'width'));
+            const ph = Number(getXmlAttr(attrsStr, 'height'));
+            if (Number.isFinite(pw) && pw > 0) pageWidth = pw;
+            if (Number.isFinite(ph) && ph > 0) pageHeight = ph;
+          }
+
           if (IGNORE_TAGS.has(tagName)) {
             if (!isSelfClosing) {
               ignoreDepth++;
@@ -2825,7 +3232,65 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
             }
             return;
           }
-          if (ignoreDepth > 0 || replacingParaDepth >= 0) {
+          if (ignoreDepth > 0) {
+            if (!isSelfClosing) xmlStack.push(tagName);
+            return;
+          }
+
+          if (activePic) {
+            if (tagName === 'hc:img') {
+              activePic.binaryItemIDRef = getXmlAttr(attrsStr, 'binaryItemIDRef') || activePic.binaryItemIDRef;
+            } else if (tagName === 'hp:orgSz') {
+              activePic.orgW = Number(getXmlAttr(attrsStr, 'width')) || activePic.orgW;
+              activePic.orgH = Number(getXmlAttr(attrsStr, 'height')) || activePic.orgH;
+            } else if (tagName === 'hp:curSz') {
+              const cw = Number(getXmlAttr(attrsStr, 'width'));
+              const ch = Number(getXmlAttr(attrsStr, 'height'));
+              if (Number.isFinite(cw) && cw > 0) activePic.curW = cw;
+              if (Number.isFinite(ch) && ch > 0) activePic.curH = ch;
+            } else if (tagName === 'hp:sz') {
+              const sw = Number(getXmlAttr(attrsStr, 'width'));
+              const sh = Number(getXmlAttr(attrsStr, 'height'));
+              if (Number.isFinite(sw) && sw > 0) activePic.szW = sw;
+              if (Number.isFinite(sh) && sh > 0) activePic.szH = sh;
+            } else if (tagName === 'hp:pos') {
+              activePic.treatAsChar = getXmlAttr(attrsStr, 'treatAsChar') === '1';
+              activePic.horzRelTo = getXmlAttr(attrsStr, 'horzRelTo') || '';
+              activePic.vertRelTo = getXmlAttr(attrsStr, 'vertRelTo') || '';
+              activePic.horzAlign = getXmlAttr(attrsStr, 'horzAlign') || '';
+              activePic.vertAlign = getXmlAttr(attrsStr, 'vertAlign') || '';
+              activePic.horzOffset = Number(getXmlAttr(attrsStr, 'horzOffset')) || 0;
+              activePic.vertOffset = Number(getXmlAttr(attrsStr, 'vertOffset')) || 0;
+            }
+            if (!isSelfClosing) xmlStack.push(tagName);
+            return;
+          }
+
+          if (tagName === 'hp:pic') {
+            const picObj = {
+              textWrap: getXmlAttr(attrsStr, 'textWrap') || '',
+              zOrder: Number(getXmlAttr(attrsStr, 'zOrder')) || 0,
+              inTable: cellStack.length > 0,
+              inReplacingPara: replacingParaDepth >= 0,
+              containerWidth: cellStack.length > 0 && cellStack[cellStack.length - 1].width > 1200
+                ? Math.max(2000, cellStack[cellStack.length - 1].width - 800)
+                : 42520,
+              binaryItemIDRef: '',
+              treatAsChar: false,
+              horzRelTo: '', vertRelTo: '', horzAlign: '', vertAlign: '', horzOffset: 0, vertOffset: 0,
+              szW: 0, szH: 0, orgW: 0, orgH: 0, curW: 0, curH: 0,
+              stackDepth: xmlStack.length + 1
+            };
+            if (isSelfClosing) {
+              finalizeActivePic(picObj);
+            } else {
+              activePic = picObj;
+              xmlStack.push(tagName);
+            }
+            return;
+          }
+
+          if (replacingParaDepth >= 0) {
             if (!isSelfClosing) xmlStack.push(tagName);
             return;
           }
@@ -2833,6 +3298,12 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
           if (tagName === 'hp:p') {
             const parentTag = xmlStack[xmlStack.length - 1];
             if (parentTag === 'hs:sec' || parentTag === 'hp:subList') {
+              if (parentTag === 'hs:sec' && getXmlAttr(attrsStr, 'pageBreak') === '1' &&
+                  (curPage.fgParts.length > 0 || curPage.bgPics.length > 0)) {
+                curPage = { bgPics: [], fgParts: [] };
+                pages.push(curPage);
+                outputStack[0] = { parts: curPage.fgParts };
+              }
               const slot = slotByStart.get(start) || null;
               recordCellSlot(slot);
               const slotEdit = slot ? editsBySlotId.get(slot.slotId) : null;
@@ -2845,6 +3316,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
                 pushOut(buildReplacedSlotHtml(slot, fillHtml));
                 if (!isSelfClosing) {
                   replacingParaDepth = xmlStack.length + 1;
+                  replacingParaPics = [];
                   xmlStack.push(tagName);
                 }
                 return;
@@ -2927,9 +3399,21 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         }
         if (ignoreDepth > 0) return;
 
+        if (activePic && tagName === 'hp:pic' && afterPopDepth === activePic.stackDepth - 1) {
+          const completed = activePic;
+          activePic = null;
+          finalizeActivePic(completed);
+          return;
+        }
+        if (activePic) return;
+
         if (replacingParaDepth >= 0) {
           if (tagName === 'hp:p' && afterPopDepth === replacingParaDepth - 1) {
             replacingParaDepth = -1;
+            if (replacingParaPics.length > 0) {
+              pushOut(replacingParaPics.join(''));
+              replacingParaPics = [];
+            }
           }
           return;
         }
@@ -3021,8 +3505,48 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       }
     });
 
+    function buildPageBgLayerHtml(bgPics) {
+      if (!bgPics || bgPics.length === 0) return '';
+      const deduped = [];
+      const fullPageSeen = new Map();
+      bgPics.forEach(pic => {
+        const isFullPageBox = pic.effW >= pageWidth * 0.8 && pic.effH >= pageHeight * 0.8;
+        if (isFullPageBox) {
+          const boxKey = `${Math.round(pic.horzOffset / 100)}_${Math.round(pic.vertOffset / 100)}_${Math.round(pic.effW / 100)}_${Math.round(pic.effH / 100)}`;
+          const prevIdx = fullPageSeen.get(boxKey);
+          if (prevIdx !== undefined) {
+            if (pic.zOrder >= deduped[prevIdx].zOrder) deduped[prevIdx] = pic;
+            return;
+          }
+          fullPageSeen.set(boxKey, deduped.length);
+        }
+        deduped.push(pic);
+      });
+      deduped.sort((a, b) => a.zOrder - b.zOrder);
+      const itemsHtml = deduped.map(pic => {
+        const widthPct = Math.min(100, Math.max(5, Math.round((pic.effW / pageWidth) * 1000) / 10));
+        let leftPct = Math.max(0, Math.round((pic.horzOffset / pageWidth) * 1000) / 10);
+        if (pic.horzAlign === 'CENTER') leftPct = Math.max(0, Math.round(((100 - widthPct) / 2) * 10) / 10);
+        const topPct = Math.max(0, Math.round((pic.vertOffset / pageHeight) * 1000) / 10);
+        return `<div class="hwpx-page-bg-item" style="left:${leftPct}%;top:${topPct}%;width:${widthPct}%;"><img class="hwpx-page-bg-img" src="${escapeHtml(pic.src)}" alt=""></div>`;
+      }).join('');
+      return `<div class="hwpx-page-bg-layer" aria-hidden="true">${itemsHtml}</div>`;
+    }
+
     const sheetMode = replaceBodyEdit ? 'replace_body' : (activeMode || 'multi');
-    return `<div class="hwpx-preview-sheet" data-template-mode="${escapeHtml(sheetMode)}">${headerHtml}${outputStack[0].parts.join('')}</div>`;
+    const hasAnyPageBg = pages.some(p => p.bgPics.length > 0);
+    if (pages.length === 1 && !hasAnyPageBg) {
+      return `<div class="hwpx-preview-sheet" data-template-mode="${escapeHtml(sheetMode)}">${headerHtml}${pages[0].fgParts.join('')}</div>`;
+    }
+
+    const pagesHtml = pages.map((page, pIdx) => {
+      const bgHtml = buildPageBgLayerHtml(page.bgPics);
+      const pageCls = page.bgPics.length > 0 ? 'hwpx-preview-page hwpx-preview-page--with-bg' : 'hwpx-preview-page';
+      const aspectStyle = page.bgPics.length > 0 ? ` style="aspect-ratio:${pageWidth}/${pageHeight};"` : '';
+      return `<div class="${pageCls}" data-page-index="${pIdx + 1}"${aspectStyle}>${bgHtml}<div class="hwpx-page-fg">${page.fgParts.join('')}</div></div>`;
+    }).join('');
+
+    return `<div class="hwpx-preview-sheet hwpx-preview-multi" data-template-mode="${escapeHtml(sheetMode)}">${headerHtml}${pagesHtml}</div>`;
   }
 
   globalThis.__AI_LATEX_ENGINE__ = {
@@ -3044,6 +3568,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     inspectHwpxSectionSlots,
     applyTextToHwpxTemplateFiles,
     applyEditsToHwpxTemplateFiles,
+    buildHwpxBinaryImageMap,
     renderHwpxTemplatePreviewHtml
   };
 
@@ -3085,7 +3610,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     if (!slot) return;
     const existing = activeTemplateState.slotEdits.get(uid);
     const mode = existing ? existing.mode : (activeTemplateState.currentMode || 'replace');
-    const isUntouchedLabel = mode === 'replace' && slot.placeholders.length === 0 && slot.rawText && val === slot.rawText;
+    const defText = getDefaultTextForSlot(slot);
+    const isUntouchedLabel = mode === 'replace' && slot.placeholders.length === 0 && defText && val === defText;
     if (isUntouchedLabel || (mode === 'after' && !val)) {
       activeTemplateState.slotEdits.delete(uid);
     } else if (slot.placeholders.length > 0 && !val && !existing) {
@@ -3098,10 +3624,10 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   function getDefaultTextForSlot(slot) {
     if (!slot) return '';
     if (slot.placeholders && slot.placeholders.length > 0) return '';
-    return slot.rawText || '';
+    return slot.editorText || slot.rawText || '';
   }
 
-  function loadSlotIntoEditor(uid) {
+  function loadSlotIntoEditor(uid, forcedMode = null) {
     if (!activeTemplateState) return;
     if (activeTemplateState.globalMode === 'replace_body') {
       rawInput.value = activeTemplateState.replaceBodyText || '';
@@ -3113,11 +3639,14 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       activeTemplateState.currentMode = saved.mode;
       rawInput.value = saved.text;
     } else {
-      const defMode = slot && (slot.placeholders.length > 0 || !slot.rawText.trim() || !slot.hasEquationChild)
-        ? 'replace'
-        : 'after';
+      const defText = getDefaultTextForSlot(slot);
+      const defMode = forcedMode || (
+        slot && (slot.hasTableChild || (slot.hasPicChild && !defText.trim()))
+          ? 'after'
+          : 'replace'
+      );
       activeTemplateState.currentMode = defMode;
-      rawInput.value = defMode === 'after' ? '' : getDefaultTextForSlot(slot);
+      rawInput.value = defMode === 'after' ? '' : defText;
     }
   }
 
@@ -3135,6 +3664,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
 
     const selectedSlot = activeTemplateState.slots.find(s => s.uid === activeTemplateState.selectedSlotUid) || null;
+    const activeSectionPath = selectedSlot ? selectedSlot.sectionPath : activeTemplateState.selectedSectionPath;
     const isReplaceBody = activeTemplateState.globalMode === 'replace_body';
     const modeLabel = isReplaceBody ? MODE_LABELS.replace_body : (MODE_LABELS[activeTemplateState.currentMode] || '이 칸 수정');
     templatePreviewBanner.classList.remove('hidden');
@@ -3150,16 +3680,20 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       renderOutput.innerHTML = renderHwpxTemplatePreviewHtml(activeTemplateState.textFiles, {
         edits: [{ mode: 'replace_body', renderedHtml: bodyHtml }],
         activeMode: 'replace_body',
-        sectionPath: selectedSlot ? selectedSlot.sectionPath : activeTemplateState.selectedSectionPath
+        sectionPath: activeSectionPath,
+        binaryImageMap: activeTemplateState.binaryImageMap,
+        binaryFiles: activeTemplateState.binaryFiles
       });
       return;
     }
 
     let totalRenderedFormulas = 0;
+    const editedReplaceUids = new Set();
     const edits = [];
     activeTemplateState.slotEdits.forEach((entry, uid) => {
       const slot = activeTemplateState.slots.find(s => s.uid === uid);
       if (!slot) return;
+      if (entry.mode === 'replace') editedReplaceUids.add(uid);
       let renderedHtml = '';
       if (entry.text && entry.text.trim()) {
         const res = processText(entry.text);
@@ -3177,12 +3711,20 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       });
     });
 
+    activeTemplateState.slots.forEach(slot => {
+      if (slot.sectionPath === activeSectionPath && !editedReplaceUids.has(slot.uid) && slot.equationCount > 0) {
+        totalRenderedFormulas += slot.equationCount;
+      }
+    });
+
     rightFormulaBadge.textContent = `수식 ${totalRenderedFormulas}개`;
     renderOutput.innerHTML = renderHwpxTemplatePreviewHtml(activeTemplateState.textFiles, {
       edits,
-      sectionPath: selectedSlot ? selectedSlot.sectionPath : activeTemplateState.selectedSectionPath,
+      sectionPath: activeSectionPath,
       activeSlotId: selectedSlot ? selectedSlot.slotId : undefined,
-      activeMode: activeTemplateState.currentMode
+      activeMode: activeTemplateState.currentMode,
+      binaryImageMap: activeTemplateState.binaryImageMap,
+      binaryFiles: activeTemplateState.binaryFiles
     });
   }
 
@@ -3321,22 +3863,25 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   let runtimeTemplates = [];
   let activeTemplateState = null;
 
-  function uint8ToBase64(bytes) {
-    let binary = '';
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
+  function revokeTemplateImageUrls(state) {
+    if (!state || !(state.binaryImageMap instanceof Map)) return;
+    if (typeof URL === 'undefined' || typeof URL.revokeObjectURL !== 'function') return;
+    state.binaryImageMap.forEach(entry => {
+      if (entry && entry.isObjectUrl && entry.src) {
+        try {
+          URL.revokeObjectURL(entry.src);
+        } catch (e) {
+          // Ignore invalid object URLs on cleanup
+        }
+      }
+    });
   }
 
-  function base64ToUint8(b64) {
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
+  function setActiveTemplateState(nextState) {
+    if (activeTemplateState && activeTemplateState !== nextState) {
+      revokeTemplateImageUrls(activeTemplateState);
     }
-    return bytes;
+    activeTemplateState = nextState;
   }
 
   function loadStoredTemplates() {
@@ -3414,12 +3959,18 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       recommendedMode = 'after';
     }
 
+    const createBlobUrl = (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function' && typeof Blob !== 'undefined')
+      ? (bytes, mime) => URL.createObjectURL(new Blob([bytes], { type: mime }))
+      : null;
+    const binaryImageMap = buildHwpxBinaryImageMap(textFiles, binaryFiles, createBlobUrl);
+
     return {
       id,
       name,
       isBuiltin,
       textFiles,
       binaryFiles,
+      binaryImageMap,
       sectionPaths,
       selectedSectionPath: sectionPaths[0],
       slots: allSlots,
@@ -3525,7 +4076,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
   async function applyActivatedTemplateState(nextState, preserveExistingText) {
     const carriedText = preserveExistingText ? rawInput.value : '';
-    activeTemplateState = nextState;
+    setActiveTemplateState(nextState);
     if (activeTemplateState) {
       if (carriedText.trim() && activeTemplateState.selectedSlotUid) {
         activeTemplateState.slotEdits.set(activeTemplateState.selectedSlotUid, {
@@ -3545,7 +4096,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         const curEdit = activeTemplateState.slotEdits.get(activeTemplateState.selectedSlotUid);
         if (curEdit) rawInput.value = curEdit.text;
       }
-      activeTemplateState = null;
+      setActiveTemplateState(null);
       persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
       renderTemplateUi();
       return;
@@ -3564,7 +4115,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         await applyActivatedTemplateState(nextState, !hadTemplate);
       } catch (err) {
         console.error('예시 양식 로드 오류:', err);
-        activeTemplateState = null;
+        setActiveTemplateState(null);
         persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
         renderTemplateUi();
         showToast('예시 양식을 불러오는 중 오류가 발생했습니다.');
@@ -3573,7 +4124,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
     const tpl = runtimeTemplates.find(t => t.id === id);
     if (!tpl) {
-      activeTemplateState = null;
+      setActiveTemplateState(null);
       persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
       renderTemplateUi();
       return;
@@ -3584,7 +4135,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       await applyActivatedTemplateState(nextState, !hadTemplate);
     } catch (err) {
       console.error('양식 파싱 오류:', err);
-      activeTemplateState = null;
+      setActiveTemplateState(null);
       persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
       renderTemplateUi();
       showToast('양식을 읽는 중 오류가 발생했습니다: ' + escapeHtml(err && err.message ? err.message : String(err)));
@@ -3661,7 +4212,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const removedName = activeTemplateState.name;
     runtimeTemplates = runtimeTemplates.filter(t => t.id !== activeTemplateState.id);
     persistStoredTemplates();
-    activeTemplateState = null;
+    setActiveTemplateState(null);
     persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
     renderTemplateUi();
     showToast(`양식 '${escapeHtml(removedName)}'을(를) 목록에서 삭제했습니다.`);
@@ -3688,7 +4239,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         if (!activeTemplateState.slotEdits.has(uid) && nextMode === 'after') {
           rawInput.value = '';
         } else if (!activeTemplateState.slotEdits.has(uid) && nextMode === 'replace') {
-          loadSlotIntoEditor(uid);
+          loadSlotIntoEditor(uid, 'replace');
         } else if (activeTemplateState.slotEdits.has(uid)) {
           const cur = activeTemplateState.slotEdits.get(uid);
           activeTemplateState.slotEdits.set(uid, { text: cur.text, mode: nextMode });
