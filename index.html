@@ -162,7 +162,50 @@
         <span id="formulaCount" class="text-emerald-400 font-medium">수식 0개</span>
       </div>
     </div>
-    <div class="relative flex-1 min-h-[350px] lg:min-h-[520px]">
+    <div class="bg-slate-800/40 px-4 py-2 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div class="flex items-center flex-wrap gap-2 flex-1 min-w-0">
+        <span class="text-[11px] font-semibold text-sky-400 shrink-0">한글 양식</span>
+        <select id="templateSelect" aria-label="한글 양식 선택" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 max-w-[220px] truncate outline-none focus:border-sky-500">
+          <option value="__default__">기본 빈 문서 (표준 A4)</option>
+        </select>
+        <input type="file" id="templateFileInput" accept=".hwpx,.hwp" class="hidden">
+        <button id="btnLoadTemplate" type="button" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 hover:border-sky-600/60 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 shrink-0" title="기존 한글(.hwpx) 양식 파일 불러오기">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          양식 불러오기
+        </button>
+        <button id="btnDeleteTemplate" type="button" class="hidden text-[11px] bg-slate-800/90 hover:bg-red-950 text-slate-400 hover:text-red-300 border border-slate-700 hover:border-red-800/60 px-2 py-1 rounded-lg transition-colors shrink-0" title="선택한 양식 삭제">
+          삭제
+        </button>
+      </div>
+      <button id="btnToggleSlotPicker" type="button" class="hidden text-[11px] bg-sky-950/60 hover:bg-sky-900/70 text-sky-300 border border-sky-800/70 px-2.5 py-1 rounded-lg transition-colors shrink-0">
+        삽입 위치 설정 ▾
+      </button>
+    </div>
+
+    <div id="templateSlotPanel" class="hidden bg-slate-950/70 border-b border-slate-800 px-4 py-3 space-y-2.5 text-xs">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div id="templateSlotSummary" class="text-[11px] text-slate-300 truncate">
+          삽입할 위치(문단·표 칸)를 선택하세요.
+        </div>
+        <div id="templateModeGroup" class="inline-flex rounded-lg bg-slate-900 border border-slate-800 p-0.5 shrink-0">
+          <button type="button" data-insert-mode="replace" class="template-mode-btn px-2 py-1 rounded-md text-[11px] font-medium transition-colors text-slate-400 hover:text-slate-200">
+            내용 교체
+          </button>
+          <button type="button" data-insert-mode="after" class="template-mode-btn px-2 py-1 rounded-md text-[11px] font-medium transition-colors text-slate-400 hover:text-slate-200">
+            위치 뒤 추가
+          </button>
+          <button type="button" data-insert-mode="replace_body" class="template-mode-btn px-2 py-1 rounded-md text-[11px] font-medium transition-colors text-slate-400 hover:text-slate-200">
+            본문 전체 교체
+          </button>
+        </div>
+      </div>
+      <div id="templateSlotList" class="max-h-40 overflow-y-auto space-y-1 pr-1"></div>
+      <p class="text-[11px] text-slate-500">
+        💡 양식에 <code class="text-emerald-400">{{본문}}</code> 같은 태그를 넣어두면 자동으로 해당 자리가 선택됩니다. (표 칸 내부 삽입 지원)
+      </p>
+    </div>
+
+    <div class="relative flex-1 min-h-[300px] lg:min-h-[450px]">
         <textarea id="rawInput"
                   placeholder="AI 답변 또는 수식을 자유롭게 붙여넣으세요.&#10;• LaTeX 수식 (\frac, \begin{bmatrix}, \alpha 등) 자동 복구 및 렌더링&#10;• 한글(HWP) 수식 스크립트 (bmatrix { 1 & 0 # 0 & 1 }, {a} over {b}, sqrt {x} 등) 직접 입력도 자동 감지하여 실시간 렌더링&#10;• 상단 '한글(.hwpx) 다운로드' 버튼으로 줄글과 수식이 포함된 정식 한글 문서를 바로 저장할 수 있습니다."
                   class="w-full h-full p-4 bg-slate-900/60 text-slate-200 text-sm font-mono leading-relaxed outline-none resize-none focus:ring-1 focus:ring-emerald-500/50"></textarea>
@@ -1446,15 +1489,685 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return { width: estWidth, height: estHeight, baseLine };
   }
 
-  function buildHwpxPackageFiles(rawText, nowDate = new Date()) {
-    const result = processText(rawText);
-    const tokenMap = new Map();
-    result.mathTokens.forEach(t => tokenMap.set(t.token, t));
+  const HWPX_SEC_CTRL_RUN_XML = (() => {
+    const pageBorderFillsXml = ['BOTH', 'EVEN', 'ODD'].map(type =>
+      `<hp:pageBorderFill type="${type}" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill>`
+    ).join('');
+    return `<hp:run charPrIDRef="0"><hp:secPr id="" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" tabStopVal="4000" tabStopUnit="HWPUNIT" outlineShapeIDRef="1" memoShapeIDRef="0" textVerticalWidthHead="0" masterPageCnt="0"><hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0"/><hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/><hp:visibility hideFirstHeader="0" hideFirstFooter="0" hideFirstMasterPage="0" border="SHOW_ALL" fill="SHOW_ALL" hideFirstPageNum="0" hideFirstEmptyLine="0" showLineNumber="0"/><hp:lineNumberShape restartType="0" countBy="0" distance="0" startNumber="0"/><hp:pagePr landscape="WIDELY" width="59528" height="84186" gutterType="LEFT_ONLY"><hp:margin header="4252" footer="4252" gutter="0" left="8504" right="8504" top="5668" bottom="4252"/></hp:pagePr><hp:footNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="-1" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="283" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="EACH_COLUMN" beneathText="0"/></hp:footNotePr><hp:endNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="14692344" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="0" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="END_OF_DOCUMENT" beneathText="0"/></hp:endNotePr>${pageBorderFillsXml}</hp:secPr><hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl></hp:run>`;
+  })();
 
-    const isoNow = nowDate.toISOString().replace(/\.\d{3}Z$/, 'Z');
-    const koDate = `${nowDate.getFullYear()}년 ${nowDate.getMonth() + 1}월 ${nowDate.getDate()}일`;
+  function decodeXmlEntities(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
+        const cp = parseInt(hex, 16);
+        return cp >= 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : '';
+      })
+      .replace(/&#(\d+);/g, (_, dec) => {
+        const cp = parseInt(dec, 10);
+        return cp >= 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : '';
+      })
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&amp;/g, '&');
+  }
 
-    const prvText = result.tokenizedText
+  function getXmlAttr(attrsStr, attrName) {
+    if (!attrsStr) return null;
+    const escaped = attrName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const m = new RegExp(`(?:^|\\s)${escaped}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`).exec(attrsStr);
+    if (!m) return null;
+    return decodeXmlEntities(m[1] !== undefined ? m[1] : m[2]);
+  }
+
+  /**
+   * Single-pass quote-aware XML scanner delivering text chunks and tag tokens
+   * with exact character offsets in the source XML string.
+   */
+  function forEachXmlTag(xml, callbacks) {
+    const len = xml.length;
+    let pos = 0;
+    while (pos < len) {
+      const lt = xml.indexOf('<', pos);
+      if (lt === -1) {
+        if (callbacks.onText && pos < len) callbacks.onText(pos, len);
+        break;
+      }
+      if (lt > pos && callbacks.onText) {
+        callbacks.onText(pos, lt);
+      }
+      if (xml.startsWith('<!--', lt)) {
+        const endComment = xml.indexOf('-->', lt + 4);
+        pos = endComment === -1 ? len : endComment + 3;
+        continue;
+      }
+      if (xml.startsWith('<?', lt)) {
+        const endPi = xml.indexOf('?>', lt + 2);
+        pos = endPi === -1 ? len : endPi + 2;
+        continue;
+      }
+      if (xml.startsWith('<![CDATA[', lt)) {
+        const endCdata = xml.indexOf(']]>', lt + 9);
+        if (endCdata === -1) break;
+        if (callbacks.onCdata) callbacks.onCdata(lt + 9, endCdata);
+        pos = endCdata + 3;
+        continue;
+      }
+      if (xml.startsWith('<!', lt)) {
+        const endDecl = xml.indexOf('>', lt + 2);
+        pos = endDecl === -1 ? len : endDecl + 1;
+        continue;
+      }
+      let gt = lt + 1;
+      let quote = null;
+      while (gt < len) {
+        const ch = xml[gt];
+        if (quote) {
+          if (ch === quote) quote = null;
+        } else if (ch === '"' || ch === "'") {
+          quote = ch;
+        } else if (ch === '>') {
+          break;
+        }
+        gt++;
+      }
+      if (gt >= len) break;
+      const raw = xml.slice(lt, gt + 1);
+      const isClosing = raw.startsWith('</');
+      const isSelfClosing = !isClosing && raw.endsWith('/>');
+      const nameMatch = /^<\/?([^\s/>]+)/.exec(raw);
+      const tagName = nameMatch ? nameMatch[1] : '';
+      const attrsStart = (isClosing ? 2 : 1) + tagName.length;
+      const attrsEnd = raw.length - (isSelfClosing ? 2 : 1);
+      const attrsStr = attrsEnd > attrsStart ? raw.slice(attrsStart, attrsEnd) : '';
+      if (callbacks.onTag) {
+        callbacks.onTag({
+          start: lt,
+          end: gt + 1,
+          tagName,
+          attrsStr,
+          isClosing,
+          isSelfClosing
+        });
+      }
+      pos = gt + 1;
+    }
+  }
+
+  /**
+   * Reads valid charPr, paraPr, and style IDs from a template's Contents/header.xml
+   * so inserted paragraphs only reference styles that exist in that template.
+   */
+  function inspectHwpxHeaderStyles(headerXml) {
+    const charPrs = [];
+    const paraPrs = [];
+    const styles = [];
+    const charPrIds = new Set();
+    const paraPrIds = new Set();
+    const styleIds = new Set();
+
+    let activeCharPr = null;
+    let activeParaPr = null;
+
+    if (headerXml) {
+      forEachXmlTag(headerXml, {
+        onTag({ tagName, attrsStr, isClosing, isSelfClosing }) {
+          if (!isClosing) {
+            if (tagName === 'hh:charPr') {
+              const id = getXmlAttr(attrsStr, 'id') || '0';
+              const obj = {
+                id,
+                height: Number(getXmlAttr(attrsStr, 'height')) || 1000,
+                hasBold: false
+              };
+              if (isSelfClosing) {
+                charPrIds.add(id);
+                charPrs.push(obj);
+              } else {
+                activeCharPr = obj;
+              }
+            } else if (tagName === 'hh:bold' && activeCharPr) {
+              activeCharPr.hasBold = true;
+            } else if (tagName === 'hh:paraPr') {
+              const id = getXmlAttr(attrsStr, 'id') || '0';
+              const obj = { id, alignHorizontal: '' };
+              if (isSelfClosing) {
+                paraPrIds.add(id);
+                paraPrs.push(obj);
+              } else {
+                activeParaPr = obj;
+              }
+            } else if (tagName === 'hh:align' && activeParaPr) {
+              activeParaPr.alignHorizontal = getXmlAttr(attrsStr, 'horizontal') || '';
+            } else if (tagName === 'hh:style') {
+              const id = getXmlAttr(attrsStr, 'id') || '0';
+              styleIds.add(id);
+              styles.push({
+                id,
+                paraPrIDRef: getXmlAttr(attrsStr, 'paraPrIDRef') || '0',
+                charPrIDRef: getXmlAttr(attrsStr, 'charPrIDRef') || '0'
+              });
+            }
+          } else {
+            if (tagName === 'hh:charPr' && activeCharPr) {
+              charPrIds.add(activeCharPr.id);
+              charPrs.push(activeCharPr);
+              activeCharPr = null;
+            } else if (tagName === 'hh:paraPr' && activeParaPr) {
+              paraPrIds.add(activeParaPr.id);
+              paraPrs.push(activeParaPr);
+              activeParaPr = null;
+            }
+          }
+        }
+      });
+    }
+
+    const defaultCharPrId = charPrIds.has('0') ? '0' : (charPrs[0] ? charPrs[0].id : '0');
+    const defaultCharObj = charPrs.find(c => c.id === defaultCharPrId);
+    const defaultHeight = defaultCharObj ? defaultCharObj.height : 1000;
+    const boldCandidate = charPrs.find(c => c.hasBold && c.height >= defaultHeight) || charPrs.find(c => c.hasBold);
+    const defaultParaPrId = paraPrIds.has('0') ? '0' : (paraPrs[0] ? paraPrs[0].id : '0');
+    const centerParaCandidate = paraPrs.find(p => p.alignHorizontal === 'CENTER');
+    const defaultStyleId = styleIds.has('0') ? '0' : (styles[0] ? styles[0].id : '0');
+
+    return {
+      charPrIds,
+      paraPrIds,
+      styleIds,
+      defaultCharPrId,
+      boldCharPrId: boldCandidate ? boldCandidate.id : defaultCharPrId,
+      defaultParaPrId,
+      centerParaPrId: centerParaCandidate ? centerParaCandidate.id : defaultParaPrId,
+      defaultStyleId
+    };
+  }
+
+  /**
+   * Scans an OWPML section XML file and returns selectable paragraph/table-cell
+   * insertion slots, detected {{placeholder}} tokens, and max ID bounds.
+   */
+  function inspectHwpxSectionSlots(sectionXml) {
+    const IGNORE_CONTAINER_TAGS = new Set([
+      'hp:secPr', 'hp:header', 'hp:footer', 'hp:footNote', 'hp:endNote', 'hp:hiddenComment'
+    ]);
+    const xmlDepthStack = [];
+    let ignoreDepth = 0;
+    let tableCounter = 0;
+    const tableStack = [];
+    const cellStack = [];
+    let drawTextDepth = 0;
+    const containerStack = [];
+    const paraStack = [];
+    const slots = [];
+    let bodyParaOrdinal = 0;
+    let secOpenEnd = -1;
+    let secCloseStart = -1;
+    let maxParaId = 0;
+    let maxEqId = 1950000000;
+    let maxEqZOrder = 0;
+
+    function finalizeParagraphSlot(para) {
+      let runningOffset = 0;
+      const textSegs = [];
+      for (const r of para.runs) {
+        for (const t of r.tList) {
+          for (const seg of t.segments) {
+            if (!seg.text) continue;
+            textSegs.push({
+              runIdx: r.runIdx,
+              tStart: t.start,
+              tEnd: t.end,
+              tOpenEnd: t.openEnd,
+              tCloseStart: t.closeStart,
+              charPrIDRef: r.charPrIDRef,
+              xmlStart: seg.xmlStart,
+              xmlEnd: seg.xmlEnd,
+              text: seg.text,
+              textStart: runningOffset,
+              textEnd: runningOffset + seg.text.length,
+              isControlTag: seg.isControlTag
+            });
+            runningOffset += seg.text.length;
+          }
+        }
+      }
+
+      const rawText = textSegs.map(s => s.text).join('');
+      const placeholders = [];
+      const phRe = /\{\{([^{}]+)\}\}/g;
+      let phMatch;
+      while ((phMatch = phRe.exec(rawText)) !== null) {
+        placeholders.push({
+          full: phMatch[0],
+          name: phMatch[1].trim(),
+          startOffset: phMatch.index,
+          endOffset: phMatch.index + phMatch[0].length
+        });
+      }
+
+      const firstContentRun = para.runs.find(r => !r.hasSecCtrl) || para.runs[0];
+      const charPrIDRef = firstContentRun ? firstContentRun.charPrIDRef : '0';
+      const inTable = Boolean(para.container && para.container.tableInfo);
+      const isDrawText = Boolean(para.container && para.container.isDrawText);
+
+      let locationLabel;
+      if (inTable) {
+        const ti = para.container.tableInfo;
+        locationLabel = `표${ti.tableIndex} · ${ti.rowIndex}행 ${ti.colIndex}열`;
+      } else if (isDrawText) {
+        locationLabel = `글상자 · 문단 ${para.slotId + 1}`;
+      } else {
+        locationLabel = `본문 문단 ${para.bodyParaOrdinal}`;
+      }
+
+      const secCtrlSlices = [];
+      for (const r of para.runs) {
+        for (const sc of r.secCtrlSlices) {
+          secCtrlSlices.push(sectionXml.slice(sc.start, sc.end));
+        }
+      }
+      const secCtrlRunXml = secCtrlSlices.length > 0
+        ? `<hp:run charPrIDRef="${escapeXml(para.secCtrlCharPrId || charPrIDRef)}">${secCtrlSlices.join('')}</hp:run>`
+        : '';
+
+      const trimmedPreview = rawText.replace(/\s+/g, ' ').trim();
+      const previewText = trimmedPreview ||
+        (para.hasTableChild ? '(표 포함)' : (para.hasEquationChild ? '(수식 포함)' : '(빈 문단)'));
+
+      slots[para.slotId] = {
+        slotId: para.slotId,
+        start: para.start,
+        openEnd: para.openEnd,
+        closeTagStart: para.closeTagStart,
+        end: para.end,
+        paraPrIDRef: para.paraPrIDRef,
+        styleIDRef: para.styleIDRef,
+        charPrIDRef,
+        inTable,
+        tableInfo: para.container && para.container.tableInfo ? { ...para.container.tableInfo } : null,
+        containerOpenEnd: para.container ? para.container.openEnd : -1,
+        containerType: para.container ? para.container.type : 'unknown',
+        isDrawText,
+        hasTableChild: para.hasTableChild,
+        hasEquationChild: para.hasEquationChild,
+        hasSecPr: para.hasSecPr,
+        secCtrlRunXml,
+        runs: para.runs,
+        textSegs,
+        rawText,
+        previewText,
+        placeholders,
+        locationLabel,
+        maxContentWidth: para.maxContentWidth
+      };
+    }
+
+    forEachXmlTag(sectionXml, {
+      onText(start, end) {
+        if (ignoreDepth > 0 || paraStack.length === 0) return;
+        const p = paraStack[paraStack.length - 1];
+        if (!p.activeT) return;
+        const text = decodeXmlEntities(sectionXml.slice(start, end));
+        if (text) {
+          p.activeT.segments.push({ xmlStart: start, xmlEnd: end, text, isControlTag: false });
+        }
+      },
+      onCdata(start, end) {
+        if (ignoreDepth > 0 || paraStack.length === 0) return;
+        const p = paraStack[paraStack.length - 1];
+        if (!p.activeT) return;
+        const text = sectionXml.slice(start, end);
+        if (text) {
+          p.activeT.segments.push({ xmlStart: start, xmlEnd: end, text, isControlTag: false });
+        }
+      },
+      onTag({ start, end, tagName, attrsStr, isClosing, isSelfClosing }) {
+        if (!isClosing) {
+          if (tagName === 'hp:p') {
+            const pid = Number(getXmlAttr(attrsStr, 'id'));
+            if (Number.isFinite(pid) && pid > maxParaId) maxParaId = pid;
+          } else if (tagName === 'hp:equation') {
+            const eid = Number(getXmlAttr(attrsStr, 'id'));
+            const zord = Number(getXmlAttr(attrsStr, 'zOrder'));
+            if (Number.isFinite(eid) && eid > maxEqId) maxEqId = eid;
+            if (Number.isFinite(zord) && zord > maxEqZOrder) maxEqZOrder = zord;
+          }
+
+          if (ignoreDepth === 0 && paraStack.length > 0) {
+            const curP = paraStack[paraStack.length - 1];
+            const ar = curP.activeRun;
+            if (ar && xmlDepthStack.length === ar.stackDepth && (tagName === 'hp:secPr' || tagName === 'hp:ctrl')) {
+              if (tagName === 'hp:secPr') curP.hasSecPr = true;
+              if (isSelfClosing) {
+                ar.secCtrlSlices.push({ start, end });
+                ar.hasSecCtrl = true;
+              } else {
+                ar.capturingSecCtrl = { start, stackDepth: xmlDepthStack.length + 1, isSecPr: tagName === 'hp:secPr' };
+              }
+            }
+          }
+
+          if (IGNORE_CONTAINER_TAGS.has(tagName)) {
+            if (!isSelfClosing) {
+              ignoreDepth++;
+              xmlDepthStack.push(tagName);
+            }
+            return;
+          }
+
+          if (ignoreDepth > 0) {
+            if (!isSelfClosing) xmlDepthStack.push(tagName);
+            return;
+          }
+
+          if (tagName === 'hs:sec' && !isSelfClosing) {
+            secOpenEnd = end;
+            containerStack.push({ type: 'sec', start, openEnd: end, tableInfo: null, isDrawText: false, maxContentWidth: 42520 });
+          } else if (tagName === 'hp:tbl') {
+            if (paraStack.length > 0) paraStack[paraStack.length - 1].hasTableChild = true;
+            if (!isSelfClosing) {
+              tableStack.push({ tableIndex: ++tableCounter, rowIndex: 0, colIndex: 0 });
+            }
+          } else if (tagName === 'hp:tr' && tableStack.length > 0 && !isSelfClosing) {
+            const topTbl = tableStack[tableStack.length - 1];
+            topTbl.rowIndex++;
+            topTbl.colIndex = 0;
+          } else if (tagName === 'hp:tc' && tableStack.length > 0 && !isSelfClosing) {
+            const topTbl = tableStack[tableStack.length - 1];
+            topTbl.colIndex++;
+            cellStack.push({
+              tableIndex: topTbl.tableIndex,
+              rowIndex: topTbl.rowIndex,
+              colIndex: topTbl.colIndex,
+              width: 0
+            });
+          } else if (tagName === 'hp:cellSz' && cellStack.length > 0) {
+            const w = Number(getXmlAttr(attrsStr, 'width'));
+            if (Number.isFinite(w) && w > 0) cellStack[cellStack.length - 1].width = w;
+          } else if (tagName === 'hp:drawText' && !isSelfClosing) {
+            drawTextDepth++;
+          } else if (tagName === 'hp:subList' && !isSelfClosing) {
+            const topCell = cellStack.length > 0 ? cellStack[cellStack.length - 1] : null;
+            const maxW = topCell && topCell.width > 1200 ? Math.max(2000, topCell.width - 800) : 42520;
+            containerStack.push({
+              type: 'subList',
+              start,
+              openEnd: end,
+              tableInfo: topCell ? { ...topCell } : null,
+              isDrawText: !topCell && drawTextDepth > 0,
+              maxContentWidth: maxW
+            });
+          } else if (tagName === 'hp:p') {
+            const parentTag = xmlDepthStack[xmlDepthStack.length - 1];
+            if (parentTag === 'hs:sec' || parentTag === 'hp:subList') {
+              const parentContainer = containerStack[containerStack.length - 1] || null;
+              const isBodyPara = parentContainer && !parentContainer.tableInfo && !parentContainer.isDrawText;
+              const slotIdx = slots.length;
+              slots.push(null);
+              const pObj = {
+                slotId: slotIdx,
+                bodyParaOrdinal: isBodyPara ? (++bodyParaOrdinal) : 0,
+                start,
+                openEnd: end,
+                closeTagStart: end,
+                end: isSelfClosing ? end : -1,
+                paraPrIDRef: getXmlAttr(attrsStr, 'paraPrIDRef') || '0',
+                styleIDRef: getXmlAttr(attrsStr, 'styleIDRef') || '0',
+                container: parentContainer,
+                stackDepth: xmlDepthStack.length + 1,
+                runs: [],
+                activeRun: null,
+                secCtrlCharPrId: '',
+                hasSecPr: false,
+                hasTableChild: false,
+                hasEquationChild: false,
+                activeT: null,
+                maxContentWidth: parentContainer ? parentContainer.maxContentWidth : 42520
+              };
+              if (isSelfClosing) {
+                finalizeParagraphSlot(pObj);
+              } else {
+                paraStack.push(pObj);
+              }
+            }
+          } else if (tagName === 'hp:run' && paraStack.length > 0) {
+            const curP = paraStack[paraStack.length - 1];
+            if (xmlDepthStack.length === curP.stackDepth) {
+              const runObj = {
+                runIdx: curP.runs.length,
+                start,
+                openEnd: end,
+                end: isSelfClosing ? end : -1,
+                charPrIDRef: getXmlAttr(attrsStr, 'charPrIDRef') || '0',
+                stackDepth: xmlDepthStack.length + 1,
+                hasSecCtrl: false,
+                capturingSecCtrl: null,
+                secCtrlSlices: [],
+                tList: []
+              };
+              if (isSelfClosing) {
+                curP.runs.push(runObj);
+              } else {
+                curP.activeRun = runObj;
+              }
+            }
+          } else if (tagName === 'hp:equation' && paraStack.length > 0) {
+            const curP = paraStack[paraStack.length - 1];
+            if (curP.activeRun && xmlDepthStack.length === curP.activeRun.stackDepth) {
+              curP.hasEquationChild = true;
+            }
+          } else if (tagName === 'hp:t' && paraStack.length > 0) {
+            const curP = paraStack[paraStack.length - 1];
+            const ar = curP.activeRun;
+            if (ar && xmlDepthStack.length === ar.stackDepth) {
+              const tObj = {
+                start,
+                openEnd: end,
+                closeStart: isSelfClosing ? start : -1,
+                end: isSelfClosing ? end : -1,
+                segments: []
+              };
+              if (isSelfClosing) {
+                ar.tList.push(tObj);
+              } else {
+                curP.activeT = tObj;
+              }
+            }
+          } else if (paraStack.length > 0 && paraStack[paraStack.length - 1].activeT &&
+                     (tagName === 'hp:tab' || tagName === 'hp:lineBreak' || tagName === 'hp:fwSpace')) {
+            paraStack[paraStack.length - 1].activeT.segments.push({
+              xmlStart: start,
+              xmlEnd: end,
+              text: ' ',
+              isControlTag: true
+            });
+          }
+
+          if (!isSelfClosing) xmlDepthStack.push(tagName);
+          return;
+        }
+
+        // Closing tag
+        if (xmlDepthStack.length > 0) xmlDepthStack.pop();
+        const afterPopDepth = xmlDepthStack.length;
+
+        if (IGNORE_CONTAINER_TAGS.has(tagName) && ignoreDepth > 0) {
+          ignoreDepth--;
+        }
+
+        if (ignoreDepth === 0 && paraStack.length > 0) {
+          const curP = paraStack[paraStack.length - 1];
+          const ar = curP.activeRun;
+          if (ar && ar.capturingSecCtrl && afterPopDepth === ar.capturingSecCtrl.stackDepth - 1) {
+            const cap = ar.capturingSecCtrl;
+            const sliceText = sectionXml.slice(cap.start, end);
+            const isLayoutCtrl = cap.isSecPr || /<hp:(?:colPr|header|footer|pageHiding|pageNumCtrl)\b/.test(sliceText);
+            if (isLayoutCtrl) {
+              ar.secCtrlSlices.push({ start: cap.start, end });
+              ar.hasSecCtrl = true;
+              if (!curP.secCtrlCharPrId) curP.secCtrlCharPrId = ar.charPrIDRef;
+            }
+            ar.capturingSecCtrl = null;
+          }
+        }
+
+        if (ignoreDepth > 0) return;
+
+        if (tagName === 'hp:t' && paraStack.length > 0) {
+          const curP = paraStack[paraStack.length - 1];
+          if (curP.activeT && curP.activeRun && afterPopDepth === curP.activeRun.stackDepth) {
+            curP.activeT.closeStart = start;
+            curP.activeT.end = end;
+            curP.activeRun.tList.push(curP.activeT);
+            curP.activeT = null;
+          }
+        } else if (tagName === 'hp:run' && paraStack.length > 0) {
+          const curP = paraStack[paraStack.length - 1];
+          if (curP.activeRun && afterPopDepth === curP.stackDepth) {
+            curP.activeRun.end = end;
+            curP.runs.push(curP.activeRun);
+            curP.activeRun = null;
+          }
+        } else if (tagName === 'hp:p' && paraStack.length > 0) {
+          const topP = paraStack[paraStack.length - 1];
+          if (afterPopDepth === topP.stackDepth - 1) {
+            paraStack.pop();
+            topP.closeTagStart = start;
+            topP.end = end;
+            finalizeParagraphSlot(topP);
+          }
+        } else if (tagName === 'hp:subList' && containerStack.length > 0) {
+          if (containerStack[containerStack.length - 1].type === 'subList') {
+            containerStack.pop();
+          }
+        } else if (tagName === 'hp:drawText' && drawTextDepth > 0) {
+          drawTextDepth--;
+        } else if (tagName === 'hp:tc' && cellStack.length > 0) {
+          cellStack.pop();
+        } else if (tagName === 'hp:tbl' && tableStack.length > 0) {
+          tableStack.pop();
+        } else if (tagName === 'hs:sec') {
+          secCloseStart = start;
+          if (containerStack.length > 0 && containerStack[containerStack.length - 1].type === 'sec') {
+            containerStack.pop();
+          }
+        }
+      }
+    });
+
+    const finalizedSlots = slots.filter(Boolean);
+
+    // Multi-paragraph table cells get "(N줄)" clarity without breaking single-paragraph labels
+    const cellCounts = new Map();
+    const cellOrdinals = new Map();
+    finalizedSlots.forEach(s => {
+      if (s.inTable && s.containerOpenEnd >= 0) {
+        cellCounts.set(s.containerOpenEnd, (cellCounts.get(s.containerOpenEnd) || 0) + 1);
+      }
+    });
+    finalizedSlots.forEach(s => {
+      if (s.inTable && s.containerOpenEnd >= 0 && cellCounts.get(s.containerOpenEnd) > 1) {
+        const ord = (cellOrdinals.get(s.containerOpenEnd) || 0) + 1;
+        cellOrdinals.set(s.containerOpenEnd, ord);
+        s.locationLabel = `${s.locationLabel} (${ord}줄)`;
+      }
+    });
+
+    const preferredRe = /\{\{\s*(?:본문|내용|풀이|정답|해설|content|body|text)\s*\}\}/i;
+    const recommendedSlot =
+      finalizedSlots.find(s => s.placeholders.some(p => preferredRe.test(p.full))) ||
+      finalizedSlots.find(s => s.placeholders.length > 0) ||
+      finalizedSlots.find(s => s.inTable && !s.hasTableChild && !s.hasEquationChild && !s.rawText.trim()) ||
+      [...finalizedSlots].reverse().find(s => !s.inTable && !s.hasTableChild) ||
+      finalizedSlots[0] ||
+      null;
+
+    const recommendedMode = recommendedSlot &&
+      (recommendedSlot.placeholders.length > 0 ||
+        (!recommendedSlot.hasTableChild && !recommendedSlot.hasEquationChild && !recommendedSlot.rawText.trim()))
+      ? 'replace'
+      : 'after';
+
+    return {
+      secOpenEnd,
+      secCloseStart,
+      slots: finalizedSlots,
+      maxParaId,
+      maxEqId,
+      maxEqZOrder,
+      recommendedSlotId: recommendedSlot ? recommendedSlot.slotId : null,
+      recommendedMode
+    };
+  }
+
+  function buildHwpxContentRuns(lineContent, opts) {
+    let trimmed = (lineContent || '').trim();
+    let isHeading = false;
+    let charPrId = opts.normalCharPrId;
+
+    if (/^#{1,6}\s+/.test(trimmed)) {
+      isHeading = true;
+      charPrId = opts.boldCharPrId;
+      trimmed = trimmed.replace(/^#{1,6}\s+/, '');
+    }
+
+    let runsXml = '';
+    let hasDisplayEq = false;
+    let addedContentRun = false;
+    const maxEqWidth = opts.maxEquationWidth > 0 ? opts.maxEquationWidth : 42520;
+
+    if (trimmed.length > 0) {
+      const parts = trimmed.split(/(%%KATEX_TOKEN_\d+%%)/g);
+      parts.forEach(part => {
+        if (!part) return;
+        if (opts.tokenMap.has(part)) {
+          const tokenInfo = opts.tokenMap.get(part);
+          const { eqId, eqZOrder } = opts.nextEqIds();
+          if (tokenInfo.isDisplay) hasDisplayEq = true;
+
+          const rawScript = (tokenInfo.hwpCode || tokenInfo.formula || '').trim() || ' ';
+          const cleanScript = escapeXml(rawScript);
+          const box = estimateHwpEquationBox(rawScript, tokenInfo.isDisplay);
+          const clampedWidth = Math.max(850, Math.min(maxEqWidth, box.width));
+
+          runsXml += `<hp:run charPrIDRef="${escapeXml(charPrId)}"><hp:equation id="${eqId}" zOrder="${eqZOrder}" numberingType="EQUATION" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" version="Equation Version 60" baseLine="${box.baseLine}" textColor="#000000" baseUnit="1100" lineMode="CHAR" font="HYhwpEQ"><hp:sz width="${clampedWidth}" widthRelTo="ABSOLUTE" height="${box.height}" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="56" right="56" top="0" bottom="0"/><hp:shapeComment>수식입니다.</hp:shapeComment><hp:script>${cleanScript}</hp:script></hp:equation><hp:t/></hp:run>`;
+          addedContentRun = true;
+        } else {
+          const cleanPart = cleanHwpxTextPart(part);
+          if (cleanPart) {
+            runsXml += `<hp:run charPrIDRef="${escapeXml(charPrId)}"><hp:t>${escapeXml(cleanPart)}</hp:t></hp:run>`;
+            addedContentRun = true;
+          }
+        }
+      });
+    }
+
+    return { runsXml, charPrId, hasDisplayEq, isHeading, addedContentRun };
+  }
+
+  function buildHwpxParagraphsFromLines(lines, cfg) {
+    let paragraphsXml = '';
+    lines.forEach((line, idx) => {
+      const isFirst = idx === 0;
+      const isLast = idx === lines.length - 1;
+      const { runsXml, charPrId, hasDisplayEq, addedContentRun } = buildHwpxContentRuns(line, cfg);
+      const secPrefix = isFirst && cfg.firstParaSecPrefix ? cfg.firstParaSecPrefix : '';
+      const pre = isFirst && cfg.firstParaInlinePrefix ? cfg.firstParaInlinePrefix : '';
+      const suf = isLast && cfg.lastParaInlineSuffix ? cfg.lastParaInlineSuffix : '';
+      const hasAnyContent = addedContentRun || Boolean(pre) || Boolean(suf);
+      const emptyFallback = hasAnyContent ? '' : `<hp:run charPrIDRef="${escapeXml(charPrId)}"><hp:t/></hp:run>`;
+      const paraPrId = hasDisplayEq && !pre && !suf ? cfg.centerParaPrId : cfg.normalParaPrId;
+      const paraId = cfg.getParaId(idx);
+      paragraphsXml += `<hp:p id="${paraId}" paraPrIDRef="${escapeXml(paraPrId)}" styleIDRef="${escapeXml(cfg.styleId)}" pageBreak="0" columnBreak="0" merged="0">${secPrefix}${pre}${runsXml}${suf}${emptyFallback}</hp:p>`;
+    });
+    return paragraphsXml;
+  }
+
+  function buildHwpxPreviewText(result, tokenMap) {
+    return result.tokenizedText
       .split(/(%%KATEX_TOKEN_\d+%%)/g)
       .map(part => {
         if (tokenMap.has(part)) {
@@ -1466,6 +2179,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       .join('')
       .trim()
       .slice(0, 1024);
+  }
+
+  function buildHwpxPackageFiles(rawText, nowDate = new Date()) {
+    const result = processText(rawText);
+    const tokenMap = new Map();
+    result.mathTokens.forEach(t => tokenMap.set(t.token, t));
+
+    const isoNow = nowDate.toISOString().replace(/\.\d{3}Z$/, 'Z');
+    const koDate = `${nowDate.getFullYear()}년 ${nowDate.getMonth() + 1}월 ${nowDate.getDate()}일`;
+    const prvText = buildHwpxPreviewText(result, tokenMap);
 
     const files = {};
 
@@ -1503,65 +2226,213 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const rawLines = (result.tokenizedText || rawText || '').split('\n');
     const lines = rawLines.length > 0 ? rawLines : [''];
     let eqCounter = 0;
-    let paragraphsXml = '';
-
-    const pageBorderFillsXml = ['BOTH', 'EVEN', 'ODD'].map(type =>
-      `<hp:pageBorderFill type="${type}" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill>`
-    ).join('');
-
-    const secCtrlRunXml = `<hp:run charPrIDRef="0"><hp:secPr id="" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" tabStopVal="4000" tabStopUnit="HWPUNIT" outlineShapeIDRef="1" memoShapeIDRef="0" textVerticalWidthHead="0" masterPageCnt="0"><hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0"/><hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/><hp:visibility hideFirstHeader="0" hideFirstFooter="0" hideFirstMasterPage="0" border="SHOW_ALL" fill="SHOW_ALL" hideFirstPageNum="0" hideFirstEmptyLine="0" showLineNumber="0"/><hp:lineNumberShape restartType="0" countBy="0" distance="0" startNumber="0"/><hp:pagePr landscape="WIDELY" width="59528" height="84186" gutterType="LEFT_ONLY"><hp:margin header="4252" footer="4252" gutter="0" left="8504" right="8504" top="5668" bottom="4252"/></hp:pagePr><hp:footNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="-1" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="283" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="EACH_COLUMN" beneathText="0"/></hp:footNotePr><hp:endNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="14692344" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="0" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="END_OF_DOCUMENT" beneathText="0"/></hp:endNotePr>${pageBorderFillsXml}</hp:secPr><hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl></hp:run>`;
-
-    lines.forEach((line, pIdx) => {
-      let lineContent = line.trim();
-      let paraPrId = 0;
-      let charPrId = 0;
-
-      if (/^#{1,6}\s+/.test(lineContent)) {
-        charPrId = 1;
-        lineContent = lineContent.replace(/^#{1,6}\s+/, '');
-      }
-
-      let runsXml = pIdx === 0 ? secCtrlRunXml : '';
-      let addedContentRun = false;
-
-      if (lineContent.length > 0) {
-        const parts = lineContent.split(/(%%KATEX_TOKEN_\d+%%)/g);
-        parts.forEach(part => {
-          if (!part) return;
-          if (tokenMap.has(part)) {
-            const tokenInfo = tokenMap.get(part);
-            const eqZOrder = eqCounter;
-            const eqId = 1950000000 + (++eqCounter);
-            if (tokenInfo.isDisplay) {
-              paraPrId = 1;
-            }
-            const rawScript = (tokenInfo.hwpCode || tokenInfo.formula || '').trim() || ' ';
-            const cleanScript = escapeXml(rawScript);
-            const box = estimateHwpEquationBox(rawScript, tokenInfo.isDisplay);
-
-            runsXml += `<hp:run charPrIDRef="${charPrId}"><hp:equation id="${eqId}" zOrder="${eqZOrder}" numberingType="EQUATION" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" version="Equation Version 60" baseLine="${box.baseLine}" textColor="#000000" baseUnit="1100" lineMode="CHAR" font="HYhwpEQ"><hp:sz width="${box.width}" widthRelTo="ABSOLUTE" height="${box.height}" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="56" right="56" top="0" bottom="0"/><hp:shapeComment>수식입니다.</hp:shapeComment><hp:script>${cleanScript}</hp:script></hp:equation><hp:t/></hp:run>`;
-            addedContentRun = true;
-          } else {
-            const cleanPart = cleanHwpxTextPart(part);
-            if (cleanPart) {
-              runsXml += `<hp:run charPrIDRef="${charPrId}"><hp:t>${escapeXml(cleanPart)}</hp:t></hp:run>`;
-              addedContentRun = true;
-            }
-          }
-        });
-      }
-
-      if (!addedContentRun) {
-        runsXml += `<hp:run charPrIDRef="${charPrId}"><hp:t/></hp:run>`;
-      }
-
-      const paraId = pIdx === 0 ? 0 : (1000000000 + pIdx);
-      paragraphsXml += `<hp:p id="${paraId}" paraPrIDRef="${paraPrId}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">${runsXml}</hp:p>`;
+    const paragraphsXml = buildHwpxParagraphsFromLines(lines, {
+      tokenMap,
+      normalCharPrId: '0',
+      boldCharPrId: '1',
+      normalParaPrId: '0',
+      centerParaPrId: '1',
+      styleId: '0',
+      maxEquationWidth: 42520,
+      firstParaSecPrefix: HWPX_SEC_CTRL_RUN_XML,
+      getParaId: (pIdx) => (pIdx === 0 ? 0 : (1000000000 + pIdx)),
+      nextEqIds: () => ({ eqZOrder: eqCounter, eqId: 1950000000 + (++eqCounter) })
     });
 
     files["Contents/section0.xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hs:sec xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0">${paragraphsXml}</hs:sec>`;
 
     return { files, result };
+  }
+
+  function extractRunWithoutSecCtrl(sectionXml, run) {
+    if (!run.hasSecCtrl || run.secCtrlSlices.length === 0) {
+      return sectionXml.slice(run.start, run.end);
+    }
+    let inner = '';
+    let cur = run.openEnd;
+    for (const sc of run.secCtrlSlices) {
+      if (sc.start > cur) inner += sectionXml.slice(cur, sc.start);
+      cur = sc.end;
+    }
+    if (cur < run.end - 9) inner += sectionXml.slice(cur, run.end - 9);
+    const cleanedInner = inner.replace(/<hp:t\s*\/>|<hp:t>\s*<\/hp:t>/g, '').trim();
+    if (!cleanedInner) return '';
+    return `${sectionXml.slice(run.start, run.openEnd)}${inner}</hp:run>`;
+  }
+
+  /**
+   * Injects converted text + HWP equations into an existing HWPX template package
+   * while preserving styles, headers/footers, master pages, tables, and binary assets.
+   */
+  function applyTextToHwpxTemplateFiles(templateFiles, rawText, options = {}, nowDate = new Date()) {
+    const sectionPaths = Object.keys(templateFiles)
+      .filter(p => /^Contents\/section\d+\.xml$/i.test(p))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const sectionPath = (options.sectionPath && templateFiles[options.sectionPath])
+      ? options.sectionPath
+      : (templateFiles['Contents/section0.xml'] ? 'Contents/section0.xml' : sectionPaths[0]);
+    if (!sectionPath) {
+      throw new Error('양식에서 Contents/section0.xml 본문을 찾을 수 없습니다.');
+    }
+
+    const sectionXml = templateFiles[sectionPath];
+    const headerStyles = inspectHwpxHeaderStyles(templateFiles['Contents/header.xml'] || '');
+    const structure = inspectHwpxSectionSlots(sectionXml);
+    if (structure.secOpenEnd < 0 || structure.secCloseStart < 0) {
+      throw new Error('양식 XML에서 <hs:sec> 영역을 찾을 수 없습니다.');
+    }
+
+    const result = processText(rawText);
+    const tokenMap = new Map();
+    result.mathTokens.forEach(t => tokenMap.set(t.token, t));
+
+    const rawLines = (result.tokenizedText || rawText || '').split('\n');
+    const lines = rawLines.length > 0 ? rawLines : [''];
+
+    let paraSeq = Math.max(2000000000, structure.maxParaId + 1);
+    let eqIdSeq = Math.max(1950000000, structure.maxEqId + 1);
+    let eqZSeq = Math.max(0, structure.maxEqZOrder + 1);
+    const nextParaId = () => paraSeq++;
+    const nextEqIds = () => ({ eqId: eqIdSeq++, eqZOrder: eqZSeq++ });
+
+    const mode = options.mode || structure.recommendedMode || 'after';
+    const targetSlot = structure.slots.find(s => s.slotId === options.slotId)
+      || structure.slots.find(s => s.slotId === structure.recommendedSlotId)
+      || structure.slots[structure.slots.length - 1]
+      || null;
+
+    const validOr = (candidate, allowedSet, fallback) => (allowedSet.has(candidate) ? candidate : fallback);
+    let newSectionXml = sectionXml;
+    let appliedSlot = targetSlot;
+
+    if (mode === 'replace_body' || !targetSlot) {
+      const secOwner = structure.slots.find(s => s.hasSecPr && s.secCtrlRunXml);
+      const paragraphsXml = buildHwpxParagraphsFromLines(lines, {
+        tokenMap,
+        normalCharPrId: headerStyles.defaultCharPrId,
+        boldCharPrId: headerStyles.boldCharPrId,
+        normalParaPrId: headerStyles.defaultParaPrId,
+        centerParaPrId: headerStyles.centerParaPrId,
+        styleId: headerStyles.defaultStyleId,
+        maxEquationWidth: 42520,
+        firstParaSecPrefix: secOwner ? secOwner.secCtrlRunXml : HWPX_SEC_CTRL_RUN_XML,
+        getParaId: (idx) => (idx === 0 ? 0 : nextParaId()),
+        nextEqIds
+      });
+      newSectionXml = sectionXml.slice(0, structure.secOpenEnd) + paragraphsXml + sectionXml.slice(structure.secCloseStart);
+      appliedSlot = null;
+    } else {
+      const slotParaPrId = validOr(targetSlot.paraPrIDRef, headerStyles.paraPrIds, headerStyles.defaultParaPrId);
+      const slotStyleId = validOr(targetSlot.styleIDRef, headerStyles.styleIds, headerStyles.defaultStyleId);
+      const slotCharPrId = validOr(targetSlot.charPrIDRef, headerStyles.charPrIds, headerStyles.defaultCharPrId);
+      const boldCharPrId = headerStyles.boldCharPrId === headerStyles.defaultCharPrId && headerStyles.charPrIds.size === 1
+        ? slotCharPrId
+        : headerStyles.boldCharPrId;
+      const centerParaPrId = headerStyles.centerParaPrId === headerStyles.defaultParaPrId && !headerStyles.paraPrIds.has('1')
+        ? slotParaPrId
+        : headerStyles.centerParaPrId;
+
+      if (mode === 'after') {
+        const insertedXml = buildHwpxParagraphsFromLines(lines, {
+          tokenMap,
+          normalCharPrId: slotCharPrId,
+          boldCharPrId,
+          normalParaPrId: slotParaPrId,
+          centerParaPrId,
+          styleId: slotStyleId,
+          maxEquationWidth: targetSlot.maxContentWidth,
+          getParaId: () => nextParaId(),
+          nextEqIds
+        });
+        newSectionXml = sectionXml.slice(0, targetSlot.end) + insertedXml + sectionXml.slice(targetSlot.end);
+      } else {
+        // mode === 'replace'
+        const ph = (options.placeholder
+          ? targetSlot.placeholders.find(p => p.full === options.placeholder || p.name === options.placeholder)
+          : null) || targetSlot.placeholders[0] || null;
+
+        let prefixRunsXml = '';
+        let suffixRunsXml = '';
+        let activeCharPr = slotCharPrId;
+
+        if (ph && targetSlot.textSegs.length > 0 && targetSlot.rawText.trim() !== ph.full) {
+          const startSeg = targetSlot.textSegs.find(s => ph.startOffset >= s.textStart && ph.startOffset < s.textEnd);
+          const endSeg = targetSlot.textSegs.find(s => ph.endOffset > s.textStart && ph.endOffset <= s.textEnd);
+          if (startSeg && endSeg) {
+            activeCharPr = validOr(startSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
+            for (const run of targetSlot.runs) {
+              if (run.runIdx < startSeg.runIdx) {
+                prefixRunsXml += extractRunWithoutSecCtrl(sectionXml, run);
+              }
+            }
+            let sameRunBeforeInner = '';
+            for (const seg of targetSlot.textSegs) {
+              if (seg.runIdx === startSeg.runIdx && seg.textEnd <= ph.startOffset) {
+                sameRunBeforeInner += seg.isControlTag ? sectionXml.slice(seg.xmlStart, seg.xmlEnd) : escapeXml(seg.text);
+              }
+            }
+            const beforeText = startSeg.isControlTag ? '' : startSeg.text.slice(0, ph.startOffset - startSeg.textStart);
+            sameRunBeforeInner += escapeXml(beforeText);
+            if (sameRunBeforeInner) {
+              prefixRunsXml += `<hp:run charPrIDRef="${escapeXml(activeCharPr)}"><hp:t>${sameRunBeforeInner}</hp:t></hp:run>`;
+            }
+
+            const endRunChar = validOr(endSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
+            const afterText = endSeg.isControlTag ? '' : endSeg.text.slice(ph.endOffset - endSeg.textStart);
+            let sameRunAfterInner = escapeXml(afterText);
+            for (const seg of targetSlot.textSegs) {
+              if (seg.runIdx === endSeg.runIdx && seg.textStart >= ph.endOffset) {
+                sameRunAfterInner += seg.isControlTag ? sectionXml.slice(seg.xmlStart, seg.xmlEnd) : escapeXml(seg.text);
+              }
+            }
+            if (sameRunAfterInner) {
+              suffixRunsXml += `<hp:run charPrIDRef="${escapeXml(endRunChar)}"><hp:t>${sameRunAfterInner}</hp:t></hp:run>`;
+            }
+            for (const run of targetSlot.runs) {
+              if (run.runIdx > endSeg.runIdx) {
+                suffixRunsXml += extractRunWithoutSecCtrl(sectionXml, run);
+              }
+            }
+          }
+        } else if (ph && targetSlot.textSegs.length > 0) {
+          const startSeg = targetSlot.textSegs[0];
+          if (startSeg) activeCharPr = validOr(startSeg.charPrIDRef, headerStyles.charPrIds, slotCharPrId);
+        }
+
+        const replacedXml = buildHwpxParagraphsFromLines(lines, {
+          tokenMap,
+          normalCharPrId: activeCharPr,
+          boldCharPrId,
+          normalParaPrId: slotParaPrId,
+          centerParaPrId,
+          styleId: slotStyleId,
+          maxEquationWidth: targetSlot.maxContentWidth,
+          firstParaSecPrefix: targetSlot.secCtrlRunXml,
+          firstParaInlinePrefix: prefixRunsXml,
+          lastParaInlineSuffix: suffixRunsXml,
+          getParaId: (idx) => (idx === 0 && targetSlot.hasSecPr ? 0 : nextParaId()),
+          nextEqIds
+        });
+
+        newSectionXml = sectionXml.slice(0, targetSlot.start) + replacedXml + sectionXml.slice(targetSlot.end);
+      }
+    }
+
+    const outFiles = { ...templateFiles };
+    outFiles[sectionPath] = newSectionXml;
+    const prvText = buildHwpxPreviewText(result, tokenMap);
+    if ('Preview/PrvText.txt' in outFiles || prvText) {
+      outFiles['Preview/PrvText.txt'] = prvText;
+    }
+    if (outFiles['Contents/content.hpf']) {
+      const isoNow = nowDate.toISOString().replace(/\.\d{3}Z$/, 'Z');
+      outFiles['Contents/content.hpf'] = outFiles['Contents/content.hpf'].replace(
+        /(<opf:meta\s+name="ModifiedDate"\s+content="text">)[^<]*(<\/opf:meta>)/,
+        `$1${isoNow}$2`
+      );
+    }
+
+    return { files: outFiles, result, appliedSlot, sectionPath, mode };
   }
 
   globalThis.__AI_LATEX_ENGINE__ = {
@@ -1577,7 +2448,10 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     escapeHtml,
     escapeXml,
     estimateHwpEquationBox,
-    buildHwpxPackageFiles
+    buildHwpxPackageFiles,
+    inspectHwpxHeaderStyles,
+    inspectHwpxSectionSlots,
+    applyTextToHwpxTemplateFiles
   };
 
   if (typeof document !== 'undefined') {
@@ -1592,6 +2466,15 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   const logCountBadge = document.getElementById('logCountBadge');
   const hwpCountBadge = document.getElementById('hwpCountBadge');
   const btnRestoreLast = document.getElementById('btnRestoreLast');
+  const templateSelect = document.getElementById('templateSelect');
+  const templateFileInput = document.getElementById('templateFileInput');
+  const btnLoadTemplate = document.getElementById('btnLoadTemplate');
+  const btnDeleteTemplate = document.getElementById('btnDeleteTemplate');
+  const btnToggleSlotPicker = document.getElementById('btnToggleSlotPicker');
+  const templateSlotPanel = document.getElementById('templateSlotPanel');
+  const templateSlotSummary = document.getElementById('templateSlotSummary');
+  const templateSlotList = document.getElementById('templateSlotList');
+  const templateModeGroup = document.getElementById('templateModeGroup');
 
   if (localStorage.getItem(STORAGE_KEY)) {
     btnRestoreLast.classList.remove('hidden');
@@ -1744,6 +2627,346 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     window.print();
   });
 
+  // --- 한글(.hwpx) 양식 저장·불러오기·삽입 위치 선택 관리 ---
+  const TEMPLATE_LIST_KEY = 'ai_latex_hwpx_templates_v1';
+  const TEMPLATE_SELECTED_KEY = 'ai_latex_hwpx_selected_v1';
+  const DEFAULT_TEMPLATE_ID = '__default__';
+  const MODE_LABELS = {
+    replace: '내용 교체',
+    after: '위치 뒤 추가',
+    replace_body: '본문 전체 교체'
+  };
+
+  let runtimeTemplates = [];
+  let activeTemplateState = null;
+
+  function uint8ToBase64(bytes) {
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+
+  function base64ToUint8(b64) {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  function loadStoredTemplates() {
+    try {
+      const raw = localStorage.getItem(TEMPLATE_LIST_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.filter(t => t && typeof t.id === 'string' && typeof t.name === 'string' && typeof t.base64 === 'string')
+        : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function persistStoredTemplates() {
+    try {
+      const toPersist = runtimeTemplates
+        .filter(t => t.persisted !== false)
+        .map(({ id, name, base64, size, addedAt }) => ({ id, name, base64, size, addedAt }));
+      localStorage.setItem(TEMPLATE_LIST_KEY, JSON.stringify(toPersist));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function persistSelectedTemplateId(id) {
+    try {
+      localStorage.setItem(TEMPLATE_SELECTED_KEY, id || DEFAULT_TEMPLATE_ID);
+    } catch (e) {
+      // Ignore storage quota errors for selection preference
+    }
+  }
+
+  function isTextZipEntry(path) {
+    return path === 'mimetype' || /\.(?:xml|hpf|rdf|txt)$/i.test(path);
+  }
+
+  async function parseHwpxTemplateState(tpl) {
+    if (typeof JSZip === 'undefined') {
+      throw new Error('JSZip 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+    }
+    const bytes = base64ToUint8(tpl.base64);
+    const zip = await JSZip.loadAsync(bytes);
+    const textFiles = {};
+    const binaryFiles = {};
+    const entries = Object.entries(zip.files);
+
+    await Promise.all(entries.map(async ([path, entry]) => {
+      if (entry.dir) return;
+      if (isTextZipEntry(path)) {
+        textFiles[path] = await entry.async('string');
+      } else {
+        binaryFiles[path] = await entry.async('uint8array');
+      }
+    }));
+
+    const sectionPaths = Object.keys(textFiles)
+      .filter(p => /^Contents\/section\d+\.xml$/i.test(p))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+    if (sectionPaths.length === 0) {
+      throw new Error('유효한 .hwpx 양식이 아닙니다. (Contents/section0.xml 누락)');
+    }
+
+    const allSlots = [];
+    let recommendedSlotUid = null;
+    let recommendedMode = 'after';
+
+    sectionPaths.forEach((secPath, secIdx) => {
+      const structure = inspectHwpxSectionSlots(textFiles[secPath]);
+      structure.slots.forEach(slot => {
+        const uid = `${secPath}::${slot.slotId}`;
+        allSlots.push({
+          ...slot,
+          sectionPath: secPath,
+          sectionLabel: sectionPaths.length > 1 ? `구역${secIdx + 1}` : '',
+          uid
+        });
+      });
+      if (recommendedSlotUid === null && structure.recommendedSlotId !== null) {
+        recommendedSlotUid = `${secPath}::${structure.recommendedSlotId}`;
+        recommendedMode = structure.recommendedMode;
+      }
+    });
+
+    if (recommendedSlotUid === null && allSlots.length > 0) {
+      recommendedSlotUid = allSlots[allSlots.length - 1].uid;
+      recommendedMode = 'after';
+    }
+
+    return {
+      id: tpl.id,
+      name: tpl.name,
+      textFiles,
+      binaryFiles,
+      sectionPaths,
+      selectedSectionPath: sectionPaths[0],
+      slots: allSlots,
+      selectedSlotUid: recommendedSlotUid,
+      insertMode: recommendedMode,
+      panelExpanded: true
+    };
+  }
+
+  function renderTemplateUi() {
+    const currentId = activeTemplateState ? activeTemplateState.id : DEFAULT_TEMPLATE_ID;
+    templateSelect.innerHTML = '';
+
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = DEFAULT_TEMPLATE_ID;
+    defaultOpt.textContent = '기본 빈 문서 (표준 A4)';
+    templateSelect.appendChild(defaultOpt);
+
+    runtimeTemplates.forEach(tpl => {
+      const opt = document.createElement('option');
+      opt.value = tpl.id;
+      opt.textContent = tpl.persisted === false ? `${tpl.name} (임시)` : tpl.name;
+      templateSelect.appendChild(opt);
+    });
+    templateSelect.value = currentId;
+
+    const hasTpl = Boolean(activeTemplateState);
+    btnDeleteTemplate.classList.toggle('hidden', !hasTpl);
+    btnToggleSlotPicker.classList.toggle('hidden', !hasTpl);
+    templateSlotPanel.classList.toggle('hidden', !(hasTpl && activeTemplateState.panelExpanded));
+
+    if (!hasTpl) return;
+
+    const mode = activeTemplateState.insertMode;
+    const selectedSlot = activeTemplateState.slots.find(s => s.uid === activeTemplateState.selectedSlotUid) || null;
+    btnToggleSlotPicker.textContent = `삽입 위치: ${MODE_LABELS[mode] || '설정'} ${activeTemplateState.panelExpanded ? '▴' : '▾'}`;
+
+    templateModeGroup.querySelectorAll('.template-mode-btn').forEach(btn => {
+      const isActive = btn.dataset.insertMode === mode;
+      btn.classList.toggle('bg-sky-600', isActive);
+      btn.classList.toggle('text-white', isActive);
+      btn.classList.toggle('text-slate-400', !isActive);
+      btn.classList.toggle('hover:text-slate-200', !isActive);
+    });
+
+    if (mode === 'replace_body') {
+      templateSlotSummary.innerHTML = `<span class="text-sky-300 font-semibold">${escapeHtml(activeTemplateState.name)}</span> · 페이지 설정/머리글 유지 + <b>기존 본문 전체 교체</b>`;
+    } else if (selectedSlot) {
+      const phTag = selectedSlot.placeholders.length > 0
+        ? ` <span class="text-emerald-400 font-mono">(${escapeHtml(selectedSlot.placeholders[0].full)})</span>`
+        : '';
+      templateSlotSummary.innerHTML = `<span class="text-sky-300 font-semibold">${escapeHtml(activeTemplateState.name)}</span> · <b>${escapeHtml(MODE_LABELS[mode])}</b> → ${escapeHtml(selectedSlot.locationLabel)}${phTag}`;
+    } else {
+      templateSlotSummary.innerHTML = `<span class="text-sky-300 font-semibold">${escapeHtml(activeTemplateState.name)}</span> · 문단을 찾지 못해 본문 끝에 추가됩니다.`;
+    }
+
+    if (activeTemplateState.slots.length === 0) {
+      templateSlotList.innerHTML = '<div class="text-slate-500 text-[11px] py-2 text-center">선택 가능한 본문 문단이 없습니다. (본문 전체 교체 또는 뒤에 추가 사용)</div>';
+      return;
+    }
+
+    templateSlotList.innerHTML = activeTemplateState.slots.map(slot => {
+      const isSelected = mode !== 'replace_body' && slot.uid === activeTemplateState.selectedSlotUid;
+      const rowCls = isSelected
+        ? 'bg-sky-950/70 border-sky-500/80 text-slate-100'
+        : 'bg-slate-900/70 border-slate-800 hover:border-slate-700 text-slate-300';
+      const secPrefix = slot.sectionLabel ? `[${escapeHtml(slot.sectionLabel)}] ` : '';
+      const locBadge = `<span class="shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded ${slot.inTable ? 'bg-indigo-950 text-indigo-300 border border-indigo-800/70' : 'bg-slate-800 text-slate-300'}">${secPrefix}${escapeHtml(slot.locationLabel)}</span>`;
+      const phBadge = slot.placeholders.length > 0
+        ? `<span class="shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/80">${escapeHtml(slot.placeholders[0].full)}</span>`
+        : '';
+      const secBadge = slot.hasSecPr
+        ? '<span class="shrink-0 text-[10px] px-1 py-0.5 rounded bg-amber-950/70 text-amber-300 border border-amber-800/60">설정</span>'
+        : '';
+      const snippet = slot.previewText.length > 56 ? `${slot.previewText.slice(0, 56)}…` : slot.previewText;
+      return `<button type="button" data-slot-uid="${escapeHtml(slot.uid)}" class="w-full text-left px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-2 ${rowCls}">${locBadge}${phBadge}${secBadge}<span class="truncate text-[11px] text-slate-300">${escapeHtml(snippet)}</span></button>`;
+    }).join('');
+  }
+
+  async function activateTemplateById(id) {
+    if (!id || id === DEFAULT_TEMPLATE_ID) {
+      activeTemplateState = null;
+      persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
+      renderTemplateUi();
+      return;
+    }
+    const tpl = runtimeTemplates.find(t => t.id === id);
+    if (!tpl) {
+      activeTemplateState = null;
+      persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
+      renderTemplateUi();
+      return;
+    }
+    try {
+      activeTemplateState = await parseHwpxTemplateState(tpl);
+      persistSelectedTemplateId(tpl.id);
+      renderTemplateUi();
+    } catch (err) {
+      console.error('양식 파싱 오류:', err);
+      activeTemplateState = null;
+      persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
+      renderTemplateUi();
+      showToast('양식을 읽는 중 오류가 발생했습니다: ' + escapeHtml(err && err.message ? err.message : String(err)));
+    }
+  }
+
+  btnLoadTemplate.addEventListener('click', () => {
+    templateFileInput.value = '';
+    templateFileInput.click();
+  });
+
+  templateFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    try {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      const isOleHwp = bytes.length >= 8 &&
+        bytes[0] === 0xD0 && bytes[1] === 0xCF && bytes[2] === 0x11 && bytes[3] === 0xE0 &&
+        bytes[4] === 0xA1 && bytes[5] === 0xB1 && bytes[6] === 0x1A && bytes[7] === 0xE1;
+      if (isOleHwp || /\.hwp$/i.test(file.name)) {
+        showToast('구형 <b>.hwp</b> 바이너리 파일은 지원되지 않습니다. 한컴오피스/한컴독스에서 <b>.hwpx</b>로 저장한 뒤 불러와 주세요.');
+        return;
+      }
+      if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4B) {
+        showToast('올바른 <b>.hwpx</b> 파일이 아닙니다.');
+        return;
+      }
+
+      const tplRecord = {
+        id: 'tpl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        name: file.name,
+        base64: uint8ToBase64(bytes),
+        size: bytes.length,
+        addedAt: Date.now(),
+        persisted: true
+      };
+
+      const parsedState = await parseHwpxTemplateState(tplRecord);
+      const existingIdx = runtimeTemplates.findIndex(t => t.name === file.name);
+      if (existingIdx >= 0) {
+        runtimeTemplates[existingIdx] = tplRecord;
+      } else {
+        runtimeTemplates.push(tplRecord);
+      }
+
+      const persistedOk = persistStoredTemplates();
+      if (!persistedOk) {
+        tplRecord.persisted = false;
+        persistStoredTemplates();
+      }
+
+      activeTemplateState = parsedState;
+      if (persistedOk) persistSelectedTemplateId(tplRecord.id);
+      renderTemplateUi();
+
+      const msgSuffix = persistedOk
+        ? `위치 ${parsedState.slots.length}개 인식됨`
+        : `위치 ${parsedState.slots.length}개 인식됨 (브라우저 저장 용량 초과로 이번 세션에만 유지)`;
+      showToast(`<b>${escapeHtml(file.name)} 양식 적용!</b> ${msgSuffix}`, true);
+    } catch (err) {
+      console.error('양식 불러오기 실패:', err);
+      showToast('양식을 불러올 수 없습니다: ' + escapeHtml(err && err.message ? err.message : String(err)));
+    }
+  });
+
+  templateSelect.addEventListener('change', (e) => {
+    activateTemplateById(e.target.value);
+  });
+
+  btnDeleteTemplate.addEventListener('click', () => {
+    if (!activeTemplateState) return;
+    const removedName = activeTemplateState.name;
+    runtimeTemplates = runtimeTemplates.filter(t => t.id !== activeTemplateState.id);
+    persistStoredTemplates();
+    activeTemplateState = null;
+    persistSelectedTemplateId(DEFAULT_TEMPLATE_ID);
+    renderTemplateUi();
+    showToast(`양식 '${escapeHtml(removedName)}'을(를) 목록에서 삭제했습니다.`);
+  });
+
+  btnToggleSlotPicker.addEventListener('click', () => {
+    if (!activeTemplateState) return;
+    activeTemplateState.panelExpanded = !activeTemplateState.panelExpanded;
+    renderTemplateUi();
+  });
+
+  templateModeGroup.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest('[data-insert-mode]');
+    if (!btn || !activeTemplateState) return;
+    const nextMode = btn.dataset.insertMode;
+    if (MODE_LABELS[nextMode]) {
+      activeTemplateState.insertMode = nextMode;
+      renderTemplateUi();
+    }
+  });
+
+  templateSlotList.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest('[data-slot-uid]');
+    if (!btn || !activeTemplateState) return;
+    const uid = btn.getAttribute('data-slot-uid');
+    const slot = activeTemplateState.slots.find(s => s.uid === uid);
+    if (!slot) return;
+    activeTemplateState.selectedSlotUid = uid;
+    activeTemplateState.selectedSectionPath = slot.sectionPath;
+    if (activeTemplateState.insertMode === 'replace_body') {
+      activeTemplateState.insertMode = (slot.placeholders.length > 0 || (!slot.hasTableChild && !slot.hasEquationChild && !slot.rawText.trim()))
+        ? 'replace'
+        : 'after';
+    }
+    renderTemplateUi();
+  });
+
   // --- 한글(.hwpx) 정식 파일 생성 및 다운로드 핸들러 ---
   async function exportToHwpx() {
     if (!rawInput.value.trim()) {
@@ -1755,21 +2978,47 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       return;
     }
 
-    showToast("<b>한컴독스 정품 규격 한글(.hwpx) 생성 중...</b>", true);
+    const usingTemplate = Boolean(activeTemplateState);
+    showToast(usingTemplate
+      ? `<b>${escapeHtml(activeTemplateState.name)}</b> 양식에 적용 중...`
+      : "<b>한컴독스 정품 규격 한글(.hwpx) 생성 중...</b>", true);
 
     try {
       const now = new Date();
-      const { files } = buildHwpxPackageFiles(rawInput.value, now);
+      let pkgFiles;
+      let binaryEntries = {};
+      let basePrefix = 'AI_Math_LaTeX';
+
+      if (usingTemplate) {
+        const selectedSlot = activeTemplateState.slots.find(s => s.uid === activeTemplateState.selectedSlotUid) || null;
+        const applied = applyTextToHwpxTemplateFiles(activeTemplateState.textFiles, rawInput.value, {
+          sectionPath: selectedSlot ? selectedSlot.sectionPath : activeTemplateState.selectedSectionPath,
+          slotId: selectedSlot ? selectedSlot.slotId : undefined,
+          mode: activeTemplateState.insertMode
+        }, now);
+        pkgFiles = applied.files;
+        binaryEntries = activeTemplateState.binaryFiles || {};
+        const stem = activeTemplateState.name.replace(/\.hwpx$/i, '').replace(/[\\/:*?"<>|]/g, '_');
+        basePrefix = `AI_Math_${stem || 'Template'}`;
+      } else {
+        pkgFiles = buildHwpxPackageFiles(rawInput.value, now).files;
+      }
+
       const zip = new JSZip();
 
       // 1. mimetype 최상단 엔트리 무압축(STORE) 저장
-      zip.file("mimetype", files["mimetype"], { compression: "STORE" });
+      zip.file("mimetype", pkgFiles["mimetype"] || "application/hwp+zip", { compression: "STORE" });
 
-      // 2. 나머지 XML/메타 파일 저장 (DEFLATE)
-      Object.entries(files).forEach(([path, data]) => {
+      // 2. 나머지 XML/텍스트 파일 저장 (DEFLATE)
+      Object.entries(pkgFiles).forEach(([path, data]) => {
         if (path !== "mimetype") {
           zip.file(path, data, { compression: "DEFLATE" });
         }
+      });
+
+      // 3. 양식에 포함된 이미지/바이너리 리소스(BinData/* 등) 원본 그대로 보존
+      Object.entries(binaryEntries).forEach(([path, uint8]) => {
+        zip.file(path, uint8, { compression: "DEFLATE" });
       });
 
       const content = await zip.generateAsync({
@@ -1779,7 +3028,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         compressionOptions: { level: 6 }
       });
       const dateStr = now.getFullYear() + ('0' + (now.getMonth() + 1)).slice(-2) + ('0' + now.getDate()).slice(-2) + '_' + ('0' + now.getHours()).slice(-2) + ('0' + now.getMinutes()).slice(-2);
-      const fileName = `AI_Math_LaTeX_${dateStr}.hwpx`;
+      const fileName = `${basePrefix}_${dateStr}.hwpx`;
 
       const downloadUrl = URL.createObjectURL(content);
       const a = document.createElement('a');
@@ -1798,6 +3047,18 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   }
 
   document.getElementById('btnDownloadHwpx').addEventListener('click', exportToHwpx);
+
+  runtimeTemplates = loadStoredTemplates();
+  renderTemplateUi();
+  let lastSelectedTplId = DEFAULT_TEMPLATE_ID;
+  try {
+    lastSelectedTplId = localStorage.getItem(TEMPLATE_SELECTED_KEY) || DEFAULT_TEMPLATE_ID;
+  } catch (e) {
+    lastSelectedTplId = DEFAULT_TEMPLATE_ID;
+  }
+  if (lastSelectedTplId !== DEFAULT_TEMPLATE_ID) {
+    activateTemplateById(lastSelectedTplId);
+  }
 
   document.getElementById('btnClear').addEventListener('click', () => {
     rawInput.value = '';

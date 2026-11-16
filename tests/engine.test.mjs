@@ -297,3 +297,95 @@ test('buildHwpxPackageFiles produces OWPML-compliant package files and well-form
   assert.ok(!sampleHwpx.files['Contents/section0.xml'].includes('\\sum'), 'HWPX script must not leak raw \\sum');
   assert.ok(!sampleHwpx.files['Contents/section0.xml'].includes('\\int'), 'HWPX script must not leak raw \\int');
 });
+
+test('HWPX template inspection and text/equation insertion support placeholders, table cells, append, and replace_body', () => {
+  const nsAttrs = 'xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core"';
+  const basePackage = engine.buildHwpxPackageFiles('템플릿 기준', new Date('2026-05-01T00:00:00Z')).files;
+
+  const customHeader = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head ${nsAttrs} version="1.4" secCnt="1"><hh:refList><hh:charProperties itemCnt="3"><hh:charPr id="0" height="1000"/><hh:charPr id="2" height="1100"/><hh:charPr id="5" height="1200"><hh:bold/></hh:charPr></hh:charProperties><hh:paraProperties itemCnt="2"><hh:paraPr id="0"><hh:align horizontal="LEFT"/></hh:paraPr><hh:paraPr id="3"><hh:align horizontal="CENTER"/></hh:paraPr></hh:paraProperties><hh:styles itemCnt="2"><hh:style id="0" paraPrIDRef="0" charPrIDRef="0"/><hh:style id="1" paraPrIDRef="0" charPrIDRef="2"/></hh:styles></hh:refList></hh:head>`;
+
+  const customSection = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hs:sec ${nsAttrs}>` +
+    `<hp:p id="0" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">` +
+      `<hp:run charPrIDRef="0"><hp:secPr id="" textDirection="HORIZONTAL"><hp:pagePr width="59528" height="84186"/></hp:secPr><hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/><hp:header id="1" applyPageType="BOTH"><hp:subList><hp:p id="999" paraPrIDRef="0" styleIDRef="0"><hp:run charPrIDRef="0"><hp:t>학교 시험지 머리글</hp:t></hp:run></hp:p></hp:subList></hp:header></hp:ctrl><hp:t/></hp:run>` +
+      `<hp:run charPrIDRef="5"><hp:t>1. 시험지 제목</hp:t></hp:run>` +
+    `</hp:p>` +
+    `<hp:p id="10" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">` +
+      `<hp:run charPrIDRef="0"><hp:tbl id="50" rowCnt="1" colCnt="2"><hp:tr>` +
+        `<hp:tc><hp:cellSz width="15000" height="3000"/><hp:subList><hp:p id="11" paraPrIDRef="0" styleIDRef="0"><hp:run charPrIDRef="0"><hp:t>문제 설명</hp:t></hp:run></hp:p></hp:subList></hp:tc>` +
+        `<hp:tc><hp:cellSz width="20000" height="3000"/><hp:subList><hp:p id="12" paraPrIDRef="0" styleIDRef="1"><hp:run charPrIDRef="2"><hp:t>정답: {{</hp:t></hp:run><hp:run charPrIDRef="2"><hp:t>본문}} 끝</hp:t></hp:run><hp:linesegarray><hp:lineseg textpos="0"/></hp:linesegarray></hp:p></hp:subList></hp:tc>` +
+      `</hp:tr></hp:tbl><hp:t/></hp:run>` +
+    `</hp:p>` +
+    `<hp:p id="20" paraPrIDRef="0" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="0"><hp:t>참고 사항</hp:t></hp:run></hp:p>` +
+  `</hs:sec>`;
+
+  const templateFiles = {
+    ...basePackage,
+    'Contents/header.xml': customHeader,
+    'Contents/section0.xml': customSection
+  };
+
+  // 1. Header style & section slot inspection
+  const styles = engine.inspectHwpxHeaderStyles(customHeader);
+  assert.equal(styles.boldCharPrId, '5');
+  assert.equal(styles.centerParaPrId, '3');
+
+  const inspected = engine.inspectHwpxSectionSlots(customSection);
+  assert.ok(!inspected.slots.some(s => s.rawText.includes('학교 시험지 머리글')), 'Header paragraphs must NOT appear as body slots');
+  assert.equal(inspected.slots.length, 5);
+  assert.equal(inspected.slots[0].locationLabel, '본문 문단 1');
+  assert.equal(inspected.slots[0].hasSecPr, true);
+  assert.equal(inspected.slots[1].hasTableChild, true);
+  assert.equal(inspected.slots[2].locationLabel, '표1 · 1행 1열');
+  assert.equal(inspected.slots[3].locationLabel, '표1 · 1행 2열');
+  assert.equal(inspected.slots[3].maxContentWidth, 19200);
+  assert.equal(inspected.slots[3].placeholders[0].full, '{{본문}}');
+  assert.equal(inspected.recommendedSlotId, 3);
+  assert.equal(inspected.recommendedMode, 'replace');
+
+  // 2. Replace inline split placeholder inside table cell (multi-line + equation)
+  const replacedCell = engine.applyTextToHwpxTemplateFiles(templateFiles, '첫째 줄 $x = \\frac{1}{2}$\n둘째 줄');
+  const repSec = replacedCell.files['Contents/section0.xml'];
+  assertWellFormedXml(repSec, 'Template replace inline cell section0.xml');
+  assert.ok(!repSec.includes('{{'), 'Placeholder must be fully replaced');
+  assert.ok(repSec.includes('정답: '), 'Inline prefix before {{본문}} must be preserved');
+  assert.ok(repSec.includes(' 끝'), 'Inline suffix after {{본문}} must be preserved');
+  assert.ok(repSec.includes('학교 시험지 머리글'), 'Template header must remain intact');
+  assert.ok(repSec.includes('문제 설명'), 'Sibling table cell must remain intact');
+  assert.ok(repSec.includes('<hp:script>{1} over {2}</hp:script>') || repSec.includes('{1} over {2}'), 'Inserted equation must convert to HWP EqEdit');
+  assert.ok(!repSec.includes('<hp:linesegarray>'), 'Stale linesegarray on replaced cell paragraph must be stripped');
+
+  // 3. Append after heading paragraph
+  const appended = engine.applyTextToHwpxTemplateFiles(templateFiles, '추가 본문 $y = x^2$', {
+    slotId: 0,
+    mode: 'after'
+  });
+  const appSec = appended.files['Contents/section0.xml'];
+  assertWellFormedXml(appSec, 'Template append section0.xml');
+  assert.ok(appSec.includes('1. 시험지 제목'), 'Original selected paragraph must remain');
+  assert.ok(appSec.indexOf('1. 시험지 제목') < appSec.indexOf('추가 본문'), 'Appended paragraph must follow selected slot');
+  assert.ok(appSec.indexOf('추가 본문') < appSec.indexOf('문제 설명'), 'Appended paragraph must precede following table paragraph');
+
+  // 4. replace_body preserves secPr + header while replacing old body & tables
+  const replacedBody = engine.applyTextToHwpxTemplateFiles(templateFiles, '# 새 제목\n$$a^2 + b^2 = c^2$$', {
+    mode: 'replace_body'
+  });
+  const bodySec = replacedBody.files['Contents/section0.xml'];
+  assertWellFormedXml(bodySec, 'Template replace_body section0.xml');
+  assert.ok(bodySec.includes('<hp:secPr '), 'secPr must survive replace_body');
+  assert.ok(bodySec.includes('학교 시험지 머리글'), 'Header inside ctrl must survive replace_body');
+  assert.ok(!bodySec.includes('문제 설명'), 'Old template table must be wiped in replace_body');
+  assert.ok(!bodySec.includes('참고 사항'), 'Old template body must be wiped in replace_body');
+  assert.ok(bodySec.includes('charPrIDRef="5"'), 'Heading should resolve template bold charPr ID 5');
+  assert.ok(bodySec.includes('paraPrIDRef="3"'), 'Display equation should resolve template center paraPr ID 3');
+
+  // 5. Fallback when template header.xml only has charPr id="0" and paraPr id="0"
+  const minimalHeader = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head ${nsAttrs}><hh:refList><hh:charProperties itemCnt="1"><hh:charPr id="0" height="1000"/></hh:charProperties><hh:paraProperties itemCnt="1"><hh:paraPr id="0"><hh:align horizontal="LEFT"/></hh:paraPr></hh:paraProperties><hh:styles itemCnt="1"><hh:style id="0" paraPrIDRef="0" charPrIDRef="0"/></hh:styles></hh:refList></hh:head>`;
+  const minimalRes = engine.applyTextToHwpxTemplateFiles({
+    ...templateFiles,
+    'Contents/header.xml': minimalHeader
+  }, '# 제목\n$$z = 1$$', { mode: 'replace_body' });
+  const minSec = minimalRes.files['Contents/section0.xml'];
+  assertWellFormedXml(minSec, 'Minimal header fallback section0.xml');
+  assert.ok(!minSec.includes('charPrIDRef="1"'), 'Must not reference nonexistent charPr 1');
+  assert.ok(!minSec.includes('paraPrIDRef="1"'), 'Must not reference nonexistent paraPr 1');
+});
