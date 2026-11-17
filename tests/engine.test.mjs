@@ -654,3 +654,134 @@ test('Round-trip integration: build/template export -> re-inspect slots & re-ren
   const rtHtml = engine.renderHwpxTemplatePreviewHtml(exported.files, { edits: [] });
   assert.ok(rtHtml.includes('과목: 미적분') && rtHtml.includes('{1} over {2}'));
 });
+
+test('Korean calculus extensions (abs, Greek/fraction bounds, derivatives, logs, trig, vectors) and matrix math convert cleanly', () => {
+  // 1. Absolute value + integral bounds (fractions & Greek letters) + trig
+  const fAbs = engine.processText('넓이 $S = 적분 0에서 4까지 절댓값(f(x)) dx$').extractedFormulas[0];
+  assert.equal(fAbs.cleaned, 'S = \\int_{0}^{4} |f(x)| dx');
+
+  const fFracBound = engine.processText('$적분 0에서 2분의 파이까지 사인 x dx$').extractedFormulas[0];
+  assert.equal(fFracBound.cleaned, '\\int_{0}^{\\frac{\\pi}{2}} \\sin x dx');
+
+  const fGreekBound = engine.processText('$적분 알파에서 베타까지 x의 제곱 dx$').extractedFormulas[0];
+  assert.equal(fGreekBound.cleaned, '\\int_{\\alpha}^{\\beta} x^{2} dx');
+
+  const fLimFrac = engine.processText('$리미트 x가 파이로 갈 때 코사인 x$').extractedFormulas[0];
+  assert.equal(fLimFrac.cleaned, '\\lim_{x \\to \\pi} \\cos x');
+
+  // 2. Derivatives, logs, combinations, vectors
+  const fDeriv = engine.processText('$dx 분의 d(x의 세제곱 + 1) = 3x의 제곱$').extractedFormulas[0];
+  assert.equal(fDeriv.cleaned, '\\frac{d}{dx}(x^{3} + 1) = 3x^{2}');
+
+  const fLog = engine.processText('$밑이 2인 로그 x + 자연로그 x = 로그 10$').extractedFormulas[0];
+  assert.equal(fLog.cleaned, '\\log_{2} x + \\ln x = \\log 10');
+
+  const fCombVec = engine.processText('$n 콤비네이션 r + 벡터 AB$').extractedFormulas[0];
+  assert.equal(fCombVec.cleaned, '\\binom{n}{r} + \\overrightarrow{AB}');
+
+  // 3. Matrix shorthand (explicit, inline with Korean math inside, bare block, cases, determinant, vdots/ddots)
+  const fMat = engine.processText('$$행렬 [1, 2; 3, 4]$$').extractedFormulas[0];
+  assert.equal(fMat.cleaned, '\\begin{bmatrix} 1 & 2 \\\\ 3 & 4 \\end{bmatrix}');
+  assert.equal(fMat.hwp, 'bmatrix { 1 & 2 # 3 & 4 }');
+
+  const fMatInnerKo = engine.processText('$소괄호행렬 [2분의 1, 알파; 0, 1]$').extractedFormulas[0];
+  assert.equal(fMatInnerKo.cleaned, '\\begin{pmatrix} \\frac{1}{2} & \\alpha \\\\ 0 & 1 \\end{pmatrix}');
+
+  const fDet = engine.processText('$$행렬식 [a, b; c, d]$$').extractedFormulas[0];
+  assert.equal(fDet.cleaned, '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}');
+  assert.equal(fDet.hwp, 'dmatrix { a & b # c & d }');
+
+  const fCases = engine.processText('$$연립 {x + y = 3; x - y = 1}$$').extractedFormulas[0];
+  assert.equal(fCases.cleaned, '\\begin{cases} x + y = 3 \\\\ x - y = 1 \\end{cases}');
+
+  const bareMat = engine.processText('A = 행렬 [1, 0; 0, 1]').extractedFormulas[0];
+  assert.equal(bareMat.cleaned, 'A = \\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}');
+
+  const hwpDots = engine.latexToHwp('\\begin{bmatrix} a & \\cdots & b \\\\ \\vdots & \\ddots & \\vdots \\\\ c & \\cdots & d \\end{bmatrix}');
+  assert.ok(hwpDots.includes('cdots') && hwpDots.includes('vdots') && hwpDots.includes('ddots'));
+  assert.equal(engine.hwpToLatex(hwpDots), '\\begin{bmatrix} a & \\cdots & b \\\\ \\vdots & \\ddots & \\vdots \\\\ c & \\cdots & d \\end{bmatrix}');
+
+  // Still protects currency & prose
+  const curCheck = engine.processText('합계는 $500과 $1,200입니다.');
+  assert.equal(curCheck.extractedFormulas.length, 0);
+});
+
+test('User image attachments render safely and round-trip into OWPML <hp:pic>, BinData, and content.hpf alongside rich Markdown', () => {
+  const sampleB64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  const attachments = new Map([
+    ['att_1', { id: 'att_1', name: 'chart.png', mime: 'image/png', ext: 'png', base64: sampleB64, widthPx: 1200, heightPx: 600 }],
+    ['bad_svg', { id: 'bad_svg', name: 'bad.svg', mime: 'image/svg+xml', ext: 'svg', base64: 'PHN2Zz48L3N2Zz4=', widthPx: 100, heightPx: 100 }]
+  ]);
+
+  const md = '# 실험 결과\n\n- **핵심**: *기울임* 및 `code` 와 [참고](https://example.com)\n  * 하위 항목\n> 인용 메모\n---\n![그래프](hwpx-img://att_1)\n![차단](hwpx-img://bad_svg)';
+  const res = engine.processText(md, { attachments });
+  assert.ok(res.renderedHtml.includes('<figure class="hwpx-attached-pic"') && res.renderedHtml.includes('data:image/png;base64,'), 'Valid attachment should render safely');
+  assert.ok(res.renderedHtml.includes('첨부 이미지 누락'), 'Unsafe non-raster mime attachment must fall back safely');
+  assert.ok(res.cleanedSource.includes('![그래프](hwpx-img://att_1)'), 'cleanedSource must keep compact hwpx-img token');
+
+  // Standalone HWPX export embeds binary + manifest + scaled <hp:pic> + clean Markdown bullets
+  const pkg = engine.buildHwpxPackageFiles(md, new Date('2026-05-01T00:00:00Z'), { attachments });
+  const sec0 = pkg.files['Contents/section0.xml'];
+  const hpf = pkg.files['Contents/content.hpf'];
+  assertWellFormedXml(sec0, 'Section XML with attached image & Markdown cleanup');
+  assertWellFormedXml(hpf, 'content.hpf with embedded user image item');
+  assert.ok(Object.keys(pkg.binaryFiles).some(k => k.startsWith('BinData/userimg_') && k.endsWith('.png')), 'Binary PNG must be staged under BinData');
+  assert.ok(hpf.includes('media-type="image/png"') && hpf.includes('isEmbeded="1"'), 'content.hpf must declare embedded PNG item');
+  assert.ok(sec0.includes('<hp:pic ') && sec0.includes('<hp:imgRect>') && sec0.includes('<hc:img binaryItemIDRef="userimg_'), 'Section XML must emit full OWPML <hp:pic>');
+  assert.ok(sec0.includes('• ') && sec0.includes('  ◦ ') && sec0.includes('│ 인용 메모'), 'Bullets and quotes must convert cleanly');
+  assert.ok(!sec0.includes('`code`') && sec0.includes('code') && sec0.includes('기울임'), 'Inline backticks and emphasis asterisks must unwrap cleanly');
+  assert.ok(sec0.includes('참고 (https://example.com)'), 'Markdown links must render readably in HWPX');
+
+  // Template cell export + re-render round-trip preserves container width clamp and shows photo
+  const sampleFiles = engine.buildSampleWorksheetTemplateFiles(new Date('2026-05-01T00:00:00Z'));
+  const inspected = engine.inspectHwpxSectionSlots(sampleFiles['Contents/section0.xml']);
+  const bodySlot = inspected.slots.find(s => s.placeholders[0]?.full === '{{본문}}');
+  const merged = engine.applyEditsToHwpxTemplateFiles(sampleFiles, [
+    { sectionPath: 'Contents/section0.xml', slotId: bodySlot.slotId, mode: 'replace', rawText: '그래프 첨부:\n![그래프](hwpx-img://att_1)' }
+  ], { attachments });
+  assertWellFormedXml(merged.files['Contents/section0.xml'], 'Template cell with attached image section0.xml');
+  const picWidthMatch = /<hp:pic\b[\s\S]*?<hp:sz width="(\d+)"/.exec(merged.files['Contents/section0.xml']);
+  assert.ok(picWidthMatch && Number(picWidthMatch[1]) <= bodySlot.maxContentWidth, 'Attached picture must clamp within table cell maxContentWidth');
+
+  const rtPreview = engine.renderHwpxTemplatePreviewHtml(merged.files, { edits: [], binaryFiles: merged.binaryFiles });
+  assert.ok(rtPreview.includes('class="hwpx-pic-img" src="data:image/png;base64,'), 'Re-rendered HWPX template preview must display newly attached BinData image');
+});
+
+test('Editable target extraction, text metrics, AI helper removal, and workspace backup validator work accurately', () => {
+  // 1. Text metrics (UTF-8 / NEIS bytes)
+  const metrics = engine.countTextMetrics('안녕 ab');
+  assert.equal(metrics.chars, 5);
+  assert.equal(metrics.charsNoSpace, 4);
+  assert.equal(metrics.bytes, 9);
+
+  // 2. Collect editable targets on worksheet & verify AI helper functions are removed
+  assert.equal(engine.collectHwpxAiTargets, undefined);
+  assert.equal(engine.buildHwpxAiPrompt, undefined);
+  assert.equal(engine.parseAiSlotBatchResponse, undefined);
+
+  const sampleFiles = engine.buildSampleWorksheetTemplateFiles(new Date('2026-05-01T00:00:00Z'));
+  const slots = engine.inspectHwpxSectionSlots(sampleFiles['Contents/section0.xml']).slots.map(s => ({
+    ...s,
+    sectionPath: 'Contents/section0.xml',
+    uid: `Contents/section0.xml::${s.slotId}`
+  }));
+  const targets = engine.collectHwpxEditableTargets(slots);
+  assert.ok(targets.some(t => t.hasPlaceholder && t.recommended), 'Placeholder cell must be marked recommended');
+  const bodyTarget = targets.find(t => t.hasPlaceholder);
+  assert.ok(bodyTarget.contextHint, 'Context hint from previous cells should be captured');
+
+  // 3. Snapshot validation
+  assert.equal(engine.validateWorkspaceSnapshotPayload(null).valid, false);
+  const validSnap = engine.validateWorkspaceSnapshotPayload({
+    version: 1,
+    rawInputValue: '초안 $x^2$',
+    attachments: [
+      { id: 'att_1', base64: 'AAAA', mime: 'image/png' },
+      { id: 'evil', base64: 'AAAA', mime: 'text/html' }
+    ],
+    customSnippets: [{ label: '테스트', snippet: 'abc' }]
+  });
+  assert.equal(validSnap.valid, true);
+  assert.equal(validSnap.snapshot.attachments.length, 1, 'Non-image attachments must be filtered out on restore');
+  assert.equal(validSnap.snapshot.customPresets, undefined);
+});

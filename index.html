@@ -287,10 +287,67 @@
       background: #f0f9ff;
       border-radius: 0.5rem;
     }
+    .hwpx-attached-pic {
+      margin: 0.5rem 0;
+      display: inline-block;
+      max-width: 100%;
+    }
+    .hwpx-attached-pic-img {
+      max-width: 100%;
+      max-height: 360px;
+      height: auto;
+      border-radius: 0.375rem;
+      border: 1px solid #cbd5e1;
+      display: block;
+    }
+    .hwpx-attached-pic-cap {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+      text-align: center;
+    }
+    .math-visual-card {
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: grab;
+      transition: transform 0.12s ease, border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .math-visual-card:hover {
+      border-color: #38bdf8;
+      background-color: rgba(14, 165, 233, 0.14);
+      transform: translateY(-1px);
+    }
+    .math-visual-card:active {
+      cursor: grabbing;
+      transform: scale(0.97);
+    }
+    .math-visual-card * {
+      pointer-events: none;
+    }
+    .math-visual-card .katex {
+      font-size: 0.88rem;
+      color: #f8fafc;
+    }
+    .math-snip-btn[draggable="true"] {
+      cursor: grab;
+    }
+    .math-snip-btn[draggable="true"]:active {
+      cursor: grabbing;
+    }
+    .hwpx-slot-drop-target {
+      outline: 2.5px dashed #f59e0b !important;
+      outline-offset: 2px;
+      background-color: rgba(245, 158, 11, 0.16) !important;
+      box-shadow: inset 0 0 0 2px rgba(245, 158, 11, 0.25) !important;
+    }
+    #rawInput.drag-target-active {
+      box-shadow: inset 0 0 0 2px #38bdf8;
+      background-color: rgba(14, 165, 233, 0.08);
+    }
 
     @media print {
       body { background: white !important; color: black !important; }
-      header, #leftPanel, #rightPanelHeader, #toast, #templatePreviewBanner, #mathQuickBar, #editedSlotsNavBar { display: none !important; }
+      header, #leftPanel, #rightPanelHeader, #toast, #templatePreviewBanner, #mathQuickBar, #editedSlotsNavBar, #backupModal, #dragDropOverlay { display: none !important; }
       main { display: block !important; max-width: 100% !important; padding: 0 !important; }
       #rightPanel { border: none !important; box-shadow: none !important; background: white !important; }
       #rightScrollArea, #tabContentPreview { display: block !important; max-height: none !important; overflow: visible !important; padding: 0 !important; }
@@ -327,38 +384,46 @@
       <div>
         <h1 class="text-base font-bold leading-tight flex items-center gap-2 text-slate-100">
           AI 수식 복구기 & 뷰어
-          <span class="text-[11px] font-medium bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full">v3.2 HWP ↔ LaTeX 양방향 엔진</span>
+          <span class="text-[11px] font-medium bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full">v3.3 수식카드·행렬·HWPX 작업실</span>
         </h1>
-        <p class="text-xs text-slate-400 hidden sm:block">AI 깨진 LaTeX 복구 + 한글(HWP) 수식 스크립트 직접 입력 시 실시간 KaTeX 자동 렌더링</p>
+        <p class="text-xs text-slate-400 hidden sm:block">수식 카드 클릭/드래그 · 한글/행렬 수식 · 이미지 첨부 · 정식 .hwpx 양식 작업</p>
       </div>
     </div>
 
     <!-- 상단 액션 버튼 -->
-    <div class="flex items-center flex-wrap gap-2.5">
-      <button id="btnRestoreLast" class="hidden text-sm font-medium bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-800/70 px-3.5 py-2.5 min-h-[44px] rounded-xl transition-colors flex items-center gap-2 touch-manipulation">
+    <div class="flex items-center flex-wrap gap-2">
+      <button id="btnRestoreLast" class="hidden text-sm font-medium bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-800/70 px-3 py-2 min-h-[44px] rounded-xl transition-colors flex items-center gap-1.5 touch-manipulation">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
         이전 작업 복원
       </button>
 
-      <button id="btnLoadSample" class="text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2.5 min-h-[44px] rounded-xl transition-colors flex items-center gap-2 touch-manipulation">
+      <button id="btnLoadSample" class="text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 min-h-[44px] rounded-xl transition-colors flex items-center gap-1.5 touch-manipulation">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-        실제 오류 예시 불러오기
+        예시 불러오기
       </button>
 
-      <button id="btnPrintPdf" class="text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2.5 min-h-[44px] rounded-xl transition-colors flex items-center gap-2 touch-manipulation" title="흰색 배경으로 인쇄 또는 PDF 저장">
+      <button id="btnPrintPdf" class="text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 min-h-[44px] rounded-xl transition-colors flex items-center gap-1.5 touch-manipulation" title="흰색 배경으로 인쇄 또는 PDF 저장">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-        PDF / 인쇄
+        PDF/인쇄
       </button>
 
       <!-- 한글(.hwpx) 직접 다운로드 버튼 -->
-      <button id="btnDownloadHwpx" class="text-sm font-semibold bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-lg shadow-sky-600/30 px-4 py-2.5 min-h-[44px] rounded-xl transition-all flex items-center gap-2 active:scale-95 touch-manipulation" title="줄글과 수식 개체가 포함된 정식 한글 문서(.hwpx) 다운로드">
+      <button id="btnDownloadHwpx" class="text-sm font-semibold bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-lg shadow-sky-600/30 px-3.5 py-2 min-h-[44px] rounded-xl transition-all flex items-center gap-1.5 active:scale-95 touch-manipulation" title="줄글·표·수식·이미지가 포함된 정식 한글 문서(.hwpx) 다운로드">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        한글(.hwpx) 다운로드
+        한글(.hwpx)
       </button>
 
-      <button id="btnCopyClean" class="text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 px-4 py-2.5 min-h-[44px] rounded-xl transition-all flex items-center gap-2 active:scale-95 touch-manipulation">
+      <button id="btnCopyHwpEq" type="button" class="text-sm font-medium bg-sky-950/70 hover:bg-sky-900/80 text-sky-300 border border-sky-700/70 px-3 py-2 min-h-[44px] rounded-xl transition-colors flex items-center gap-1.5 touch-manipulation" title="입력창의 수식을 한컴 수식 편집기(Ctrl+N, M) 스크립트 형식으로 복사">
+        HWP 수식
+      </button>
+
+      <button id="btnCopyClean" class="text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 px-3.5 py-2 min-h-[44px] rounded-xl transition-all flex items-center gap-1.5 active:scale-95 touch-manipulation">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
         정제본 복사
+      </button>
+
+      <button id="btnOpenBackupModal" type="button" class="text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 min-h-[44px] rounded-xl transition-colors flex items-center gap-1.5 touch-manipulation" title="전체 작업본 백업(.json) 저장 및 복원">
+        백업
       </button>
     </div>
   </div>
@@ -369,23 +434,26 @@
 
   <!-- 좌측: 입력 에디터 -->
   <section id="leftPanel" class="min-w-0 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-    <div class="bg-slate-800/80 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs sm:text-sm text-slate-300">
-      <div class="flex items-center gap-2.5">
+    <div class="bg-slate-800/80 px-4 py-2.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-slate-300">
+      <div class="flex items-center flex-wrap gap-2">
           <span class="font-medium flex items-center gap-1.5 text-slate-200">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             AI 원문 입력
           </span>
-        <button id="btnClear" class="text-xs sm:text-sm bg-slate-800/90 hover:bg-red-950 hover:text-red-300 text-slate-300 border border-slate-700 hover:border-red-800/60 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation">
+        <button id="btnUndoEdit" type="button" disabled class="text-xs sm:text-sm bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 border border-slate-700 px-2.5 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1 touch-manipulation" title="최근 수정 되돌리기 (Ctrl+Z)">
+          되돌리기
+        </button>
+        <button id="btnClear" class="text-xs sm:text-sm bg-slate-800/90 hover:bg-red-950 hover:text-red-300 text-slate-300 border border-slate-700 hover:border-red-800/60 px-2.5 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1 touch-manipulation">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           비우기
         </button>
-        <button id="btnToggleAutoSave" type="button" aria-pressed="true" class="text-xs sm:text-sm bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/70 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation" title="입력 본문 및 양식 칸별 작업 자동 저장 켜기/끄기">
+        <button id="btnToggleAutoSave" type="button" aria-pressed="true" class="text-xs sm:text-sm bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/70 px-2.5 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation" title="입력 본문·양식·첨부 이미지 자동 저장 켜기/끄기">
           <span id="autoSaveDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
           <span id="autoSaveLabel">자동저장 ON</span>
         </button>
       </div>
-      <div class="flex items-center gap-3 text-slate-400 text-xs sm:text-sm">
-        <span id="charCount">0자</span>
+      <div class="flex items-center gap-2.5 text-slate-400 text-xs">
+        <span id="charCount" title="글자 수 · 공백 제외 · UTF-8/나이스 기준 바이트">0자 · 공백제외 0자 · 0B</span>
         <span class="text-slate-600">|</span>
         <span id="formulaCount" class="text-emerald-400 font-medium">수식 0개</span>
       </div>
@@ -436,35 +504,87 @@
           </button>
         </div>
       </div>
+      <div id="slotProgressRow" class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/70">
+        <div class="flex items-center flex-wrap gap-1.5">
+          <span id="slotProgressSummary" class="text-[11px] font-semibold text-sky-300">진행률: 0 / 0칸</span>
+          <div id="slotNavFilterGroup" class="inline-flex rounded-lg bg-slate-900 border border-slate-800 p-0.5 text-[11px]">
+            <button type="button" data-slot-filter="edited" class="slot-filter-btn px-2 py-0.5 rounded bg-emerald-700 text-white">수정됨</button>
+            <button type="button" data-slot-filter="todo" class="slot-filter-btn px-2 py-0.5 rounded text-slate-400 hover:text-slate-200">빈칸·{{}}</button>
+            <button type="button" data-slot-filter="all" class="slot-filter-btn px-2 py-0.5 rounded text-slate-400 hover:text-slate-200">전체 칸</button>
+          </div>
+        </div>
+        <button id="btnNextEmptySlot" type="button" class="px-2.5 py-1 min-h-[30px] rounded-lg text-[11px] font-medium bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 border border-amber-700/60 transition-colors touch-manipulation">
+          다음 빈 칸 →
+        </button>
+      </div>
       <div id="editedSlotsNavBar" class="hidden pt-1.5 border-t border-slate-800/80 flex items-center flex-wrap gap-1.5">
-        <span class="text-[11px] font-semibold text-emerald-400 shrink-0">✏️ 수정된 칸:</span>
-        <div id="editedSlotsChipList" class="flex items-center flex-wrap gap-1.5"></div>
+        <span id="editedSlotsNavLabel" class="text-[11px] font-semibold text-emerald-400 shrink-0">✏️ 수정된 칸:</span>
+        <div id="editedSlotsChipList" class="flex items-center flex-wrap gap-1.5 max-h-24 overflow-y-auto"></div>
       </div>
       <p class="text-[11px] sm:text-xs text-slate-400">
         👆 오른쪽 <b class="text-sky-300">실시간 렌더링</b>에서 표 칸이나 문단을 클릭한 뒤 여기에 입력하면 칸별로 내용이 반영됩니다.
       </p>
     </div>
 
-    <div id="mathQuickBar" class="bg-slate-900/90 border-b border-slate-800 px-3 py-1.5 flex items-center flex-wrap gap-1.5 text-xs">
-      <span class="text-[11px] text-slate-400 font-medium mr-1 shrink-0">빠른 삽입:</span>
-      <button type="button" data-snippet="$%%CURSOR%%$" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">$수식$</button>
-      <button type="button" data-snippet="$$&#10;%%CURSOR%%&#10;$$" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">$$블록$$</button>
-      <button type="button" data-snippet="\frac{%%CURSOR%%}{}" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">분수</button>
-      <button type="button" data-snippet="\sqrt{%%CURSOR%%}" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">루트</button>
-      <button type="button" data-snippet="^{%%CURSOR%%}" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">거듭제곱</button>
-      <button type="button" data-snippet="\lim_{x \to %%CURSOR%%}" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">극한</button>
-      <button type="button" data-snippet="\sum_{k=1}^{n} %%CURSOR%%" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">시그마</button>
-      <button type="button" data-snippet="\int_{a}^{b} %%CURSOR%% \,dx" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">적분</button>
-      <button type="button" data-snippet="&#10;| 항목 | 값 | 비고 |&#10;| --- | --- | --- |&#10;| %%CURSOR%% |  |  |&#10;" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-sky-950/70 hover:bg-sky-900/80 text-sky-300 border border-sky-800/70 touch-manipulation">+ 표 삽입</button>
+    <div id="mathQuickBar" class="bg-slate-900/90 border-b border-slate-800 px-3 py-2 space-y-2 text-xs">
+      <div class="flex items-center flex-wrap gap-1.5 justify-between">
+        <div class="flex items-center flex-wrap gap-1.5">
+          <button id="btnToggleMathCards" type="button" aria-expanded="true" class="px-2.5 py-1 min-h-[32px] rounded-lg bg-sky-950/80 hover:bg-sky-900/80 text-sky-300 border border-sky-700/70 font-semibold touch-manipulation">
+            수식 카드 ▾
+          </button>
+          <button type="button" draggable="true" data-snippet="$%%CURSOR%%$" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">$수식$</button>
+          <button type="button" draggable="true" data-snippet="$$&#10;%%CURSOR%%&#10;$$" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">$$블록$$</button>
+          <button id="btnToggleMatrixBuilder" type="button" class="px-2.5 py-1 min-h-[32px] rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/70 touch-manipulation">행렬 생성 ▾</button>
+          <button type="button" draggable="true" data-snippet="&#10;| 항목 | 값 | 비고 |&#10;| --- | --- | --- |&#10;| %%CURSOR%% |  |  |&#10;" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-sky-950/70 hover:bg-sky-900/80 text-sky-300 border border-sky-800/70 touch-manipulation">+ 표</button>
+          <button type="button" draggable="true" data-snippet="**%%CURSOR%%**" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">굵게</button>
+          <button type="button" draggable="true" data-snippet="- %%CURSOR%%" class="math-snip-btn px-2.5 py-1 min-h-[32px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 touch-manipulation">목록</button>
+          <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp" class="hidden">
+          <button id="btnInsertImage" type="button" class="px-2.5 py-1 min-h-[32px] rounded-lg bg-teal-950/70 hover:bg-teal-900/80 text-teal-300 border border-teal-700/70 touch-manipulation" title="PNG/JPG 이미지 첨부 (또는 에디터에 Ctrl+V로 캡처 바로 붙여넣기)">+ 이미지</button>
+          <button id="btnToggleSnippetManager" type="button" class="px-2.5 py-1 min-h-[32px] rounded-lg bg-amber-950/60 hover:bg-amber-900/70 text-amber-300 border border-amber-800/60 touch-manipulation">★ 내 버튼</button>
+        </div>
+        <span class="text-[11px] text-slate-400 hidden sm:inline">클릭: 커서 삽입 · 드래그: 에디터/오른쪽 표 칸 드롭</span>
+      </div>
+      <div id="mathVisualCardGrid" class="flex items-stretch flex-wrap gap-1.5"></div>
+      <div id="customSnippetsRow" class="hidden flex items-center flex-wrap gap-1.5 pt-1 border-t border-slate-800/80"></div>
+    </div>
+
+    <div id="matrixBuilderBar" class="hidden bg-indigo-950/40 border-b border-indigo-800/60 px-3 py-2 flex flex-wrap items-center gap-2 text-xs">
+      <span class="font-semibold text-indigo-300">행렬 생성기:</span>
+      <label class="flex items-center gap-1 text-slate-300">행
+        <input id="matRowsInput" type="number" min="1" max="8" value="2" class="w-12 bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-center text-slate-100">
+      </label>
+      <span class="text-slate-500">×</span>
+      <label class="flex items-center gap-1 text-slate-300">열
+        <input id="matColsInput" type="number" min="1" max="8" value="2" class="w-12 bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-center text-slate-100">
+      </label>
+      <select id="matTypeSelect" aria-label="행렬 괄호 종류" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-200">
+        <option value="bmatrix">대괄호 [ ] (bmatrix)</option>
+        <option value="pmatrix">소괄호 ( ) (pmatrix)</option>
+        <option value="vmatrix">행렬식 | | (vmatrix)</option>
+        <option value="Bmatrix">중괄호 { } (Bmatrix)</option>
+        <option value="cases">연립 { (cases)</option>
+        <option value="korean">한글 식 (행렬 [...])</option>
+      </select>
+      <button id="btnInsertBuiltMatrix" type="button" class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium">수식 삽입</button>
+      <button id="btnCloseMatrixBuilder" type="button" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">닫기</button>
+    </div>
+
+    <div id="snippetManagerBar" class="hidden bg-amber-950/30 border-b border-amber-800/50 px-3 py-2 flex flex-wrap items-center gap-2 text-xs">
+      <span class="font-semibold text-amber-300">내 스니펫 추가:</span>
+      <input id="customSnipLabelInput" type="text" placeholder="버튼 이름 (예: 출처틀)" class="w-32 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-200">
+      <input id="customSnipCodeInput" type="text" placeholder="삽입 문구/수식 (미입력 시 현재 선택 텍스트 사용)" class="flex-1 min-w-[160px] bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-200">
+      <button id="btnSaveCustomSnippet" type="button" class="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium">저장</button>
+      <button id="btnCloseSnippetManager" type="button" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">닫기</button>
     </div>
 
     <div class="relative flex-1 min-h-[340px] lg:min-h-[500px]">
         <textarea id="rawInput"
-                  placeholder="AI 답변 또는 수식을 자유롭게 붙여넣으세요.&#10;• LaTeX 수식 (\frac, \begin{bmatrix}, \alpha 등) 자동 복구 및 렌더링&#10;• 한글 식 입력 지원: $2 분의 1 + 루트(x+1)$, $$리미트 x가 무한대로 갈 때 x 분의 1$$&#10;• 한글(HWP) 수식 스크립트 (bmatrix { 1 & 0 # 0 & 1 }, {a} over {b}, sqrt {x} 등) 자동 감지&#10;• 마크다운 표(| 항목 | 값 |) 입력 시 한글(.hwpx) 표로 자동 변환"
+                  placeholder="AI 답변 또는 수식을 자유롭게 붙여넣으세요.&#10;• LaTeX 수식 (\frac, \begin{bmatrix}, \alpha 등) 자동 복구 및 렌더링&#10;• 한글 수식: $2 분의 1 + 절댓값(x)$, $적분 0에서 2분의 파이까지 사인 x dx$, $$행렬 [1, 2; 3, 4]$$&#10;• 한글(HWP) 수식: bmatrix { 1 & 0 # 0 & 1 }, {a} over {b}, sqrt {x}&#10;• 캡처 이미지(Ctrl+V) · 마크다운 표(| 항목 | 값 |) · 목록(- 항목) -> 한글(.hwpx) 완벽 변환"
                   class="w-full h-full p-4 bg-slate-900/60 text-slate-200 text-sm font-mono leading-relaxed outline-none resize-none focus:ring-1 focus:ring-emerald-500/50"></textarea>
     </div>
-    <div class="px-4 py-2 bg-slate-950/60 border-t border-slate-800/60 text-[11px] text-slate-500 flex items-center justify-between">
-      <span>라인 단위 정밀 파서 적용됨 (개행 소실 차단)</span>
+    <div class="px-4 py-2 bg-slate-950/60 border-t border-slate-800/60 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2">
+      <span>Ctrl+V 이미지 첨부 · 파일 드래그&amp;드롭(.hwpx/.md/사진/.json) · 한글/행렬 수식 자동 변환</span>
+      <span id="attachedImgCountBadge" class="hidden text-teal-400 font-medium">첨부 이미지 0개</span>
     </div>
   </section>
 
@@ -475,7 +595,7 @@
         <span class="text-xs sm:text-sm font-semibold text-emerald-400">실시간 렌더링</span>
         <span id="rightFormulaBadge" class="bg-sky-900/80 text-sky-300 border border-sky-700/60 text-xs px-2.5 py-0.5 rounded-full">수식 0개</span>
       </div>
-      <span id="templateClickHint" class="hidden text-xs text-sky-300">👆 표 칸·문단을 클릭해 입력 위치를 선택하세요</span>
+      <span id="templateClickHint" class="hidden text-xs text-sky-300">👆 표 칸 클릭 또는 수식 카드를 표 칸 위로 끌어다 놓으세요</span>
     </div>
 
     <!-- 본문 -->
@@ -494,6 +614,35 @@
     </div>
   </section>
 </main>
+
+<!-- 드래그 앤 드롭 안내 오버레이 -->
+<div id="dragDropOverlay" class="hidden fixed inset-0 z-50 bg-sky-950/85 backdrop-blur-sm border-4 border-dashed border-sky-400 flex items-center justify-center pointer-events-none">
+  <div class="bg-slate-900 border border-sky-500/70 rounded-2xl px-8 py-6 text-center shadow-2xl">
+    <div class="text-2xl mb-2">📂</div>
+    <p class="text-base font-bold text-sky-200">여기에 파일을 놓으세요</p>
+    <p class="text-xs text-slate-400 mt-1">.hwpx 양식 · 이미지(PNG/JPG) · 텍스트(.md/.txt) · 작업 백업(.json)</p>
+  </div>
+</div>
+
+<!-- 작업 백업 / 복원 모달 -->
+<div id="backupModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+    <div class="px-5 py-3.5 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between">
+      <h2 class="text-base font-bold text-slate-100">💾 전체 작업 백업 / 불러오기</h2>
+      <button id="btnCloseBackupModal" type="button" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium">닫기</button>
+    </div>
+    <div class="p-5 space-y-4 text-xs sm:text-sm text-slate-300">
+      <p class="text-xs text-slate-400 leading-relaxed">
+        불러온 한글 양식(.hwpx), 칸별 입력 내용, 첨부 이미지, 나만의 스니펫을 하나의 <code class="text-sky-300">.json</code> 파일로 내보내거나 다른 PC/태블릿에서 그대로 복원할 수 있습니다.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-2.5">
+        <button id="btnExportWorkspaceJson" type="button" class="flex-1 py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold">작업 백업 파일(.json) 저장</button>
+        <input type="file" id="backupJsonFileInput" accept=".json,application/json" class="hidden">
+        <button id="btnImportWorkspaceJson" type="button" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-semibold">백업 파일(.json) 불러오기</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- 토스트 알림창 -->
 <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 border border-slate-700 text-slate-100 text-xs px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none translate-y-3 flex items-center gap-3">
@@ -786,6 +935,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
          .replace(/(?<![\\a-zA-Z])cdot(?![a-zA-Z])/gi, '\\cdot ')
          .replace(/(?<![\\a-zA-Z])cdots(?![a-zA-Z])/gi, '\\cdots ')
          .replace(/(?<![\\a-zA-Z])ldots(?![a-zA-Z])/gi, '\\ldots ')
+         .replace(/(?<![\\a-zA-Z])vdots(?![a-zA-Z])/gi, '\\vdots ')
+         .replace(/(?<![\\a-zA-Z])ddots(?![a-zA-Z])/gi, '\\ddots ')
          .replace(/(?<![\\a-zA-Z])inf(?![a-zA-Z])/gi, '\\infty ')
          .replace(/(?<![\\a-zA-Z])approx(?![a-zA-Z])/gi, '\\approx ')
          .replace(/(?<![\\a-zA-Z])sim(?![a-zA-Z])/gi, '\\sim ')
@@ -1119,6 +1270,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     });
 
     // 10. 공백 정리 (\\ 행 바꿈에 영향을 주지 않도록 단일 백슬래시만 처리)
+    s = s.replace(/\\(vdots|ddots)(?![a-zA-Z])/g, '$1');
+    s = s.replace(/\\dots(?![a-zA-Z])/g, 'ldots');
     s = s.replace(/\\quad(?![a-zA-Z])/g, '~~');
     s = s.replace(/\\qquad(?![a-zA-Z])/g, '~~~~');
     s = s.replace(/(?<!\\)\\[,;! ]/g, '`');
@@ -1141,7 +1294,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     'upsilon', 'phi', 'chi', 'psi', 'Gamma', 'Delta', 'Theta', 'Lambda',
     'Xi', 'Pi', 'Sigma', 'Phi', 'Psi', 'Omega',
     'begin', 'end', 'left', 'right', 'text', 'mathrm', 'textbf', 'textit',
-    'vert', 'Vert', 'lbrace', 'rbrace', 'cdots', 'ldots', 'equiv', 'sim', 'prime', 'in',
+    'vert', 'Vert', 'lbrace', 'rbrace', 'cdots', 'ldots', 'vdots', 'ddots', 'dots',
+    'equiv', 'sim', 'prime', 'in',
     'notin', 'subset', 'cup', 'cap', 'emptyset', 'therefore', 'because',
     'Longrightarrow', 'Longleftrightarrow', 'rightarrow', 'leftarrow', 'gets',
     'vec', 'overrightarrow', 'overline', 'bar', 'hat', 'dot',
@@ -1209,47 +1363,114 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return tok;
   }
 
-  function translateKoreanMathShorthand(mathStr) {
-    if (!mathStr || !/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(mathStr)) return mathStr;
-    const protectedBlocks = [];
-    let s = replaceBalancedCommands(mathStr, /\\(text|mathrm|textbf|textit)(?![a-zA-Z])/, 1, false, (cmd, opt, args, raw) => {
-      const tok = `\uE000KT${protectedBlocks.length}\uE001`;
-      protectedBlocks.push({ tok, raw });
-      return tok;
+  function splitArgsTopLevel(str, delimChar) {
+    const parts = [];
+    let pDepth = 0;
+    let bDepth = 0;
+    let sDepth = 0;
+    let last = 0;
+    for (let i = 0; i < str.length; i++) {
+      const ch = str[i];
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === '(') pDepth++;
+      else if (ch === ')' && pDepth > 0) pDepth--;
+      else if (ch === '{') bDepth++;
+      else if (ch === '}' && bDepth > 0) bDepth--;
+      else if (ch === '[') sDepth++;
+      else if (ch === ']' && sDepth > 0) sDepth--;
+      else if (ch === delimChar && pDepth === 0 && bDepth === 0 && sDepth === 0) {
+        parts.push(str.slice(last, i));
+        last = i + 1;
+      }
+    }
+    parts.push(str.slice(last));
+    return parts;
+  }
+
+  const KOREAN_MATRIX_ENV_MAP = {
+    '대괄호행렬': 'bmatrix',
+    '행렬': 'bmatrix',
+    '소괄호행렬': 'pmatrix',
+    '괄호행렬': 'pmatrix',
+    '중괄호행렬': 'Bmatrix',
+    '행렬식': 'vmatrix',
+    '연립방정식': 'cases',
+    '연립': 'cases',
+    '경우': 'cases'
+  };
+
+  function convertKoreanMatricesInExpr(str) {
+    const kwRe = /(?<![가-힣a-zA-Z0-9_])(대괄호행렬|소괄호행렬|괄호행렬|중괄호행렬|행렬식|연립방정식|연립|경우|행렬)\s*([\[\(\{])/g;
+    let out = '';
+    let last = 0;
+    let m;
+    while ((m = kwRe.exec(str)) !== null) {
+      const openCh = m[2];
+      const closeCh = openCh === '[' ? ']' : (openCh === '(' ? ')' : '}');
+      const openIdx = m.index + m[0].length - 1;
+      const grp = extractBalancedGroup(str, openIdx, openCh, closeCh);
+      if (!grp) continue;
+      const rawBody = grp.content.trim();
+      const env = KOREAN_MATRIX_ENV_MAP[m[1]] || 'bmatrix';
+      const hasExplicitRowSep = rawBody.includes(';') || rawBody.includes('\n');
+      const rowChunks = hasExplicitRowSep
+        ? (rawBody.includes(';') ? splitArgsTopLevel(rawBody, ';') : rawBody.split(/\r?\n/))
+        : [rawBody];
+      const formattedRows = rowChunks
+        .map(r => r.trim())
+        .filter(Boolean)
+        .map(r => splitArgsTopLevel(r, ',').map(c => c.trim()).join(' & '));
+      if (formattedRows.length === 0) continue;
+      out += str.slice(last, m.index);
+      out += `\\begin{${env}} ${formattedRows.join(' \\\\ ')} \\end{${env}}`;
+      last = grp.endIndex;
+      kwRe.lastIndex = grp.endIndex;
+    }
+    return out + str.slice(last);
+  }
+
+  function replaceBalancedKeywordParen(str, keywordPatternStr, formatter) {
+    const re = new RegExp(`(?<![가-힣a-zA-Z0-9_])(?:${keywordPatternStr})\\s*\\(`, 'g');
+    let out = '';
+    let last = 0;
+    let m;
+    while ((m = re.exec(str)) !== null) {
+      const openIdx = m.index + m[0].length - 1;
+      const grp = extractBalancedGroup(str, openIdx, '(', ')');
+      if (!grp) continue;
+      out += str.slice(last, m.index);
+      out += formatter(grp.content.trim(), m);
+      last = grp.endIndex;
+      re.lastIndex = grp.endIndex;
+    }
+    return out + str.slice(last);
+  }
+
+  function translateKoreanMathAtoms(expr) {
+    let s = expr;
+    // 절댓값(...) 및 단일 토큰 절댓값
+    s = replaceBalancedKeywordParen(s, '절댓값|절대값', (inner) => {
+      const hasTall = /분의|\\frac|루트|\\sqrt|시그마|\\sum|인테그랄|적분|\\int/.test(inner);
+      return hasTall ? `\\left| ${inner} \\right|` : `|${inner}|`;
     });
-    s = s.replace(/"([^"\r\n]+)"/g, (m) => {
-      const tok = `\uE000KT${protectedBlocks.length}\uE001`;
-      protectedBlocks.push({ tok, raw: m });
-      return tok;
-    });
+    s = s.replace(/(?<![가-힣])(?:절댓값|절대값)\s*([a-zA-Z0-9_]+(?:\([^()\s]+\))?)/g, '|$1|');
 
-    const mapBoundVal = (val) => {
-      if (val === '무한대' || val === '무한') return '\\infty';
-      if (val === '-무한대' || val === '-무한') return '-\\infty';
-      return val;
-    };
+    // 미분 d변수 분의 d(...) 꼴 우선 지원
+    s = replaceBalancedKeywordParen(s, 'd([a-zA-Z]+)\\s*분의\\s*d', (inner, match) => `\\frac{d}{d${match[1]}}(${inner})`);
 
-    // 1. 극한, 시그마, 정적분 범위 구문
-    s = s.replace(
-      /(?:리미트|극한)\s*([a-zA-Z0-9_]+)\s*(?:가|이)?\s*(-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*(?:로|으로)?\s*(?:갈\s*때)?\s*/g,
-      (m, v, target) => `\\lim_{${v} \\to ${mapBoundVal(target)}} `
-    );
-    s = s.replace(
-      /(?:시그마|합)\s*([a-zA-Z0-9_]+\s*=\s*[a-zA-Z0-9_+-]+)\s*(?:에서|부터)\s*(-?(?:무한대|무한)|[a-zA-Z0-9_+-]+)\s*까지\s*/g,
-      (m, lower, upper) => `\\sum_{${lower.trim()}}^{${mapBoundVal(upper)}} `
-    );
-    s = s.replace(
-      /(?:인테그랄|정적분|적분)\s*(-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*(?:에서|부터)\s*(-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*까지\s*/g,
-      (m, lower, upper) => `\\int_{${mapBoundVal(lower)}}^{${mapBoundVal(upper)}} `
-    );
-
-    // 2. 제곱근 (루트/세제곱근/네제곱근) - 거듭제곱 규칙보다 먼저 실행
+    // 제곱근 (루트/세제곱근/네제곱근)
+    s = replaceBalancedKeywordParen(s, '세제곱근', (inner) => `\\sqrt[3]{${inner}}`);
+    s = replaceBalancedKeywordParen(s, '네제곱근', (inner) => `\\sqrt[4]{${inner}}`);
+    s = replaceBalancedKeywordParen(s, '루트|제곱근', (inner) => `\\sqrt{${inner}}`);
     const argAtom = '(\\{[^{}]+\\}|\\([^()]+\\)|[a-zA-Z0-9_+-]+)';
     s = s.replace(new RegExp(`세제곱근\\s*${argAtom}`, 'g'), (m, inner) => `\\sqrt[3]{${unwrapParenOrBrace(inner)}}`);
     s = s.replace(new RegExp(`네제곱근\\s*${argAtom}`, 'g'), (m, inner) => `\\sqrt[4]{${unwrapParenOrBrace(inner)}}`);
     s = s.replace(new RegExp(`(?:루트|제곱근)\\s*${argAtom}`, 'g'), (m, inner) => `\\sqrt{${unwrapParenOrBrace(inner)}}`);
 
-    // 3. 거듭제곱
+    // 거듭제곱
     const baseAtom = '(\\{[^{}]+\\}|\\([^()]+\\)|[a-zA-Z0-9_]+)';
     s = s.replace(new RegExp(`${baseAtom}\\s*의?\\s*세제곱(?![가-힣])`, 'g'), '$1^{3}');
     s = s.replace(new RegExp(`${baseAtom}\\s*의?\\s*제곱(?![가-힣])`, 'g'), '$1^{2}');
@@ -1258,15 +1479,51 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       (m, base, exp) => `${base}^{${unwrapParenOrBrace(exp)}}`
     );
 
-    // 4. 분수 ("분모 분의 분자" -> \frac{분자}{분모}, 중첩 반복 지원)
-    const fracTerm = '(\\\\[a-zA-Z]+(?:\\{[^{}]*\\})+|[a-zA-Z0-9_]+\\^\\{[^{}]+\\}|\\{[^{}]+\\}|\\([^()]+\\)|[a-zA-Z0-9_.+-]+)';
+    // 삼각함수/로그/조합/벡터
+    s = s.replace(/밑이\s*(\{[^{}]+\}|\([^()]+\)|[a-zA-Z0-9_+-]+)\s*인\s*로그\s*(\([^()]+\)|[a-zA-Z0-9_+-]+)/g,
+      (m, base, arg) => `\\log_{${unwrapParenOrBrace(base)}} ${arg}`
+    );
+    s = s.replace(/(?<![가-힣])자연로그\s*/g, '\\ln ');
+    s = s.replace(/(?<![가-힣])로그\s*/g, '\\log ');
+    s = s.replace(/(?<![가-힣])사인\s*/g, '\\sin ');
+    s = s.replace(/(?<![가-힣])코사인\s*/g, '\\cos ');
+    s = s.replace(/(?<![가-힣])탄젠트\s*/g, '\\tan ');
+    s = s.replace(/([a-zA-Z0-9_]+)\s*(?:콤비네이션|조합)\s*([a-zA-Z0-9_]+)/g, '\\binom{$1}{$2}');
+    s = s.replace(/(?<![가-힣])벡터\s*(\{[^{}]+\}|\([^()]+\)|[a-zA-Z0-9_]+)/g, (m, v) => {
+      const inner = unwrapParenOrBrace(v).trim();
+      return inner.length > 1 ? `\\overrightarrow{${inner}}` : `\\vec{${inner}}`;
+    });
+
+    // 그리스 문자와 무한대 먼저 (이후 분수 규칙에서 '2분의 파이' -> \frac{\pi}{2} 결합 가능)
+    const earlySymPairs = [
+      ['무한대|무한', '\\infty'],
+      ['입실론|엡실론', '\\epsilon'],
+      ['오메가', '\\omega'],
+      ['알파', '\\alpha'],
+      ['베타', '\\beta'],
+      ['감마', '\\gamma'],
+      ['델타', '\\delta'],
+      ['제타', '\\zeta'],
+      ['에타', '\\eta'],
+      ['세타|시타', '\\theta'],
+      ['람다', '\\lambda'],
+      ['파이', '\\pi'],
+      ['타우', '\\tau'],
+      ['뮤', '\\mu']
+    ];
+    earlySymPairs.forEach(([pat, rep]) => {
+      s = s.replace(new RegExp(`(?<![가-힣])${pat}(?![가-힣])`, 'g'), `${rep} `);
+    });
+
+    // 분수 ("분모 분의 분자" -> \frac{분자}{분모}, 중첩 반복 지원)
+    const fracTerm = '(\\\\[a-zA-Z]+(?:\\{[^{}]*\\})*|[a-zA-Z0-9_]+\\^\\{[^{}]+\\}|\\{[^{}]+\\}|\\([^()]+\\)|[a-zA-Z0-9_.+-]+)';
     const fracRe = new RegExp(`${fracTerm}\\s*분의\\s*${fracTerm}`);
     for (let g = 0; g < 8; g++) {
       if (!fracRe.test(s)) break;
-      s = s.replace(new RegExp(fracRe.source, 'g'), (m, den, num) => `\\frac{${unwrapParenOrBrace(num)}}{${unwrapParenOrBrace(den)}}`);
+      s = s.replace(new RegExp(fracRe.source, 'g'), (m, den, num) => `\\frac{${unwrapParenOrBrace(num.trim())}}{${unwrapParenOrBrace(den.trim())}}`);
     }
 
-    // 5. 한국어 연산자, 관계 기호, 그리스 문자
+    // 한국어 연산자, 관계 기호
     const koPairs = [
       ['플러스마이너스|쁠마', '\\pm '],
       ['마이너스플러스', '\\mp '],
@@ -1283,29 +1540,67 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       ['교집합', '\\cap '],
       ['합집합', '\\cup '],
       ['공집합', '\\emptyset '],
-      ['무한대|무한', '\\infty '],
       ['편미분', '\\partial '],
       ['리미트|극한', '\\lim '],
       ['시그마', '\\sum '],
-      ['인테그랄|부정적분|적분', '\\int '],
-      ['입실론|엡실론', '\\epsilon '],
-      ['오메가', '\\omega '],
-      ['알파', '\\alpha '],
-      ['베타', '\\beta '],
-      ['감마', '\\gamma '],
-      ['델타', '\\delta '],
-      ['제타', '\\zeta '],
-      ['에타', '\\eta '],
-      ['세타|시타', '\\theta '],
-      ['람다', '\\lambda '],
-      ['파이', '\\pi '],
-      ['타우', '\\tau '],
-      ['뮤', '\\mu ']
+      ['인테그랄|부정적분|적분', '\\int ']
     ];
     koPairs.forEach(([pat, rep]) => {
       s = s.replace(new RegExp(`(?<![가-힣])${pat}(?![가-힣])`, 'g'), rep);
     });
     s = s.replace(/\s*프라임(?![가-힣])/g, "'");
+    return s;
+  }
+
+  function translateKoreanMathShorthand(mathStr) {
+    if (!mathStr || !/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(mathStr)) return mathStr;
+    const protectedBlocks = [];
+    let s = replaceBalancedCommands(mathStr, /\\(text|mathrm|textbf|textit)(?![a-zA-Z])/, 1, false, (cmd, opt, args, raw) => {
+      const tok = `\uE000KT${protectedBlocks.length}\uE001`;
+      protectedBlocks.push({ tok, raw });
+      return tok;
+    });
+    s = s.replace(/"([^"\r\n]+)"/g, (m) => {
+      const tok = `\uE000KT${protectedBlocks.length}\uE001`;
+      protectedBlocks.push({ tok, raw: m });
+      return tok;
+    });
+
+    // 0. 한글 행렬/연립방정식 블록 변환 (셀 내부 한글 수식은 아래 단계에서 함께 변환됨)
+    s = convertKoreanMatricesInExpr(s);
+
+    const mapBoundVal = (val) => {
+      const clean = (val || '').trim();
+      if (clean === '무한대' || clean === '무한') return '\\infty';
+      if (clean === '-무한대' || clean === '-무한') return '-\\infty';
+      return translateKoreanMathAtoms(clean).replace(/\s{2,}/g, ' ').trim();
+    };
+
+    // 1. 극한, 시그마, 정적분 범위 구문 (한글 분수·그리스 문자·루트 범위 포함)
+    s = s.replace(
+      /(?:리미트|극한)\s*([a-zA-Z0-9_]+)\s*(?:가|이)?\s*((?:(?!으?로\s*갈\s*때|[\n$=]).){1,36}?)\s*(?:로|으로)\s*갈\s*때\s*/g,
+      (m, v, target) => `\\lim_{${v} \\to ${mapBoundVal(target)}} `
+    );
+    s = s.replace(
+      /(?:리미트|극한)\s*([a-zA-Z0-9_]+)\s*(?:가|이)?\s*(-?(?:무한대|무한)|알파|베타|감마|델타|세타|파이|[a-zA-Z0-9_.+-]+)(?:\s*(?:으로|로))?(?=\s|$)/g,
+      (m, v, target) => `\\lim_{${v} \\to ${mapBoundVal(target)}} `
+    );
+    const boundAtom = '(?:(?!에서|부터|까지|인테그랄|정적분|적분|시그마|리미트|극한|[\\n$]).){1,36}?';
+    s = s.replace(
+      new RegExp(`(?:시그마|합)\\s*([a-zA-Z0-9_]+\\s*=\\s*${boundAtom})\\s*(?:에서|부터)\\s*(${boundAtom})\\s*까지\\s*`, 'g'),
+      (m, lower, upper) => {
+        const eqParts = lower.split('=');
+        const mappedLower = eqParts.length === 2 ? `${eqParts[0].trim()}=${mapBoundVal(eqParts[1])}` : mapBoundVal(lower);
+        return `\\sum_{${mappedLower}}^{${mapBoundVal(upper)}} `;
+      }
+    );
+    s = s.replace(
+      new RegExp(`(?:인테그랄|정적분|적분)\\s*(${boundAtom})\\s*(?:에서|부터)\\s*(${boundAtom})\\s*까지\\s*`, 'g'),
+      (m, lower, upper) => `\\int_{${mapBoundVal(lower)}}^{${mapBoundVal(upper)}} `
+    );
+
+    // 2~5. 절댓값·미분·제곱근·거듭제곱·분수·삼각·로그·벡터·기호 변환
+    s = translateKoreanMathAtoms(s);
 
     for (let i = protectedBlocks.length - 1; i >= 0; i--) {
       const { tok, raw } = protectedBlocks[i];
@@ -1313,6 +1608,39 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
 
     return wrapBareKoreanInLatex(s).replace(/\s{2,}/g, ' ').trim();
+  }
+
+  function convertBareKoreanMatricesInText(text, allLogs) {
+    if (!/[가-힣]/.test(text) || !/(?:대괄호행렬|소괄호행렬|괄호행렬|중괄호행렬|행렬식|연립방정식|연립|경우|행렬)\s*[\[\(\{]/.test(text)) {
+      return text;
+    }
+    const lines = text.split('\n');
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim() || line.includes('$') || line.includes('%%GLOBAL_BLOCK_') || line.includes('%%CODE_BLOCK_')) {
+        out.push(line);
+        continue;
+      }
+      const trimmed = line.trim();
+      const kwMatch = /^(?:([a-zA-Z0-9_'^\{\}\(\)\[\]\|\+\-\*\/\\ ]+=\s*))?(대괄호행렬|소괄호행렬|괄호행렬|중괄호행렬|행렬식|연립방정식|연립|경우|행렬)\s*([\[\(\{])/.exec(trimmed);
+      if (kwMatch) {
+        const prefix = (kwMatch[1] || '').trim();
+        const openCh = kwMatch[3];
+        const closeCh = openCh === '[' ? ']' : (openCh === '(' ? ')' : '}');
+        const openIdx = kwMatch[0].length - 1;
+        const grp = extractBalancedGroup(trimmed, openIdx, openCh, closeCh);
+        if (grp && grp.endIndex === trimmed.length && /[;,\n]/.test(grp.content)) {
+          const converted = translateKoreanMathShorthand(trimmed.slice(prefix ? kwMatch[1].length : 0));
+          const full = prefix ? `${prefix} ${converted}` : converted;
+          if (allLogs) allLogs.push(`한글 행렬/연립식 자동 감지 -> LaTeX 변환`);
+          out.push(`\n$$\n${full}\n$$\n`);
+          continue;
+        }
+      }
+      out.push(line);
+    }
+    return out.join('\n');
   }
 
   function repairMathString(mathContent) {
@@ -1395,7 +1723,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return { cleaned, leading, trailing };
   }
 
-  const KOREAN_MATH_TOKEN_STRIP_RE = /(?:리미트|극한|시그마|합|인테그랄|정적분|부정적분|적분|세제곱근|네제곱근|제곱근|루트|의?\s*(?:세?제곱|승)|분의|플러스마이너스|쁠마|마이너스플러스|크거나\s*같다|작거나\s*같다|같지\s*않다|거의\s*같다|다르다|이상|이하|근사|곱하기|나누기|동치|화살표|따라서|그러므로|왜냐하면|교집합|합집합|공집합|무한대|무한|편미분|프라임|알파|베타|감마|델타|입실론|엡실론|제타|에타|세타|시타|람다|뮤|파이|타우|오메가)/g;
+  const KOREAN_MATH_TOKEN_STRIP_RE = /(?:대괄호행렬|소괄호행렬|괄호행렬|중괄호행렬|행렬식|연립방정식|연립|경우|행렬|절댓값|절대값|리미트|극한|시그마|합|인테그랄|정적분|부정적분|적분|세제곱근|네제곱근|제곱근|루트|의?\s*(?:세?제곱|승)|분의|자연로그|로그|밑이|사인|코사인|탄젠트|콤비네이션|조합|벡터|플러스마이너스|쁠마|마이너스플러스|크거나\s*같다|작거나\s*같다|같지\s*않다|거의\s*같다|다르다|이상|이하|근사|곱하기|나누기|동치|화살표|따라서|그러므로|왜냐하면|교집합|합집합|공집합|무한대|무한|편미분|프라임|알파|베타|감마|델타|입실론|엡실론|제타|에타|세타|시타|람다|뮤|파이|타우|오메가)/g;
 
   function isValidExplicitDollarMath(inner) {
     const trimmed = (inner || '').trim();
@@ -1411,11 +1739,13 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     // Explicit $...$ with Korean text: allow only concise Korean math shorthand, not spanning prose/currency
     if (/[.?!]|\r|\n/.test(innerWithoutTextCmd)) return false;
     const strippedMath = innerWithoutTextCmd
-      .replace(/(?:리미트|극한)\s*[a-zA-Z0-9_]+\s*(?:가|이)?\s*(?:-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*(?:로|으로)?\s*(?:갈\s*때)?/g, ' ')
-      .replace(/(?:시그마|합|인테그랄|정적분|적분)\s*[a-zA-Z0-9_=+-]+\s*(?:에서|부터)\s*(?:-?(?:무한대|무한)|[a-zA-Z0-9_.+-]+)\s*까지/g, ' ')
+      .replace(/(?:리미트|극한)\s*[a-zA-Z0-9_]+\s*(?:가|이)?\s*(?:(?!으?로\s*갈\s*때|[\n$]).){1,36}?(?:로|으로)\s*갈\s*때/g, ' ')
+      .replace(/(?:시그마|합|인테그랄|정적분|적분)\s*(?:(?!에서|부터|까지|[\n$]).){1,36}?(?:에서|부터)\s*(?:(?!까지|[\n$]).){1,36}?까지/g, ' ')
+      .replace(/밑이\s*[^\s인]+\s*인\s*로그/g, ' ')
+      .replace(/d[a-zA-Z]+\s*분의\s*d/g, ' ')
       .replace(KOREAN_MATH_TOKEN_STRIP_RE, ' ');
     const hadKoreanMathKeyword = strippedMath !== innerWithoutTextCmd;
-    const hasMathOperator = /[=+\-*/\\^_{}()<>|]/.test(strippedMath);
+    const hasMathOperator = /[=+\-*/\\^_{}()[\];<>|]/.test(strippedMath);
     if (!hadKoreanMathKeyword && !hasMathOperator) return false;
     if (/^\d/.test(trimmed) && !hadKoreanMathKeyword) return false;
     if (/(?:입니다|니다|므로|되어|하면|이고|이므로|에는|에만|에서|으로|이며|이고|와|과)(?![가-힣])/.test(strippedMath)) {
@@ -1633,11 +1963,19 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return linePrefix + l;
   }
 
+  function resolveAttachmentEntry(attachments, id) {
+    if (!attachments || !id) return null;
+    if (attachments instanceof Map) return attachments.get(id) || null;
+    if (typeof attachments === 'object') return attachments[id] || null;
+    return null;
+  }
+
   // --- 전체 텍스트 처리 파이프라인 ---
-  function processText(rawText) {
+  function processText(rawText, options = {}) {
     let text = rawText;
     const allLogs = [];
     const extractedFormulas = [];
+    const imgTokens = [];
 
     // 0. 마크다운 펜스 코드 블록(```...```, ~~~...~~~) 최우선 격리 (코드 예시 수식 오변환 방지)
     const codeProtectedBlocks = [];
@@ -1645,6 +1983,20 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       const tok = `%%CODE_BLOCK_${codeProtectedBlocks.length}%%`;
       codeProtectedBlocks.push({ tok, block });
       return `${lead}${tok}`;
+    });
+
+    // 0.5 사용자 첨부 이미지 마크다운 토큰화 (![설명](hwpx-img://id)) -> Bare-Math/DOMPurify 보호
+    text = text.replace(/!\[([^\]]*)\]\(hwpx-img:\/\/([a-zA-Z0-9_-]+)\)/g, (m, alt, imgId) => {
+      const token = `%%HWPX_IMG_TOKEN_${imgTokens.length}%%`;
+      const entry = resolveAttachmentEntry(options.attachments, imgId);
+      imgTokens.push({
+        token,
+        imgId,
+        alt: (alt || '').trim(),
+        rawMarkdown: m,
+        entry
+      });
+      return token;
     });
 
     // A. 기초 정규화 (행렬 줄바꿈 \\b 등은 보존하고 알려진 LaTeX 명령의 이중 슬래시만 축소)
@@ -1655,8 +2007,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     text = text.replace(/\\\[([\s\S]*?)\\\]/g, (m, c) => `$$${c}$$`);
     text = text.replace(/\\\(([\s\S]*?)\\\)/g, (m, c) => `$${c}$`);
 
-    // A-1. 한글(HWP) 행렬 및 조건식 블록 자동 감지 -> LaTeX 블록 수식($$ ... $$)으로 변환 (중첩 중괄호 안전 파싱)
+    // A-1. 한글(HWP) 행렬 및 한국어 행렬 블록 자동 감지 -> LaTeX 블록 수식($$ ... $$)으로 변환
     text = convertHwpMatricesToLatex(text, allLogs);
+    text = convertBareKoreanMatricesInText(text, allLogs);
 
     // B. 블록 수식($$ ... $$) 최우선 금고 격리 (줄바꿈 포함 가능)
     const globalProtectedBlocks = [];
@@ -1680,7 +2033,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     );
 
     text = text.replace(bareEnvRegex, (match, leftBracket, envBody, rightBracket, scriptPart) => {
-      if (match.includes('%%GLOBAL_BLOCK_') || match.includes('%%CODE_BLOCK_')) return match;
+      if (match.includes('%%GLOBAL_BLOCK_') || match.includes('%%CODE_BLOCK_') || match.includes('%%HWPX_IMG_TOKEN_')) return match;
       const prefixIdx = match.indexOf(leftBracket || envBody);
       const prefix = prefixIdx > 0 ? match.slice(0, prefixIdx) : '';
       const fullFormula = prefix + (leftBracket || '') + envBody + (rightBracket || '') + (scriptPart || '');
@@ -1748,7 +2101,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       text = text.replace(tok, () => block);
     }
 
-    // F. 마크다운 변환 + DOMPurify XSS 정화 (수식 토큰은 정화 후 안전 주입)
+    // F. 마크다운 변환 + DOMPurify XSS 정화 (수식·이미지 토큰은 정화 후 안전 주입)
     let renderedHtml = '';
     if (typeof marked !== 'undefined') {
       marked.setOptions({ gfm: true, breaks: true });
@@ -1779,11 +2132,27 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       renderedHtml = renderedHtml.replace(token, () => katexHtml);
     });
 
+    // G-1. 첨부 이미지 토큰 안전 주입
+    imgTokens.forEach(({ token, imgId, alt, entry }) => {
+      let imgHtml = '';
+      if (entry && entry.base64 && /^image\/(?:png|jpeg|gif|webp|bmp)$/.test(entry.mime || '')) {
+        const cleanB64 = String(entry.base64).replace(/[^A-Za-z0-9+/=]/g, '');
+        const capHtml = alt ? `<figcaption class="hwpx-attached-pic-cap">${escapeHtml(alt)}</figcaption>` : '';
+        imgHtml = `<figure class="hwpx-attached-pic" data-attach-id="${escapeHtml(imgId)}"><img class="hwpx-attached-pic-img" src="data:${entry.mime};base64,${cleanB64}" alt="${escapeHtml(alt || imgId)}">${capHtml}</figure>`;
+      } else {
+        imgHtml = `<span class="hwpx-pic-unsupported">첨부 이미지 누락 (${escapeHtml(alt || imgId)})</span>`;
+      }
+      renderedHtml = renderedHtml.replace(token, () => imgHtml);
+    });
+
     // H. 정제본 LaTeX 소스 구성 (콜백 함수 () => wrapped 사용)
     let cleanedSource = text;
     mathTokens.forEach(({ token, formula, isDisplay }) => {
       const wrapped = isDisplay ? `\n$$\n${formula}\n$$\n` : `$${formula}$`;
       cleanedSource = cleanedSource.replace(token, () => wrapped);
+    });
+    imgTokens.forEach(({ token, rawMarkdown }) => {
+      cleanedSource = cleanedSource.replace(token, () => rawMarkdown);
     });
 
     return {
@@ -1791,6 +2160,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       cleanedSource,
       tokenizedText: text,
       mathTokens,
+      imgTokens,
       allLogs,
       extractedFormulas,
       totalFormulas: mathTokens.length
@@ -2662,15 +3032,129 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return aligns;
   }
 
+  function countTextMetrics(text) {
+    const str = String(text || '');
+    const chars = str.length;
+    const charsNoSpace = str.replace(/\s+/g, '').length;
+    let bytes = 0;
+    if (typeof TextEncoder !== 'undefined') {
+      bytes = new TextEncoder().encode(str).length;
+    } else {
+      for (let i = 0; i < str.length; i++) {
+        const cp = str.codePointAt(i);
+        if (cp <= 0x7f) bytes += 1;
+        else if (cp <= 0x7ff) bytes += 2;
+        else if (cp <= 0xffff) bytes += 3;
+        else { bytes += 4; i++; }
+      }
+    }
+    return { chars, charsNoSpace, bytes };
+  }
+
+  function cleanHwpxInlineMarkdown(text) {
+    return cleanHwpxTextPart(text)
+      .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1 ($2)')
+      .replace(/`([^`\n]+)`/g, '$1')
+      .replace(/~~([^~\n]+)~~/g, '$1')
+      .replace(/(?:^|(?<=[\s(\[]))\*([^\s*\n](?:[^*\n]*?[^\s*\n])?)\*(?=$|[\s).,;:!?])/g, '$1')
+      .replace(/(?:^|(?<=[\s(\[]))_([^\s_\n](?:[^_\n]*?[^\s_\n])?)_(?=$|[\s).,;:!?])/g, '$1');
+  }
+
+  function computeAttachedPicDimsHwp(entry, maxWidthHwp = 42520) {
+    const pxW = Math.max(32, Number(entry?.widthPx) || 640);
+    const pxH = Math.max(32, Number(entry?.heightPx) || 400);
+    const rawW = Math.round(pxW * 75);
+    const clampedMax = Math.max(4500, Number(maxWidthHwp) || 42520);
+    const widthHwp = Math.max(4500, Math.min(clampedMax, rawW));
+    const heightHwp = Math.max(1500, Math.round(widthHwp * (pxH / pxW)));
+    return { widthHwp, heightHwp };
+  }
+
+  function buildAttachedPicXml({ picId, instId, zOrder, itemId, widthHwp, heightHwp }) {
+    const w = Math.max(1000, Math.round(widthHwp || 12000));
+    const h = Math.max(1000, Math.round(heightHwp || 8000));
+    const cx = Math.floor(w / 2);
+    const cy = Math.floor(h / 2);
+    const pid = escapeXml(String(picId));
+    const iid = escapeXml(String(instId || picId));
+    const zo = escapeXml(String(zOrder || 0));
+    const ref = escapeXml(String(itemId));
+    return `<hp:pic id="${pid}" zOrder="${zo}" numberingType="PICTURE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" href="" groupLevel="0" instid="${iid}" reverse="0"><hp:offset x="0" y="0"/><hp:orgSz width="${w}" height="${h}"/><hp:curSz width="${w}" height="${h}"/><hp:flip horizontal="0" vertical="0"/><hp:rotationInfo angle="0" centerX="${cx}" centerY="${cy}" rotateimage="1"/><hp:renderingInfo><hc:transMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/><hc:scaMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/><hc:rotMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/></hp:renderingInfo><hp:imgRect><hc:pt0 x="0" y="0"/><hc:pt1 x="${w}" y="0"/><hc:pt2 x="${w}" y="${h}"/><hc:pt3 x="0" y="${h}"/></hp:imgRect><hp:imgClip left="0" right="${w}" top="0" bottom="${h}"/><hp:inMargin left="0" right="0" top="0" bottom="0"/><hp:imgDim dimwidth="${w}" dimheight="${h}"/><hc:img binaryItemIDRef="${ref}" bright="0" contrast="0" effect="REAL_PIC" alpha="0"/><hp:effects/><hp:sz width="${w}" widthRelTo="ABSOLUTE" height="${h}" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="141" right="141" top="141" bottom="141"/><hp:shapeComment/></hp:pic>`;
+  }
+
+  function createHwpxAttachmentRegistry(existingContentHpf = '', existingBinaryFiles = {}) {
+    const manifestMap = parseContentHpfImageManifest(existingContentHpf || '');
+    const usedIds = new Set(manifestMap.keys());
+    const usedPaths = new Set(Object.keys(existingBinaryFiles || {}).map(k => k.toLowerCase()));
+    const registeredByAttKey = new Map();
+    const manifestAdditions = [];
+    const addedBinaryFiles = {};
+    let seq = 1;
+
+    return {
+      register(entry, fallbackId = 'att') {
+        if (!entry || !entry.base64) return null;
+        const mime = entry.mime || 'image/png';
+        if (!/^image\/(?:png|jpeg|gif|webp|bmp)$/.test(mime)) return null;
+        const key = entry.id || fallbackId;
+        if (registeredByAttKey.has(key)) return registeredByAttKey.get(key);
+
+        const extMap = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'image/bmp': 'bmp' };
+        const ext = (entry.ext || extMap[mime] || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+        let itemId = `userimg_${seq}`;
+        let binPath = `BinData/${itemId}.${ext}`;
+        while (usedIds.has(itemId) || usedPaths.has(binPath.toLowerCase())) {
+          seq++;
+          itemId = `userimg_${seq}`;
+          binPath = `BinData/${itemId}.${ext}`;
+        }
+        seq++;
+        usedIds.add(itemId);
+        usedPaths.add(binPath.toLowerCase());
+
+        const bytes = base64ToUint8(entry.base64);
+        addedBinaryFiles[binPath] = bytes;
+        manifestAdditions.push(`<opf:item id="${escapeXml(itemId)}" href="${escapeXml(binPath)}" media-type="${escapeXml(mime)}" isEmbeded="1"/>`);
+        const reg = { itemId, binPath, mime, widthPx: entry.widthPx || 640, heightPx: entry.heightPx || 400 };
+        registeredByAttKey.set(key, reg);
+        return reg;
+      },
+      patchContentHpf(contentHpfXml) {
+        if (!contentHpfXml || manifestAdditions.length === 0) return contentHpfXml;
+        const itemsXml = manifestAdditions.join('');
+        if (/<\/opf:manifest>/i.test(contentHpfXml)) {
+          return contentHpfXml.replace(/<\/opf:manifest>/i, `${itemsXml}</opf:manifest>`);
+        }
+        return contentHpfXml;
+      },
+      addedBinaryFiles
+    };
+  }
+
   function buildHwpxContentRuns(lineContent, opts) {
-    let trimmed = (lineContent || '').trim();
+    let rawLine = String(lineContent || '').replace(/\r/g, '');
+    let trimmed = rawLine.trim();
     let isHeading = false;
     let charPrId = opts.normalCharPrId;
 
-    if (/^#{1,6}\s+/.test(trimmed)) {
+    if (/^(?:-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      trimmed = '────────────────────────────────';
+    } else if (/^#{1,6}\s+/.test(trimmed)) {
       isHeading = true;
       charPrId = opts.boldCharPrId;
       trimmed = trimmed.replace(/^#{1,6}\s+/, '');
+    } else {
+      const quoteMatch = rawLine.match(/^\s*>\s?(.*)$/);
+      if (quoteMatch) {
+        trimmed = `│ ${quoteMatch[1].trimStart()}`;
+      } else {
+        const bulletMatch = rawLine.match(/^([ \t]{0,8})([-*+])\s+(.*)$/);
+        if (bulletMatch) {
+          const indent = bulletMatch[1].replace(/\t/g, '  ');
+          const bulletChar = indent.length >= 2 ? '  ◦ ' : '• ';
+          trimmed = `${bulletChar}${bulletMatch[3].trimStart()}`;
+        }
+      }
     }
 
     let runsXml = '';
@@ -2679,7 +3163,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const maxEqWidth = opts.maxEquationWidth > 0 ? opts.maxEquationWidth : 42520;
 
     if (trimmed.length > 0) {
-      const parts = trimmed.split(/(%%KATEX_TOKEN_\d+%%)/g);
+      const parts = trimmed.split(/(%%KATEX_TOKEN_\d+%%|%%HWPX_IMG_TOKEN_\d+%%)/g);
       parts.forEach(part => {
         if (!part) return;
         if (opts.tokenMap.has(part)) {
@@ -2694,6 +3178,28 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
           runsXml += `<hp:run charPrIDRef="${escapeXml(charPrId)}"><hp:equation id="${eqId}" zOrder="${eqZOrder}" numberingType="EQUATION" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" version="Equation Version 60" baseLine="${box.baseLine}" textColor="#000000" baseUnit="1100" lineMode="CHAR" font="HYhwpEQ"><hp:sz width="${clampedWidth}" widthRelTo="ABSOLUTE" height="${box.height}" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="56" right="56" top="0" bottom="0"/><hp:shapeComment>수식입니다.</hp:shapeComment><hp:script>${cleanScript}</hp:script></hp:equation><hp:t/></hp:run>`;
           addedContentRun = true;
+        } else if (opts.imgTokenMap && opts.imgTokenMap.has(part)) {
+          const imgInfo = opts.imgTokenMap.get(part);
+          const reg = typeof opts.registerImage === 'function' ? opts.registerImage(imgInfo.entry, imgInfo.imgId) : null;
+          if (reg) {
+            const { eqId: picId, eqZOrder: zOrder } = opts.nextEqIds();
+            const { widthHwp, heightHwp } = computeAttachedPicDimsHwp(reg, maxEqWidth);
+            const picXml = buildAttachedPicXml({
+              picId,
+              instId: picId,
+              zOrder,
+              itemId: reg.itemId,
+              widthHwp,
+              heightHwp
+            });
+            runsXml += `<hp:run charPrIDRef="${escapeXml(charPrId)}">${picXml}<hp:t/></hp:run>`;
+            if (!trimmed.replace(part, '').trim()) hasDisplayEq = true;
+            addedContentRun = true;
+          } else {
+            const fallbackLabel = `[이미지: ${imgInfo.alt || imgInfo.imgId}]`;
+            runsXml += `<hp:run charPrIDRef="${escapeXml(charPrId)}"><hp:t>${escapeXml(fallbackLabel)}</hp:t></hp:run>`;
+            addedContentRun = true;
+          }
         } else {
           const boldSegs = part.split(/(\*\*[^*\n]+\*\*)/g);
           boldSegs.forEach(seg => {
@@ -2701,7 +3207,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
             const isBoldSpan = seg.startsWith('**') && seg.endsWith('**') && seg.length > 4;
             const segText = isBoldSpan ? seg.slice(2, -2) : seg;
             const segCharPrId = isBoldSpan ? opts.boldCharPrId : charPrId;
-            const cleanPart = cleanHwpxTextPart(segText);
+            const cleanPart = cleanHwpxInlineMarkdown(segText);
             if (cleanPart) {
               runsXml += `<hp:run charPrIDRef="${escapeXml(segCharPrId)}"><hp:t>${escapeXml(cleanPart)}</hp:t></hp:run>`;
               addedContentRun = true;
@@ -2795,29 +3301,40 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return paragraphsXml;
   }
 
-  function buildHwpxPreviewText(result, tokenMap) {
+  function buildTokenMaps(result) {
+    const tokenMap = new Map();
+    const imgTokenMap = new Map();
+    (result.mathTokens || []).forEach(t => tokenMap.set(t.token, t));
+    (result.imgTokens || []).forEach(t => imgTokenMap.set(t.token, t));
+    return { tokenMap, imgTokenMap };
+  }
+
+  function buildHwpxPreviewText(result, tokenMap, imgTokenMap = null) {
     return result.tokenizedText
-      .split(/(%%KATEX_TOKEN_\d+%%)/g)
+      .split(/(%%KATEX_TOKEN_\d+%%|%%HWPX_IMG_TOKEN_\d+%%)/g)
       .map(part => {
         if (tokenMap.has(part)) {
           const info = tokenMap.get(part);
           return info.hwpCode || info.formula || '';
         }
-        return cleanHwpxTextPart(part);
+        if (imgTokenMap && imgTokenMap.has(part)) {
+          const img = imgTokenMap.get(part);
+          return `[그림: ${img.alt || img.imgId}]`;
+        }
+        return cleanHwpxInlineMarkdown(part);
       })
       .join('')
       .trim()
       .slice(0, 1024);
   }
 
-  function buildHwpxPackageFiles(rawText, nowDate = new Date()) {
-    const result = processText(rawText);
-    const tokenMap = new Map();
-    result.mathTokens.forEach(t => tokenMap.set(t.token, t));
+  function buildHwpxPackageFiles(rawText, nowDate = new Date(), options = {}) {
+    const result = processText(rawText, { attachments: options.attachments });
+    const { tokenMap, imgTokenMap } = buildTokenMaps(result);
 
     const isoNow = nowDate.toISOString().replace(/\.\d{3}Z$/, 'Z');
     const koDate = `${nowDate.getFullYear()}년 ${nowDate.getMonth() + 1}월 ${nowDate.getDate()}일`;
-    const prvText = buildHwpxPreviewText(result, tokenMap);
+    const prvText = buildHwpxPreviewText(result, tokenMap, imgTokenMap);
 
     const files = {};
 
@@ -2843,7 +3360,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     files["settings.xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><ha:HWPApplicationSetting xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0"><ha:CaretPosition listIDRef="0" paraIDRef="0" pos="0"/></ha:HWPApplicationSetting>`;
 
     // 8. Contents/content.hpf
-    files["Contents/content.hpf"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><opf:package xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" version="" unique-identifier="" id=""><opf:metadata><opf:title>AI Math Document</opf:title><opf:language>ko</opf:language><opf:meta name="creator" content="text">AI LaTeX Healer</opf:meta><opf:meta name="subject" content="text"/><opf:meta name="description" content="text"/><opf:meta name="lastsaveby" content="text">AI LaTeX Healer</opf:meta><opf:meta name="CreatedDate" content="text">${isoNow}</opf:meta><opf:meta name="ModifiedDate" content="text">${isoNow}</opf:meta><opf:meta name="date" content="text">${escapeXml(koDate)}</opf:meta><opf:meta name="keyword" content="text"/></opf:metadata><opf:manifest><opf:item id="header" href="Contents/header.xml" media-type="application/xml"/><opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/><opf:item id="settings" href="settings.xml" media-type="application/xml"/></opf:manifest><opf:spine><opf:itemref idref="header" linear="yes"/><opf:itemref idref="section0" linear="yes"/></opf:spine></opf:package>`;
+    const baseContentHpf = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><opf:package xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" version="" unique-identifier="" id=""><opf:metadata><opf:title>AI Math Document</opf:title><opf:language>ko</opf:language><opf:meta name="creator" content="text">AI LaTeX Healer</opf:meta><opf:meta name="subject" content="text"/><opf:meta name="description" content="text"/><opf:meta name="lastsaveby" content="text">AI LaTeX Healer</opf:meta><opf:meta name="CreatedDate" content="text">${isoNow}</opf:meta><opf:meta name="ModifiedDate" content="text">${isoNow}</opf:meta><opf:meta name="date" content="text">${escapeXml(koDate)}</opf:meta><opf:meta name="keyword" content="text"/></opf:metadata><opf:manifest><opf:item id="header" href="Contents/header.xml" media-type="application/xml"/><opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/><opf:item id="settings" href="settings.xml" media-type="application/xml"/></opf:manifest><opf:spine><opf:itemref idref="header" linear="yes"/><opf:itemref idref="section0" linear="yes"/></opf:spine></opf:package>`;
+    const attReg = createHwpxAttachmentRegistry(baseContentHpf, {});
 
     // 9. Contents/header.xml (charPr/paraPr switch/compatibleDocument/docOption/metaTag/trackchageConfig 포함)
     const paraPrSwitchXml = `<hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar"><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:case><hp:default><hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hp:default></hp:switch>`;
@@ -2851,12 +3369,14 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
     files["Contents/header.xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" version="1.4" secCnt="1"><hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/><hh:refList><hh:fontfaces itemCnt="7"><hh:fontface lang="HANGUL" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="LATIN" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="HANJA" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="JAPANESE" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="OTHER" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="SYMBOL" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface><hh:fontface lang="USER" fontCnt="1"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_MYUNGJO" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface></hh:fontfaces>${HWPX_BORDER_FILLS_XML}<hh:charProperties itemCnt="2"><hh:charPr id="0" height="1000" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>${charShapeSuffix}</hh:charPr><hh:charPr id="1" height="1200" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:bold/>${charShapeSuffix}</hh:charPr></hh:charProperties><hh:tabProperties itemCnt="1"><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/></hh:tabProperties><hh:numberings itemCnt="1"><hh:numbering id="1" start="0"><hh:paraHead start="1" level="1" align="LEFT" useInstWidth="1" autoIndent="1" widthAdjust="0" textOffsetType="PERCENT" textOffset="50" numFormat="DIGIT" charPrIDRef="4294967295" checkable="0">^1.</hh:paraHead></hh:numbering></hh:numberings><hh:paraProperties itemCnt="2"><hh:paraPr id="0" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/>${paraPrSwitchXml}<hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr><hh:paraPr id="1" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0" textDir="LTR"><hh:align horizontal="CENTER" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/>${paraPrSwitchXml}<hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr></hh:paraProperties><hh:styles itemCnt="1"><hh:style id="0" type="PARA" name="바탕글" engName="Normal" paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0" langID="1042" lockForm="0"/></hh:styles></hh:refList><hh:compatibleDocument targetProgram="HWP201X"><hh:layoutCompatibility/></hh:compatibleDocument><hh:docOption><hh:linkinfo path="" pageInherit="0" footnoteInherit="0"/></hh:docOption><hh:metaTag>{"name":""}</hh:metaTag><hh:trackchageConfig flags="56"/></hh:head>`;
 
-    // 10. Contents/section0.xml (BOTH/EVEN/ODD pageBorderFill, secPr 독립 run 분리, 수식 run 뒤 <hp:t/>)
+    // 10. Contents/section0.xml (BOTH/EVEN/ODD pageBorderFill, secPr 독립 run 분리, 수식·그림 run 뒤 <hp:t/>)
     const rawLines = (result.tokenizedText || rawText || '').split('\n');
     const lines = rawLines.length > 0 ? rawLines : [''];
     let eqCounter = 0;
     const paragraphsXml = buildHwpxParagraphsFromLines(lines, {
       tokenMap,
+      imgTokenMap,
+      registerImage: (entry, fallbackId) => attReg.register(entry, fallbackId),
       normalCharPrId: '0',
       boldCharPrId: '1',
       normalParaPrId: '0',
@@ -2870,9 +3390,10 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       nextEqIds: () => ({ eqZOrder: eqCounter, eqId: 1950000000 + (++eqCounter) })
     });
 
+    files["Contents/content.hpf"] = attReg.patchContentHpf(baseContentHpf);
     files["Contents/section0.xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hs:sec xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0">${paragraphsXml}</hs:sec>`;
 
-    return { files, result };
+    return { files, binaryFiles: attReg.addedBinaryFiles, result };
   }
 
   function extractRunWithoutSecCtrl(sectionXml, run) {
@@ -2891,10 +3412,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     return `${sectionXml.slice(run.start, run.openEnd)}${inner}</hp:run>`;
   }
 
-  function buildSingleSlotPatchXml(sectionXml, targetSlot, rawText, mode, placeholder, headerStyles, idGen) {
-    const result = processText(rawText);
-    const tokenMap = new Map();
-    result.mathTokens.forEach(t => tokenMap.set(t.token, t));
+  function buildSingleSlotPatchXml(sectionXml, targetSlot, rawText, mode, placeholder, headerStyles, idGen, imgCtx = {}) {
+    const result = processText(rawText, { attachments: imgCtx.attachments });
+    const { tokenMap, imgTokenMap } = buildTokenMaps(result);
 
     const rawLines = (result.tokenizedText || rawText || '').split('\n');
     const lines = rawLines.length > 0 ? rawLines : [''];
@@ -2913,6 +3433,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     if (mode === 'after') {
       const patchXml = buildHwpxParagraphsFromLines(lines, {
         tokenMap,
+        imgTokenMap,
+        registerImage: imgCtx.registerImage,
         normalCharPrId: slotCharPrId,
         boldCharPrId,
         normalParaPrId: slotParaPrId,
@@ -2929,7 +3451,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         replaceEnd: targetSlot.end,
         patchXml,
         result,
-        previewSnippet: buildHwpxPreviewText(result, tokenMap)
+        previewSnippet: buildHwpxPreviewText(result, tokenMap, imgTokenMap)
       };
     }
 
@@ -2995,6 +3517,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
     const patchXml = buildHwpxParagraphsFromLines(lines, {
       tokenMap,
+      imgTokenMap,
+      registerImage: imgCtx.registerImage,
       normalCharPrId: activeCharPr,
       boldCharPrId,
       normalParaPrId: slotParaPrId,
@@ -3015,7 +3539,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       replaceEnd: targetSlot.end,
       patchXml,
       result,
-      previewSnippet: buildHwpxPreviewText(result, tokenMap)
+      previewSnippet: buildHwpxPreviewText(result, tokenMap, imgTokenMap)
     };
   }
 
@@ -3036,6 +3560,11 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
     const headerStyles = inspectHwpxHeaderStyles(templateFiles['Contents/header.xml'] || '');
     const outFiles = { ...templateFiles };
+    const attReg = createHwpxAttachmentRegistry(outFiles['Contents/content.hpf'] || '', options.existingBinaryFiles || {});
+    const imgCtx = {
+      attachments: options.attachments,
+      registerImage: (entry, fallbackId) => attReg.register(entry, fallbackId)
+    };
     const normalizedEdits = Array.isArray(editsList) ? editsList : [];
     const editsBySection = new Map();
 
@@ -3071,15 +3600,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       const replaceBodyEdit = secEdits.find(e => e.mode === 'replace_body');
       if (replaceBodyEdit || structure.slots.length === 0) {
         const text = replaceBodyEdit ? (replaceBodyEdit.rawText || '') : (secEdits[0]?.rawText || '');
-        const result = processText(text);
-        const tokenMap = new Map();
-        result.mathTokens.forEach(t => tokenMap.set(t.token, t));
+        const result = processText(text, { attachments: options.attachments });
+        const { tokenMap, imgTokenMap } = buildTokenMaps(result);
         const rawLines = (result.tokenizedText || text || '').split('\n');
         const lines = rawLines.length > 0 ? rawLines : [''];
         const secOwner = structure.slots.find(s => s.hasSecPr && s.secCtrlRunXml);
 
         const paragraphsXml = buildHwpxParagraphsFromLines(lines, {
           tokenMap,
+          imgTokenMap,
+          registerImage: imgCtx.registerImage,
           normalCharPrId: headerStyles.defaultCharPrId,
           boldCharPrId: headerStyles.boldCharPrId,
           normalParaPrId: headerStyles.defaultParaPrId,
@@ -3094,7 +3624,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         });
         outFiles[secPath] = sectionXml.slice(0, structure.secOpenEnd) + paragraphsXml + sectionXml.slice(structure.secCloseStart);
         lastResult = result;
-        previewParts.push(buildHwpxPreviewText(result, tokenMap));
+        previewParts.push(buildHwpxPreviewText(result, tokenMap, imgTokenMap));
         continue;
       }
 
@@ -3122,7 +3652,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
           mode,
           item.placeholder || options.placeholder,
           headerStyles,
-          idGen
+          idGen,
+          imgCtx
         );
         lastResult = patch.result;
         if (patch.previewSnippet) previewParts.push(patch.previewSnippet);
@@ -3140,7 +3671,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
     if (outFiles['Contents/content.hpf']) {
       const isoNow = nowDate.toISOString().replace(/\.\d{3}Z$/, 'Z');
-      outFiles['Contents/content.hpf'] = outFiles['Contents/content.hpf'].replace(
+      outFiles['Contents/content.hpf'] = attReg.patchContentHpf(outFiles['Contents/content.hpf']).replace(
         /(<opf:meta\s+name="ModifiedDate"\s+content="text">)[^<]*(<\/opf:meta>)/,
         `$1${isoNow}$2`
       );
@@ -3148,10 +3679,89 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
     return {
       files: outFiles,
+      binaryFiles: attReg.addedBinaryFiles,
       result: lastResult,
       appliedSlot: firstAppliedSlot,
       sectionPath: defaultSectionPath,
       mode: normalizedEdits[0]?.mode || 'replace'
+    };
+  }
+
+  function collectHwpxEditableTargets(slots) {
+    if (!Array.isArray(slots)) return [];
+    const list = [];
+    for (let i = 0; i < slots.length; i++) {
+      const s = slots[i];
+      if (!s || s.hasTableChild) continue;
+      const rawTrim = (s.rawText || '').trim();
+      const hasPh = Array.isArray(s.placeholders) && s.placeholders.length > 0;
+      const isEmptyCell = Boolean(s.inTable && !rawTrim && !s.hasPicChild);
+      if (!s.inTable && !rawTrim && !hasPh) continue;
+      if (s.hasPicChild && !rawTrim && !hasPh) continue;
+
+      const isPromptColon = /[:：]\s*$/.test(rawTrim) || /(?:쓰기|작성하세요|입력하세요|설명하시오|서술하시오)\.?$/.test(rawTrim);
+      const recommended = hasPh || isEmptyCell || isPromptColon;
+
+      let contextHint = '';
+      for (let back = i - 1; back >= Math.max(0, i - 3); back--) {
+        const prev = slots[back];
+        if (!prev || prev.hasTableChild) continue;
+        const pTxt = (prev.rawText || '').replace(/\s+/g, ' ').trim();
+        if (pTxt && pTxt !== rawTrim) {
+          contextHint = pTxt.slice(0, 120);
+          break;
+        }
+      }
+
+      const uid = s.uid || `${s.sectionPath || 'Contents/section0.xml'}::${s.slotId}`;
+      list.push({
+        uid,
+        slotId: s.slotId,
+        sectionPath: s.sectionPath || 'Contents/section0.xml',
+        locationLabel: s.locationLabel || `문단 ${s.slotId + 1}`,
+        currentText: (s.editorText || s.rawText || '').trim(),
+        placeholders: (s.placeholders || []).map(p => p.full),
+        isEmptyCell,
+        hasPlaceholder: hasPh,
+        recommended,
+        contextHint
+      });
+    }
+    return list;
+  }
+
+  function validateWorkspaceSnapshotPayload(obj) {
+    if (!obj || typeof obj !== 'object') {
+      return { valid: false, reason: '올바른 JSON 백업 객체가 아닙니다.' };
+    }
+    const templates = Array.isArray(obj.runtimeTemplates)
+      ? obj.runtimeTemplates.filter(t => t && typeof t.id === 'string' && typeof t.name === 'string' && typeof t.base64 === 'string')
+      : [];
+    const attachments = Array.isArray(obj.attachments)
+      ? obj.attachments.filter(a => a && typeof a.id === 'string' && typeof a.base64 === 'string' && /^image\/(?:png|jpeg|gif|webp|bmp)$/.test(a.mime || ''))
+      : [];
+    const customSnippets = Array.isArray(obj.customSnippets)
+      ? obj.customSnippets.filter(s => s && typeof s.label === 'string' && typeof s.snippet === 'string')
+      : [];
+    const templateDrafts = (obj.templateDrafts && typeof obj.templateDrafts === 'object' && !Array.isArray(obj.templateDrafts))
+      ? obj.templateDrafts
+      : {};
+    const hasAnything = typeof obj.rawInputValue === 'string' || templates.length > 0 || attachments.length > 0 || Object.keys(templateDrafts).length > 0 || customSnippets.length > 0;
+    if (!hasAnything) {
+      return { valid: false, reason: '복원할 작업 데이터가 없습니다.' };
+    }
+    return {
+      valid: true,
+      snapshot: {
+        version: Number(obj.version) || 1,
+        autoSaveEnabled: typeof obj.autoSaveEnabled === 'boolean' ? obj.autoSaveEnabled : undefined,
+        rawInputValue: typeof obj.rawInputValue === 'string' ? obj.rawInputValue : '',
+        selectedTemplateId: typeof obj.selectedTemplateId === 'string' ? obj.selectedTemplateId : '__default__',
+        runtimeTemplates: templates,
+        templateDrafts,
+        attachments,
+        customSnippets
+      }
     };
   }
 
@@ -4055,6 +4665,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     escapeHtml,
     escapeXml,
     estimateHwpEquationBox,
+    countTextMetrics,
+    computeAttachedPicDimsHwp,
+    buildAttachedPicXml,
     buildHwpxPackageFiles,
     buildSampleWorksheetTemplateFiles,
     inspectHwpxHeaderStyles,
@@ -4062,7 +4675,9 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     applyTextToHwpxTemplateFiles,
     applyEditsToHwpxTemplateFiles,
     buildHwpxBinaryImageMap,
-    renderHwpxTemplatePreviewHtml
+    renderHwpxTemplatePreviewHtml,
+    collectHwpxEditableTargets,
+    validateWorkspaceSnapshotPayload
   };
 
   if (typeof document !== 'undefined') {
@@ -4083,8 +4698,33 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   const btnResetActiveSlot = document.getElementById('btnResetActiveSlot');
   const btnResetAllSlots = document.getElementById('btnResetAllSlots');
   const editedSlotsNavBar = document.getElementById('editedSlotsNavBar');
+  const editedSlotsNavLabel = document.getElementById('editedSlotsNavLabel');
   const editedSlotsChipList = document.getElementById('editedSlotsChipList');
+  const slotProgressSummary = document.getElementById('slotProgressSummary');
+  const slotNavFilterGroup = document.getElementById('slotNavFilterGroup');
+  const btnNextEmptySlot = document.getElementById('btnNextEmptySlot');
   const mathQuickBar = document.getElementById('mathQuickBar');
+  const btnToggleMathCards = document.getElementById('btnToggleMathCards');
+  const mathVisualCardGrid = document.getElementById('mathVisualCardGrid');
+  const customSnippetsRow = document.getElementById('customSnippetsRow');
+  const matrixBuilderBar = document.getElementById('matrixBuilderBar');
+  const btnToggleMatrixBuilder = document.getElementById('btnToggleMatrixBuilder');
+  const btnInsertBuiltMatrix = document.getElementById('btnInsertBuiltMatrix');
+  const btnCloseMatrixBuilder = document.getElementById('btnCloseMatrixBuilder');
+  const matRowsInput = document.getElementById('matRowsInput');
+  const matColsInput = document.getElementById('matColsInput');
+  const matTypeSelect = document.getElementById('matTypeSelect');
+  const snippetManagerBar = document.getElementById('snippetManagerBar');
+  const btnToggleSnippetManager = document.getElementById('btnToggleSnippetManager');
+  const customSnipLabelInput = document.getElementById('customSnipLabelInput');
+  const customSnipCodeInput = document.getElementById('customSnipCodeInput');
+  const btnSaveCustomSnippet = document.getElementById('btnSaveCustomSnippet');
+  const btnCloseSnippetManager = document.getElementById('btnCloseSnippetManager');
+  const imageFileInput = document.getElementById('imageFileInput');
+  const btnInsertImage = document.getElementById('btnInsertImage');
+  const attachedImgCountBadge = document.getElementById('attachedImgCountBadge');
+  const btnUndoEdit = document.getElementById('btnUndoEdit');
+  const btnCopyHwpEq = document.getElementById('btnCopyHwpEq');
   const btnToggleAutoSave = document.getElementById('btnToggleAutoSave');
   const autoSaveDot = document.getElementById('autoSaveDot');
   const autoSaveLabel = document.getElementById('autoSaveLabel');
@@ -4092,11 +4732,29 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   const btnDownloadBlankSample = document.getElementById('btnDownloadBlankSample');
   const templatePreviewBanner = document.getElementById('templatePreviewBanner');
   const templatePreviewBannerText = document.getElementById('templatePreviewBannerText');
+  const dragDropOverlay = document.getElementById('dragDropOverlay');
 
   const AUTO_SAVE_ENABLED_KEY = 'ai_math_autosave_enabled_v1';
   const TEMPLATE_DRAFTS_KEY = 'ai_math_template_drafts_v1';
+  const CUSTOM_SNIPPETS_KEY = 'ai_math_custom_snippets_v1';
   const IDB_NAME = 'ai_math_hwpx_db_v1';
+  const IDB_VERSION = 2;
   const IDB_STORE = 'templates';
+  const IDB_ATT_STORE = 'attachments';
+
+  const MIME_SNIPPET = 'application/x-ai-latex-snippet';
+  const MIME_WRAP_FLAG = 'application/x-ai-latex-wrap';
+  const MIME_SLOT_UID = 'application/x-ai-latex-slot-uid';
+  let activeDragPayload = null;
+  let rawInputHasCursor = false;
+
+  const attachedImagesMap = new Map();
+  let inMemoryTemplateDrafts = {};
+  let attachmentSeq = 1;
+  let slotNavFilter = 'edited';
+  const undoStack = [];
+  let lastTypedSnapshotText = '';
+  let lastTypedSnapshotAt = 0;
 
   let autoSaveEnabled = true;
   try {
@@ -4108,8 +4766,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   function updateAutoSaveToggleUi() {
     btnToggleAutoSave.setAttribute('aria-pressed', autoSaveEnabled ? 'true' : 'false');
     btnToggleAutoSave.className = autoSaveEnabled
-      ? 'text-xs sm:text-sm bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/70 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation'
-      : 'text-xs sm:text-sm bg-slate-800/90 hover:bg-slate-700 text-slate-400 border border-slate-700 px-3 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation';
+      ? 'text-xs sm:text-sm bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/70 px-2.5 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation'
+      : 'text-xs sm:text-sm bg-slate-800/90 hover:bg-slate-700 text-slate-400 border border-slate-700 px-2.5 py-1.5 min-h-[38px] rounded-lg transition-colors flex items-center gap-1.5 touch-manipulation';
     autoSaveDot.className = autoSaveEnabled ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-slate-500';
     autoSaveLabel.textContent = autoSaveEnabled ? '자동저장 ON' : '자동저장 OFF';
   }
@@ -4117,11 +4775,14 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   function openTemplateDb() {
     return new Promise((resolve, reject) => {
       if (typeof indexedDB === 'undefined') return reject(new Error('IndexedDB unsupported'));
-      const req = indexedDB.open(IDB_NAME, 1);
+      const req = indexedDB.open(IDB_NAME, IDB_VERSION);
       req.onupgradeneeded = () => {
         const db = req.result;
         if (!db.objectStoreNames.contains(IDB_STORE)) {
           db.createObjectStore(IDB_STORE, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(IDB_ATT_STORE)) {
+          db.createObjectStore(IDB_ATT_STORE, { keyPath: 'id' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -4129,12 +4790,12 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     });
   }
 
-  async function idbSaveTemplate(tplRecord) {
+  async function idbPutRecord(storeName, record) {
     try {
       const db = await openTemplateDb();
       return await new Promise((resolve) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        tx.objectStore(IDB_STORE).put({ ...tplRecord, persisted: true });
+        const tx = db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).put(record);
         tx.oncomplete = () => { db.close(); resolve(true); };
         tx.onerror = () => { db.close(); resolve(false); };
       });
@@ -4143,12 +4804,12 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
   }
 
-  async function idbDeleteTemplate(id) {
+  async function idbDeleteRecord(storeName, id) {
     try {
       const db = await openTemplateDb();
       return await new Promise((resolve) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        tx.objectStore(IDB_STORE).delete(id);
+        const tx = db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).delete(id);
         tx.oncomplete = () => { db.close(); resolve(true); };
         tx.onerror = () => { db.close(); resolve(false); };
       });
@@ -4157,16 +4818,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
   }
 
-  async function idbLoadAllTemplates() {
+  async function idbGetAllRecords(storeName) {
     try {
       const db = await openTemplateDb();
       return await new Promise((resolve) => {
-        const tx = db.transaction(IDB_STORE, 'readonly');
-        const req = tx.objectStore(IDB_STORE).getAll();
+        const tx = db.transaction(storeName, 'readonly');
+        const req = tx.objectStore(storeName).getAll();
         req.onsuccess = () => {
           const list = Array.isArray(req.result) ? req.result : [];
           db.close();
-          resolve(list.filter(t => t && typeof t.id === 'string' && typeof t.name === 'string' && typeof t.base64 === 'string'));
+          resolve(list);
         };
         req.onerror = () => { db.close(); resolve([]); };
       });
@@ -4175,18 +4836,87 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
   }
 
-  async function idbClearAllTemplates() {
+  async function idbClearAllStores() {
     try {
       const db = await openTemplateDb();
       return await new Promise((resolve) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        tx.objectStore(IDB_STORE).clear();
+        const stores = [IDB_STORE, IDB_ATT_STORE].filter(s => db.objectStoreNames.contains(s));
+        if (stores.length === 0) { db.close(); return resolve(true); }
+        const tx = db.transaction(stores, 'readwrite');
+        stores.forEach(s => tx.objectStore(s).clear());
         tx.oncomplete = () => { db.close(); resolve(true); };
         tx.onerror = () => { db.close(); resolve(false); };
       });
     } catch (e) {
       return false;
     }
+  }
+
+  const idbSaveTemplate = (tpl) => idbPutRecord(IDB_STORE, { ...tpl, persisted: true });
+  const idbDeleteTemplate = (id) => idbDeleteRecord(IDB_STORE, id);
+  const idbLoadAllTemplates = async () => (await idbGetAllRecords(IDB_STORE))
+    .filter(t => t && typeof t.id === 'string' && typeof t.name === 'string' && typeof t.base64 === 'string');
+  const idbSaveAttachment = (att) => idbPutRecord(IDB_ATT_STORE, att);
+  const idbLoadAllAttachments = async () => (await idbGetAllRecords(IDB_ATT_STORE))
+    .filter(a => a && typeof a.id === 'string' && typeof a.base64 === 'string');
+
+  function updateAttachedImageBadge() {
+    const cnt = attachedImagesMap.size;
+    attachedImgCountBadge.classList.toggle('hidden', cnt === 0);
+    attachedImgCountBadge.textContent = `첨부 이미지 ${cnt}개`;
+  }
+
+  function pushUndoSnapshot(kind = 'slot', customBatchPrev = null) {
+    if (customBatchPrev) {
+      undoStack.push({
+        kind: 'batch',
+        templateId: activeTemplateState ? activeTemplateState.id : null,
+        selectedSlotUid: activeTemplateState ? activeTemplateState.selectedSlotUid : null,
+        globalMode: activeTemplateState ? activeTemplateState.globalMode : null,
+        editsEntries: customBatchPrev,
+        rawText: rawInput.value
+      });
+    } else {
+      undoStack.push({
+        kind,
+        templateId: activeTemplateState ? activeTemplateState.id : null,
+        selectedSlotUid: activeTemplateState ? activeTemplateState.selectedSlotUid : null,
+        globalMode: activeTemplateState ? activeTemplateState.globalMode : null,
+        rawText: rawInput.value
+      });
+    }
+    if (undoStack.length > 50) undoStack.shift();
+    btnUndoEdit.disabled = undoStack.length === 0;
+  }
+
+  function performUndo() {
+    if (undoStack.length === 0) {
+      showToast('되돌릴 작업 내역이 없습니다.');
+      return;
+    }
+    const snap = undoStack.pop();
+    btnUndoEdit.disabled = undoStack.length === 0;
+    if (snap.kind === 'batch' && activeTemplateState && activeTemplateState.id === snap.templateId) {
+      activeTemplateState.slotEdits = new Map(snap.editsEntries);
+      activeTemplateState.globalMode = snap.globalMode;
+      if (snap.selectedSlotUid) activeTemplateState.selectedSlotUid = snap.selectedSlotUid;
+      loadSlotIntoEditor(activeTemplateState.selectedSlotUid);
+      renderTemplateUi();
+      showToast('일괄 채우기 이전 상태로 되돌렸습니다.');
+      return;
+    }
+    if (activeTemplateState && activeTemplateState.id === snap.templateId && snap.selectedSlotUid && snap.globalMode !== 'replace_body') {
+      activeTemplateState.globalMode = null;
+      activeTemplateState.selectedSlotUid = snap.selectedSlotUid;
+      rawInput.value = snap.rawText;
+      syncCurrentInputToActiveSlot();
+      renderTemplateUi();
+    } else {
+      rawInput.value = snap.rawText;
+      updateAll();
+    }
+    rawInput.focus();
+    showToast('직전 입력 상태로 되돌렸습니다.');
   }
 
   function loadTemplateDraftsMap() {
@@ -4275,6 +5005,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     if (!activeTemplateState) return;
     if (activeTemplateState.globalMode === 'replace_body') {
       rawInput.value = activeTemplateState.replaceBodyText || '';
+      lastTypedSnapshotText = rawInput.value;
       return;
     }
     const slot = activeTemplateState.slots.find(s => s.uid === uid) || null;
@@ -4292,6 +5023,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       activeTemplateState.currentMode = defMode;
       rawInput.value = defMode === 'after' ? '' : defText;
     }
+    lastTypedSnapshotText = rawInput.value;
   }
 
   function renderPreviewWithTemplateState(curResult) {
@@ -4316,7 +5048,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
     if (isReplaceBody) {
       const text = activeTemplateState.replaceBodyText || rawInput.value;
-      const bodyRes = text.trim() ? processText(text) : null;
+      const bodyRes = text.trim() ? processText(text, { attachments: attachedImagesMap }) : null;
       const bodyHtml = bodyRes
         ? bodyRes.renderedHtml
         : '<div class="hwpx-slot-placeholder-hint">새 본문과 수식을 왼쪽 입력창에 입력하세요.</div>';
@@ -4340,7 +5072,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       if (entry.mode === 'replace') editedReplaceUids.add(uid);
       let renderedHtml = '';
       if (entry.text && entry.text.trim()) {
-        const res = processText(entry.text);
+        const res = processText(entry.text, { attachments: attachedImagesMap });
         renderedHtml = res.renderedHtml;
         totalRenderedFormulas += res.totalFormulas;
       } else {
@@ -4374,29 +5106,92 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   }
 
   function renderEditedSlotsNav() {
-    if (!activeTemplateState || activeTemplateState.globalMode === 'replace_body' || activeTemplateState.slotEdits.size === 0) {
+    if (!activeTemplateState || activeTemplateState.globalMode === 'replace_body') {
       editedSlotsNavBar.classList.add('hidden');
       btnResetAllSlots.classList.add('hidden');
       editedSlotsChipList.innerHTML = '';
       return;
     }
 
-    btnResetAllSlots.classList.remove('hidden');
+    const editedCount = activeTemplateState.slotEdits.size;
+    btnResetAllSlots.classList.toggle('hidden', editedCount === 0);
+
+    const targets = collectHwpxEditableTargets(activeTemplateState.slots);
+    const recommendedTargets = targets.filter(t => t.recommended);
+    const todoPool = recommendedTargets.length > 0 ? recommendedTargets : targets;
+    const completedInTodo = todoPool.filter(t => activeTemplateState.slotEdits.has(t.uid)).length;
+    slotProgressSummary.textContent = `진행: ${completedInTodo} / ${todoPool.length}칸 (수정 ${editedCount}개)`;
+
+    slotNavFilterGroup.querySelectorAll('.slot-filter-btn').forEach(btn => {
+      const active = btn.dataset.slotFilter === slotNavFilter;
+      btn.classList.toggle('bg-emerald-700', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('text-slate-400', !active);
+    });
+
+    let displaySlots = [];
+    if (slotNavFilter === 'edited') {
+      displaySlots = activeTemplateState.slots.filter(s => activeTemplateState.slotEdits.has(s.uid));
+      editedSlotsNavLabel.textContent = `✏️ 수정된 칸 (${displaySlots.length}) · 드래그로 다른 칸 복사:`;
+    } else if (slotNavFilter === 'todo') {
+      displaySlots = todoPool
+        .filter(t => !activeTemplateState.slotEdits.has(t.uid))
+        .map(t => activeTemplateState.slots.find(s => s.uid === t.uid))
+        .filter(Boolean);
+      editedSlotsNavLabel.textContent = `⬜ 남은 입력 칸 (${displaySlots.length}):`;
+    } else {
+      displaySlots = targets
+        .map(t => activeTemplateState.slots.find(s => s.uid === t.uid))
+        .filter(Boolean);
+      editedSlotsNavLabel.textContent = `📋 전체 칸 (${displaySlots.length}):`;
+    }
+
+    if (displaySlots.length === 0) {
+      editedSlotsNavBar.classList.add('hidden');
+      editedSlotsChipList.innerHTML = '';
+      return;
+    }
+
     editedSlotsNavBar.classList.remove('hidden');
     editedSlotsChipList.innerHTML = '';
 
-    const orderedSlots = activeTemplateState.slots.filter(s => activeTemplateState.slotEdits.has(s.uid));
-    orderedSlots.forEach(slot => {
+    displaySlots.forEach(slot => {
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.dataset.jumpUid = slot.uid;
       const isSelected = slot.uid === activeTemplateState.selectedSlotUid;
-      chip.className = isSelected
-        ? 'px-2.5 py-1 min-h-[30px] rounded-lg text-[11px] sm:text-xs font-medium bg-sky-600 text-white border border-sky-400 transition-colors touch-manipulation'
-        : 'px-2.5 py-1 min-h-[30px] rounded-lg text-[11px] sm:text-xs font-medium bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/60 transition-colors touch-manipulation';
-      chip.textContent = slot.sectionLabel ? `${slot.sectionLabel} · ${slot.locationLabel}` : slot.locationLabel;
+      const isEdited = activeTemplateState.slotEdits.has(slot.uid);
+      if (isEdited) chip.draggable = true;
+      if (isSelected) {
+        chip.className = 'px-2.5 py-1 min-h-[30px] rounded-lg text-[11px] sm:text-xs font-medium bg-sky-600 text-white border border-sky-400 transition-colors touch-manipulation';
+      } else if (isEdited) {
+        chip.className = 'px-2.5 py-1 min-h-[30px] rounded-lg text-[11px] sm:text-xs font-medium bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/60 transition-colors touch-manipulation cursor-grab';
+        chip.title = '클릭해 이동하거나, 오른쪽 다른 표 칸 위로 드래그해 내용 복사';
+      } else {
+        chip.className = 'px-2.5 py-1 min-h-[30px] rounded-lg text-[11px] sm:text-xs font-medium bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors touch-manipulation';
+      }
+      const prefix = isEdited ? '✓ ' : '';
+      chip.textContent = `${prefix}${slot.sectionLabel ? `${slot.sectionLabel} · ${slot.locationLabel}` : slot.locationLabel}`;
       editedSlotsChipList.appendChild(chip);
     });
+  }
+
+  function jumpToSlotUid(uid) {
+    if (!activeTemplateState || !uid) return;
+    const slot = activeTemplateState.slots.find(s => s.uid === uid);
+    if (!slot) return;
+    syncCurrentInputToActiveSlot();
+    activeTemplateState.globalMode = null;
+    activeTemplateState.selectedSlotUid = uid;
+    activeTemplateState.selectedSectionPath = slot.sectionPath;
+    loadSlotIntoEditor(uid);
+    renderTemplateUi();
+
+    const targetEl = renderOutput.querySelector(`[data-slot-uid="${CSS.escape(uid)}"], [data-cell-slot-uid="${CSS.escape(uid)}"]`);
+    if (targetEl && typeof targetEl.scrollIntoView === 'function') {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    rawInput.focus();
   }
 
   function updateActiveSlotSummaryText() {
@@ -4422,7 +5217,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   function updateAll() {
     if (activeTemplateState) syncCurrentInputToActiveSlot();
     const val = rawInput.value;
-    charCount.textContent = `${val.length}자`;
+    const m = countTextMetrics(val);
+    charCount.textContent = `${m.chars}자 · 공백제외 ${m.charsNoSpace}자 · ${m.bytes}B`;
 
     if (autoSaveEnabled) {
       if (val.trim()) {
@@ -4436,11 +5232,11 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       if (activeTemplateState) saveTemplateDraft(activeTemplateState);
     }
 
-    const curResult = (!activeTemplateState && val.trim()) ? processText(val) : null;
+    const curResult = (!activeTemplateState && val.trim()) ? processText(val, { attachments: attachedImagesMap }) : null;
     if (curResult) {
       formulaCount.textContent = `수식 ${curResult.totalFormulas}개`;
     } else if (val.trim()) {
-      const quickRes = processText(val);
+      const quickRes = processText(val, { attachments: attachedImagesMap });
       formulaCount.textContent = `수식 ${quickRes.totalFormulas}개`;
     } else {
       formulaCount.textContent = '수식 0개';
@@ -4449,6 +5245,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     renderPreviewWithTemplateState(curResult);
     updateActiveSlotSummaryText();
     updateActiveSlotResetVisibility();
+    updateAttachedImageBadge();
   }
 
   function updateActiveSlotResetVisibility() {
@@ -4462,52 +5259,539 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     renderEditedSlotsNav();
   }
 
-  mathQuickBar.addEventListener('click', (e) => {
-    const btn = e.target && e.target.closest('.math-snip-btn');
-    if (!btn) return;
-    const rawSnippet = btn.getAttribute('data-snippet') || '';
-    if (!rawSnippet) return;
+  function isInsideMathAtCursor(text, cursorPos) {
+    const before = String(text || '').slice(0, Math.max(0, cursorPos));
+    const blockCount = (before.match(/\$\$/g) || []).length;
+    if (blockCount % 2 === 1) return true;
+    const withoutBlocks = before.replace(/\$\$[\s\S]*?\$\$/g, '');
+    const lastNl = withoutBlocks.lastIndexOf('\n');
+    const curLineBefore = lastNl >= 0 ? withoutBlocks.slice(lastNl + 1) : withoutBlocks;
+    let unescapedSingle = 0;
+    for (let i = 0; i < curLineBefore.length; i++) {
+      if (curLineBefore[i] === '$' && (i === 0 || curLineBefore[i - 1] !== '\\')) {
+        unescapedSingle++;
+      }
+    }
+    return unescapedSingle % 2 === 1;
+  }
 
-    const start = rawInput.selectionStart || 0;
-    const end = rawInput.selectionEnd || 0;
+  function insertSnippetAtCursor(rawSnippet, options = {}) {
+    if (!rawSnippet) return;
+    pushUndoSnapshot();
+    const len = rawInput.value.length;
+    const start = typeof options.forcePos === 'number'
+      ? Math.max(0, Math.min(len, options.forcePos))
+      : (rawInput.selectionStart || 0);
+    const end = typeof options.forcePos === 'number'
+      ? start
+      : (rawInput.selectionEnd || 0);
     const selected = rawInput.value.slice(start, end);
     const markerToken = '%%CURSOR%%';
-    const markerIdx = rawSnippet.indexOf(markerToken);
-    let inserted = rawSnippet;
-    let caretOffset = rawSnippet.length;
+    const wrapMath = Boolean(options.needsWrap) && !isInsideMathAtCursor(rawInput.value, start);
+    const defaultPrefix = (wrapMath && !selected && options.defaultPrefixWhenPlain) ? options.defaultPrefixWhenPlain : '';
+
+    let workingSnippet = rawSnippet;
+    if (wrapMath && !/\$/.test(rawSnippet)) {
+      workingSnippet = `$${defaultPrefix}${rawSnippet}$`;
+    }
+
+    const markerIdx = workingSnippet.indexOf(markerToken);
+    let inserted = workingSnippet;
+    let caretOffset = workingSnippet.length;
     if (markerIdx !== -1) {
-      const before = rawSnippet.slice(0, markerIdx);
-      const after = rawSnippet.slice(markerIdx + markerToken.length);
+      const before = workingSnippet.slice(0, markerIdx);
+      const after = workingSnippet.slice(markerIdx + markerToken.length);
       inserted = before + selected + after;
       caretOffset = before.length + selected.length;
     }
 
+    if (options.separateIfNeeded && start > 0) {
+      const prevCh = rawInput.value[start - 1];
+      if (prevCh && !/\s/.test(prevCh) && !inserted.startsWith('\n') && !inserted.startsWith(' ')) {
+        const sep = inserted.startsWith('$$') ? '\n' : ' ';
+        inserted = sep + inserted;
+        caretOffset += sep.length;
+      }
+    }
+
     rawInput.value = rawInput.value.slice(0, start) + inserted + rawInput.value.slice(end);
+    rawInputHasCursor = true;
     rawInput.focus();
     rawInput.setSelectionRange(start + caretOffset, start + caretOffset);
+    lastTypedSnapshotText = rawInput.value;
     updateAll();
+  }
+
+  // --- 시각적 KaTeX 수식 카드 팔레트 (클릭 + 드래그 동시 지원) ---
+  const MATH_VISUAL_CARDS = [
+    { label: '분수', preview: '\\frac{a}{b}', snippet: '\\frac{%%CURSOR%%}{}', wrap: true },
+    { label: '루트', preview: '\\sqrt{x}', snippet: '\\sqrt{%%CURSOR%%}', wrap: true },
+    { label: '제곱', preview: 'x^{n}', snippet: '^{%%CURSOR%%}', wrap: true, defaultPrefix: 'x' },
+    { label: '절댓값', preview: '\\left|x\\right|', snippet: '\\left| %%CURSOR%% \\right|', wrap: true },
+    { label: '극한', preview: '\\lim_{x\\to a}', snippet: '\\lim_{x \\to %%CURSOR%%}', wrap: true },
+    { label: '시그마', preview: '\\sum_{k=1}^{n}', snippet: '\\sum_{k=1}^{n} %%CURSOR%%', wrap: true },
+    { label: '정적분', preview: '\\int_{a}^{b} dx', snippet: '\\int_{a}^{b} %%CURSOR%% \\,dx', wrap: true },
+    { label: '도함수', preview: '\\frac{d}{dx}', snippet: '\\frac{d}{dx}(%%CURSOR%%)', wrap: true },
+    { label: '2×2 행렬', preview: '\\begin{bmatrix}a&b\\\\c&d\\end{bmatrix}', snippet: '$$\n\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}\n$$', wrap: false },
+    { label: '연립', preview: '\\begin{cases}x\\\\y\\end{cases}', snippet: '$$\n\\begin{cases} x%%CURSOR%%, & x \\ge 0 \\\\ -x, & x < 0 \\end{cases}\n$$', wrap: false },
+    { label: '로그', preview: '\\log_{a} b', snippet: '\\log_{%%CURSOR%%}{}', wrap: true },
+    { label: '벡터', preview: '\\vec{a}', snippet: '\\vec{%%CURSOR%%}', wrap: true }
+  ];
+
+  function renderMathVisualCards() {
+    if (!mathVisualCardGrid) return;
+    mathVisualCardGrid.innerHTML = '';
+    MATH_VISUAL_CARDS.forEach(card => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.draggable = true;
+      btn.className = 'math-visual-card flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 min-h-[48px] rounded-xl bg-slate-800/95 border border-slate-700 text-slate-100 touch-manipulation';
+      btn.setAttribute('data-snippet', card.snippet);
+      btn.setAttribute('data-needs-wrap', card.wrap ? 'true' : 'false');
+      if (card.defaultPrefix) btn.setAttribute('data-default-prefix', card.defaultPrefix);
+      btn.title = `${card.label}: 클릭해 커서에 삽입하거나 에디터/표 칸 위로 끌어다 놓기`;
+
+      const mathBox = document.createElement('span');
+      mathBox.className = 'leading-none';
+      if (typeof katex !== 'undefined') {
+        try {
+          mathBox.innerHTML = katex.renderToString(card.preview, { displayMode: false, throwOnError: false });
+        } catch (e) {
+          mathBox.textContent = card.label;
+        }
+      } else {
+        mathBox.textContent = card.preview;
+      }
+
+      const cap = document.createElement('span');
+      cap.className = 'text-[10px] text-slate-400 font-medium leading-tight';
+      cap.textContent = card.label;
+
+      btn.appendChild(mathBox);
+      btn.appendChild(cap);
+      mathVisualCardGrid.appendChild(btn);
+    });
+  }
+
+  renderMathVisualCards();
+
+  btnToggleMathCards.addEventListener('click', () => {
+    const willHide = !mathVisualCardGrid.classList.contains('hidden');
+    mathVisualCardGrid.classList.toggle('hidden', willHide);
+    btnToggleMathCards.setAttribute('aria-expanded', willHide ? 'false' : 'true');
+    btnToggleMathCards.textContent = willHide ? '수식 카드 ▸' : '수식 카드 ▾';
+  });
+
+  // --- 개인 맞춤 스니펫 관리 ---
+  function loadCustomSnippets() {
+    try {
+      const raw = localStorage.getItem(CUSTOM_SNIPPETS_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter(s => s && s.label && s.snippet) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveCustomSnippets(list) {
+    try {
+      localStorage.setItem(CUSTOM_SNIPPETS_KEY, JSON.stringify(list));
+    } catch (e) {
+      // Ignore quota errors
+    }
+  }
+
+  function renderCustomSnippets() {
+    const list = loadCustomSnippets();
+    customSnippetsRow.innerHTML = '';
+    if (list.length === 0) {
+      customSnippetsRow.classList.add('hidden');
+      return;
+    }
+    customSnippetsRow.classList.remove('hidden');
+    const tag = document.createElement('span');
+    tag.className = 'text-[11px] text-amber-300/90 font-medium mr-1';
+    tag.textContent = '★ 내 버튼:';
+    customSnippetsRow.appendChild(tag);
+
+    list.forEach((item, idx) => {
+      const wrap = document.createElement('span');
+      wrap.className = 'inline-flex items-center rounded-lg bg-amber-950/50 border border-amber-800/60 overflow-hidden';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.draggable = true;
+      btn.className = 'math-snip-btn px-2 py-1 text-[11px] text-amber-200 hover:bg-amber-900/60 touch-manipulation cursor-grab';
+      btn.setAttribute('data-snippet', item.snippet);
+      btn.textContent = item.label;
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'px-1.5 py-1 text-[10px] text-amber-400/70 hover:text-red-300 hover:bg-red-950/60';
+      delBtn.title = '삭제';
+      delBtn.textContent = '×';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const next = loadCustomSnippets().filter((_, i) => i !== idx);
+        saveCustomSnippets(next);
+        renderCustomSnippets();
+      });
+
+      wrap.appendChild(btn);
+      wrap.appendChild(delBtn);
+      customSnippetsRow.appendChild(wrap);
+    });
+  }
+
+  renderCustomSnippets();
+
+  mathQuickBar.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest('.math-visual-card, .math-snip-btn');
+    if (!btn) return;
+    insertSnippetAtCursor(btn.getAttribute('data-snippet') || '', {
+      needsWrap: btn.getAttribute('data-needs-wrap') === 'true',
+      defaultPrefixWhenPlain: btn.getAttribute('data-default-prefix') || ''
+    });
+  });
+
+  // 수식 카드 / 빠른 삽입 버튼 드래그 시작
+  mathQuickBar.addEventListener('dragstart', (e) => {
+    const btn = e.target && e.target.closest('.math-visual-card, .math-snip-btn');
+    if (!btn) return;
+    const snippet = btn.getAttribute('data-snippet') || '';
+    if (!snippet) return;
+    const needsWrap = btn.getAttribute('data-needs-wrap') === 'true';
+    const defaultPrefix = btn.getAttribute('data-default-prefix') || '';
+    activeDragPayload = { kind: 'snippet', snippet, needsWrap, defaultPrefix };
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData(MIME_SNIPPET, snippet);
+      e.dataTransfer.setData(MIME_WRAP_FLAG, needsWrap ? '1' : '0');
+      e.dataTransfer.setData('text/plain', snippet.replace(/%%CURSOR%%/g, ''));
+    }
+  });
+
+  // 수정된 칸 칩 드래그 시작 -> 오른쪽 다른 표 칸에 내용 복사
+  editedSlotsChipList.addEventListener('dragstart', (e) => {
+    const chip = e.target && e.target.closest('[data-jump-uid]');
+    if (!chip || !activeTemplateState) return;
+    const uid = chip.dataset.jumpUid;
+    if (!activeTemplateState.slotEdits.has(uid)) return;
+    activeDragPayload = { kind: 'slot', sourceUid: uid };
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData(MIME_SLOT_UID, uid);
+      e.dataTransfer.setData('text/plain', activeTemplateState.slotEdits.get(uid)?.text || '');
+    }
+  });
+
+  // 에디터(#rawInput) 커서 Tracking 및 드롭 수신
+  ['click', 'keyup', 'focus'].forEach(evt => {
+    rawInput.addEventListener(evt, () => { rawInputHasCursor = true; });
+  });
+
+  rawInput.addEventListener('dragover', (e) => {
+    const isInternalSnippet = Boolean(activeDragPayload && activeDragPayload.kind === 'snippet') ||
+      (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes(MIME_SNIPPET));
+    if (!isInternalSnippet) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    rawInput.classList.add('drag-target-active');
+  });
+
+  rawInput.addEventListener('dragleave', () => {
+    rawInput.classList.remove('drag-target-active');
+  });
+
+  rawInput.addEventListener('drop', (e) => {
+    const isInternalSnippet = Boolean(activeDragPayload && activeDragPayload.kind === 'snippet') ||
+      (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes(MIME_SNIPPET));
+    if (!isInternalSnippet) return;
+    e.preventDefault();
+    e.stopPropagation();
+    rawInput.classList.remove('drag-target-active');
+    const snippet = (activeDragPayload && activeDragPayload.snippet) || e.dataTransfer.getData(MIME_SNIPPET) || '';
+    const needsWrap = activeDragPayload ? activeDragPayload.needsWrap : (e.dataTransfer.getData(MIME_WRAP_FLAG) === '1');
+    const defaultPrefix = activeDragPayload ? activeDragPayload.defaultPrefix : '';
+    activeDragPayload = null;
+    if (!snippet) return;
+    const insertPos = rawInputHasCursor ? (rawInput.selectionStart || 0) : rawInput.value.length;
+    insertSnippetAtCursor(snippet, {
+      forcePos: insertPos,
+      needsWrap,
+      defaultPrefixWhenPlain: defaultPrefix,
+      separateIfNeeded: !rawInputHasCursor
+    });
+  });
+
+  // 오른쪽 실시간 미리보기 표 칸·문단 직접 드롭 수신 (수식 카드 또는 수정된 칸 칩)
+  let currentHoveredDropEl = null;
+  function clearPreviewDropHighlight() {
+    if (currentHoveredDropEl) {
+      currentHoveredDropEl.classList.remove('hwpx-slot-drop-target');
+      currentHoveredDropEl = null;
+    }
+  }
+
+  renderOutput.addEventListener('dragover', (e) => {
+    if (!activeTemplateState) return;
+    const types = e.dataTransfer ? Array.from(e.dataTransfer.types || []) : [];
+    const canAccept = Boolean(activeDragPayload) || types.includes(MIME_SNIPPET) || types.includes(MIME_SLOT_UID);
+    if (!canAccept) return;
+    const slotEl = e.target && (e.target.closest('[data-slot-uid]') || e.target.closest('[data-cell-slot-uid]'));
+    if (!slotEl) {
+      clearPreviewDropHighlight();
+      return;
+    }
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    if (currentHoveredDropEl !== slotEl) {
+      clearPreviewDropHighlight();
+      currentHoveredDropEl = slotEl;
+      currentHoveredDropEl.classList.add('hwpx-slot-drop-target');
+    }
+  });
+
+  renderOutput.addEventListener('dragleave', (e) => {
+    if (currentHoveredDropEl && (!e.relatedTarget || !renderOutput.contains(e.relatedTarget))) {
+      clearPreviewDropHighlight();
+    }
+  });
+
+  renderOutput.addEventListener('drop', (e) => {
+    clearPreviewDropHighlight();
+    if (!activeTemplateState) return;
+    const types = e.dataTransfer ? Array.from(e.dataTransfer.types || []) : [];
+    const slotEl = e.target && (e.target.closest('[data-slot-uid]') || e.target.closest('[data-cell-slot-uid]'));
+    if (!slotEl) return;
+
+    const uid = slotEl.getAttribute('data-slot-uid') || slotEl.getAttribute('data-cell-slot-uid');
+    const targetSlot = uid ? activeTemplateState.slots.find(s => s.uid === uid) : null;
+    if (!targetSlot) return;
+
+    const sourceUid = (activeDragPayload && activeDragPayload.kind === 'slot' ? activeDragPayload.sourceUid : '') ||
+      (e.dataTransfer ? e.dataTransfer.getData(MIME_SLOT_UID) : '');
+    const snippet = (activeDragPayload && activeDragPayload.kind === 'snippet' ? activeDragPayload.snippet : '') ||
+      (e.dataTransfer ? e.dataTransfer.getData(MIME_SNIPPET) : '');
+
+    if (!sourceUid && !snippet) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (sourceUid) {
+      activeDragPayload = null;
+      if (sourceUid === uid) return;
+      const srcEdit = activeTemplateState.slotEdits.get(sourceUid);
+      const srcSlot = activeTemplateState.slots.find(s => s.uid === sourceUid);
+      const copiedText = srcEdit ? srcEdit.text : getDefaultTextForSlot(srcSlot);
+      pushUndoSnapshot('batch', Array.from(activeTemplateState.slotEdits.entries()));
+      syncCurrentInputToActiveSlot();
+      activeTemplateState.globalMode = null;
+      activeTemplateState.selectedSlotUid = uid;
+      activeTemplateState.selectedSectionPath = targetSlot.sectionPath;
+      activeTemplateState.slotEdits.set(uid, { text: copiedText, mode: 'replace' });
+      loadSlotIntoEditor(uid);
+      renderTemplateUi();
+      showToast(`<b>${escapeHtml(targetSlot.locationLabel)}</b> 칸으로 내용을 복사했습니다!`);
+      return;
+    }
+
+    const needsWrap = activeDragPayload ? activeDragPayload.needsWrap : (types.includes(MIME_WRAP_FLAG) && e.dataTransfer.getData(MIME_WRAP_FLAG) === '1');
+    const defaultPrefix = activeDragPayload ? activeDragPayload.defaultPrefix : '';
+    activeDragPayload = null;
+
+    syncCurrentInputToActiveSlot();
+    activeTemplateState.globalMode = null;
+    activeTemplateState.selectedSlotUid = uid;
+    activeTemplateState.selectedSectionPath = targetSlot.sectionPath;
+    loadSlotIntoEditor(uid);
+    renderTemplateUi();
+    insertSnippetAtCursor(snippet, {
+      forcePos: rawInput.value.length,
+      needsWrap,
+      defaultPrefixWhenPlain: defaultPrefix,
+      separateIfNeeded: true
+    });
+    showToast(`<b>${escapeHtml(targetSlot.locationLabel)}</b> 칸에 수식을 추가했습니다!`);
+  });
+
+  window.addEventListener('dragend', () => {
+    activeDragPayload = null;
+    clearPreviewDropHighlight();
+    rawInput.classList.remove('drag-target-active');
+  });
+
+  btnToggleMatrixBuilder.addEventListener('click', () => {
+    matrixBuilderBar.classList.toggle('hidden');
+  });
+  btnCloseMatrixBuilder.addEventListener('click', () => {
+    matrixBuilderBar.classList.add('hidden');
+  });
+  btnInsertBuiltMatrix.addEventListener('click', () => {
+    const r = Math.min(8, Math.max(1, parseInt(matRowsInput.value, 10) || 2));
+    const c = Math.min(8, Math.max(1, parseInt(matColsInput.value, 10) || 2));
+    const t = matTypeSelect.value || 'bmatrix';
+    let body = '';
+    if (t === 'korean') {
+      const rows = [];
+      for (let i = 0; i < r; i++) {
+        const cols = [];
+        for (let j = 0; j < c; j++) {
+          cols.push(i === 0 && j === 0 ? '1%%CURSOR%%' : (i === j ? '1' : '0'));
+        }
+        rows.push(cols.join(', '));
+      }
+      body = `$$\n행렬 [${rows.join('; ')}]\n$$`;
+    } else if (t === 'cases') {
+      const rows = [];
+      for (let i = 0; i < r; i++) {
+        rows.push(i === 0 ? 'x%%CURSOR%%, & x \\ge 0' : '-x, & x < 0');
+      }
+      body = `$$\n\\begin{cases}\n${rows.join(' \\\\\n')}\n\\end{cases}\n$$`;
+    } else {
+      const rows = [];
+      for (let i = 0; i < r; i++) {
+        const cols = [];
+        for (let j = 0; j < c; j++) {
+          cols.push(i === 0 && j === 0 ? '1%%CURSOR%%' : (i === j ? '1' : '0'));
+        }
+        rows.push(cols.join(' & '));
+      }
+      body = `$$\n\\begin{${t}}\n${rows.join(' \\\\\n')}\n\\end{${t}}\n$$`;
+    }
+    insertSnippetAtCursor(body);
+    matrixBuilderBar.classList.add('hidden');
+  });
+
+  btnToggleSnippetManager.addEventListener('click', () => {
+    snippetManagerBar.classList.toggle('hidden');
+    if (!snippetManagerBar.classList.contains('hidden')) {
+      const s = rawInput.selectionStart || 0;
+      const e = rawInput.selectionEnd || 0;
+      const sel = rawInput.value.slice(s, e);
+      if (sel && !customSnipCodeInput.value) customSnipCodeInput.value = sel;
+      customSnipLabelInput.focus();
+    }
+  });
+  btnCloseSnippetManager.addEventListener('click', () => {
+    snippetManagerBar.classList.add('hidden');
+  });
+  btnSaveCustomSnippet.addEventListener('click', () => {
+    const label = customSnipLabelInput.value.trim();
+    const s = rawInput.selectionStart || 0;
+    const e = rawInput.selectionEnd || 0;
+    const code = customSnipCodeInput.value || rawInput.value.slice(s, e) || rawInput.value;
+    if (!label || !code.trim()) {
+      showToast('버튼 이름과 삽입할 문구를 입력해 주세요.');
+      return;
+    }
+    const list = loadCustomSnippets();
+    list.push({ label, snippet: code });
+    saveCustomSnippets(list);
+    renderCustomSnippets();
+    customSnipLabelInput.value = '';
+    customSnipCodeInput.value = '';
+    snippetManagerBar.classList.add('hidden');
+    showToast(`나만의 버튼 '${escapeHtml(label)}'이(가) 추가되었습니다.`);
+  });
+
+  // --- 이미지 첨부 (Ctrl+V, 버튼 업로드, 드래그앤드롭) ---
+  async function attachImageFileAndInsert(file) {
+    if (!file) return;
+    const mimeRaw = (file.type || '').toLowerCase();
+    const mime = mimeRaw === 'image/jpg' ? 'image/jpeg' : mimeRaw;
+    if (!/^image\/(?:png|jpeg|gif|webp|bmp)$/.test(mime)) {
+      showToast('PNG, JPG, GIF, WebP, BMP 이미지만 첨부할 수 있습니다.');
+      return;
+    }
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    const b64 = uint8ToBase64(bytes);
+    const dataUrl = `data:${mime};base64,${b64}`;
+
+    let widthPx = 640;
+    let heightPx = 400;
+    await new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        widthPx = img.naturalWidth || 640;
+        heightPx = img.naturalHeight || 400;
+        resolve();
+      };
+      img.onerror = () => resolve();
+      img.src = dataUrl;
+    });
+
+    const id = `att_${Date.now().toString(36)}_${attachmentSeq++}`;
+    const extMap = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'image/bmp': 'bmp' };
+    const cleanName = (file.name || `그림_${attachmentSeq - 1}.${extMap[mime] || 'png'}`).replace(/[\[\]()\r\n]/g, '_');
+    const attRecord = {
+      id,
+      name: cleanName,
+      mime,
+      ext: extMap[mime] || 'png',
+      base64: b64,
+      widthPx,
+      heightPx,
+      addedAt: Date.now()
+    };
+    attachedImagesMap.set(id, attRecord);
+    if (autoSaveEnabled) await idbSaveAttachment(attRecord);
+
+    insertSnippetAtCursor(`\n![${cleanName}](hwpx-img://${id})\n`);
+    showToast(`이미지 <b>${escapeHtml(cleanName)}</b> 첨부 완료! (.hwpx 다운로드 시 함께 저장됩니다)`);
+  }
+
+  btnInsertImage.addEventListener('click', () => {
+    imageFileInput.value = '';
+    imageFileInput.click();
+  });
+  imageFileInput.addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) await attachImageFileAndInsert(f);
+  });
+
+  rawInput.addEventListener('paste', async (e) => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.kind === 'file' && /^image\/(?:png|jpeg|gif|webp|bmp)/i.test(item.type)) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) await attachImageFileAndInsert(file);
+        return;
+      }
+    }
+  });
+
+  slotNavFilterGroup.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest('[data-slot-filter]');
+    if (!btn) return;
+    slotNavFilter = btn.dataset.slotFilter || 'edited';
+    renderEditedSlotsNav();
+  });
+
+  btnNextEmptySlot.addEventListener('click', () => {
+    if (!activeTemplateState) return;
+    const targets = collectHwpxEditableTargets(activeTemplateState.slots);
+    const unfilled = targets.filter(t => t.recommended && !activeTemplateState.slotEdits.has(t.uid));
+    const fallbackUnfilled = unfilled.length > 0 ? unfilled : targets.filter(t => !activeTemplateState.slotEdits.has(t.uid));
+    if (fallbackUnfilled.length === 0) {
+      showToast('모든 추천 입력 칸 작성이 완료되었습니다!');
+      return;
+    }
+    const curIdx = fallbackUnfilled.findIndex(t => t.uid === activeTemplateState.selectedSlotUid);
+    const nextTarget = fallbackUnfilled[(curIdx + 1) % fallbackUnfilled.length];
+    jumpToSlotUid(nextTarget.uid);
   });
 
   editedSlotsChipList.addEventListener('click', (e) => {
     const chip = e.target && e.target.closest('[data-jump-uid]');
     if (!chip || !activeTemplateState) return;
-    const uid = chip.dataset.jumpUid;
-    const slot = activeTemplateState.slots.find(s => s.uid === uid);
-    if (!slot) return;
-
-    syncCurrentInputToActiveSlot();
-    activeTemplateState.globalMode = null;
-    activeTemplateState.selectedSlotUid = uid;
-    activeTemplateState.selectedSectionPath = slot.sectionPath;
-    loadSlotIntoEditor(uid);
-    renderTemplateUi();
-
-    const targetEl = renderOutput.querySelector(`[data-slot-uid="${CSS.escape(uid)}"], [data-cell-slot-uid="${CSS.escape(uid)}"]`);
-    if (targetEl && typeof targetEl.scrollIntoView === 'function') {
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    rawInput.focus();
+    jumpToSlotUid(chip.dataset.jumpUid);
   });
+
+  btnUndoEdit.addEventListener('click', performUndo);
 
   btnToggleAutoSave.addEventListener('click', async () => {
     autoSaveEnabled = !autoSaveEnabled;
@@ -4527,7 +5811,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       } catch (e) {
         // Ignore storage errors
       }
-      await idbClearAllTemplates();
+      await idbClearAllStores();
       btnRestoreLast.classList.add('hidden');
       showToast('자동 저장이 꺼졌습니다. 기존 브라우저 임시 저장 내역을 비웠습니다.');
     } else {
@@ -4545,13 +5829,30 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       for (const tpl of runtimeTemplates) {
         await idbSaveTemplate(tpl);
       }
+      for (const att of attachedImagesMap.values()) {
+        await idbSaveAttachment(att);
+      }
       persistStoredTemplates();
-      showToast('자동 저장이 켜졌습니다. 양식과 칸별 입력이 브라우저에 자동 저장됩니다.');
+      showToast('자동 저장이 켜졌습니다. 양식·칸별 입력·첨부 이미지가 자동 저장됩니다.');
     }
   });
 
   let debounceTimer = null;
   rawInput.addEventListener('input', () => {
+    const now = Date.now();
+    if (now - lastTypedSnapshotAt > 900 || Math.abs(rawInput.value.length - lastTypedSnapshotText.length) > 15) {
+      undoStack.push({
+        kind: 'slot',
+        templateId: activeTemplateState ? activeTemplateState.id : null,
+        selectedSlotUid: activeTemplateState ? activeTemplateState.selectedSlotUid : null,
+        globalMode: activeTemplateState ? activeTemplateState.globalMode : null,
+        rawText: lastTypedSnapshotText
+      });
+      if (undoStack.length > 50) undoStack.shift();
+      btnUndoEdit.disabled = false;
+      lastTypedSnapshotText = rawInput.value;
+      lastTypedSnapshotAt = now;
+    }
     if (activeTemplateState) syncCurrentInputToActiveSlot();
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(updateAll, 80);
@@ -4600,11 +5901,22 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
   }
 
   document.getElementById('btnCopyClean').addEventListener('click', () => {
-    const fresh = processText(rawInput.value);
+    const fresh = processText(rawInput.value, { attachments: attachedImagesMap });
     copyToClipboard(fresh.cleanedSource || rawInput.value, "정제된 LaTeX 텍스트가 복사되었습니다!");
   });
 
+  btnCopyHwpEq.addEventListener('click', () => {
+    const fresh = processText(rawInput.value, { attachments: attachedImagesMap });
+    const scripts = (fresh.extractedFormulas || []).map(f => f.hwp).filter(Boolean);
+    if (scripts.length === 0) {
+      showToast('복사할 수식이 없습니다.');
+      return;
+    }
+    copyToClipboard(scripts.join('\n'), `한글(HWP) 수식 ${scripts.length}개가 복사되었습니다! (Ctrl+N, M에 붙여넣기)`, true);
+  });
+
   document.getElementById('btnLoadSample').addEventListener('click', () => {
+    pushUndoSnapshot();
     rawInput.value = SAMPLE_TEXT;
     if (activeTemplateState) {
       if (activeTemplateState.globalMode === 'replace_body') {
@@ -4616,6 +5928,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         });
       }
     }
+    lastTypedSnapshotText = rawInput.value;
     updateAll();
     showToast("실제 오류 예시 텍스트를 불러왔습니다.");
   });
@@ -4869,26 +6182,24 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     const carriedText = preserveExistingText ? rawInput.value : '';
     setActiveTemplateState(nextState);
     if (activeTemplateState) {
-      if (autoSaveEnabled) {
-        const drafts = loadTemplateDraftsMap();
-        const savedDraft = drafts[activeTemplateState.id];
-        if (savedDraft && typeof savedDraft === 'object') {
-          if (Array.isArray(savedDraft.slotEdits)) {
-            const validUids = new Set(activeTemplateState.slots.map(s => s.uid));
-            savedDraft.slotEdits.forEach(([uid, entry]) => {
-              if (validUids.has(uid) && entry && typeof entry.text === 'string') {
-                activeTemplateState.slotEdits.set(uid, { text: entry.text, mode: entry.mode || 'replace' });
-              }
-            });
-          }
-          if (savedDraft.selectedSlotUid && activeTemplateState.slots.some(s => s.uid === savedDraft.selectedSlotUid)) {
-            activeTemplateState.selectedSlotUid = savedDraft.selectedSlotUid;
-          }
-          if (savedDraft.currentMode) activeTemplateState.currentMode = savedDraft.currentMode;
-          if (savedDraft.globalMode === 'replace_body') {
-            activeTemplateState.globalMode = 'replace_body';
-            activeTemplateState.replaceBodyText = savedDraft.replaceBodyText || '';
-          }
+      const drafts = autoSaveEnabled ? loadTemplateDraftsMap() : inMemoryTemplateDrafts;
+      const savedDraft = (drafts && drafts[activeTemplateState.id]) || inMemoryTemplateDrafts[activeTemplateState.id];
+      if (savedDraft && typeof savedDraft === 'object') {
+        if (Array.isArray(savedDraft.slotEdits)) {
+          const validUids = new Set(activeTemplateState.slots.map(s => s.uid));
+          savedDraft.slotEdits.forEach(([uid, entry]) => {
+            if (validUids.has(uid) && entry && typeof entry.text === 'string') {
+              activeTemplateState.slotEdits.set(uid, { text: entry.text, mode: entry.mode || 'replace' });
+            }
+          });
+        }
+        if (savedDraft.selectedSlotUid && activeTemplateState.slots.some(s => s.uid === savedDraft.selectedSlotUid)) {
+          activeTemplateState.selectedSlotUid = savedDraft.selectedSlotUid;
+        }
+        if (savedDraft.currentMode) activeTemplateState.currentMode = savedDraft.currentMode;
+        if (savedDraft.globalMode === 'replace_body') {
+          activeTemplateState.globalMode = 'replace_body';
+          activeTemplateState.replaceBodyText = savedDraft.replaceBodyText || '';
         }
       }
       if (carriedText.trim() && activeTemplateState.selectedSlotUid && !activeTemplateState.slotEdits.has(activeTemplateState.selectedSlotUid)) {
@@ -4955,15 +6266,8 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     }
   }
 
-  btnLoadTemplate.addEventListener('click', () => {
-    templateFileInput.value = '';
-    templateFileInput.click();
-  });
-
-  templateFileInput.addEventListener('change', async (e) => {
-    const file = e.target.files && e.target.files[0];
+  async function handleHwpxTemplateFile(file) {
     if (!file) return;
-
     try {
       const hadTemplate = Boolean(activeTemplateState);
       const buf = await file.arrayBuffer();
@@ -5031,6 +6335,16 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       console.error('양식 불러오기 실패:', err);
       showToast('양식을 불러올 수 없습니다: ' + escapeHtml(err && err.message ? err.message : String(err)));
     }
+  }
+
+  btnLoadTemplate.addEventListener('click', () => {
+    templateFileInput.value = '';
+    templateFileInput.click();
+  });
+
+  templateFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) await handleHwpxTemplateFile(file);
   });
 
   templateSelect.addEventListener('change', (e) => {
@@ -5085,6 +6399,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
   btnResetActiveSlot.addEventListener('click', () => {
     if (!activeTemplateState || !activeTemplateState.selectedSlotUid) return;
+    pushUndoSnapshot('batch', Array.from(activeTemplateState.slotEdits.entries()));
     const uid = activeTemplateState.selectedSlotUid;
     activeTemplateState.slotEdits.delete(uid);
     activeTemplateState.globalMode = null;
@@ -5095,6 +6410,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
   btnResetAllSlots.addEventListener('click', () => {
     if (!activeTemplateState) return;
+    pushUndoSnapshot('batch', Array.from(activeTemplateState.slotEdits.entries()));
     activeTemplateState.slotEdits.clear();
     activeTemplateState.globalMode = null;
     activeTemplateState.replaceBodyText = '';
@@ -5118,19 +6434,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     if (!slotEl) return;
     const uid = slotEl.getAttribute('data-slot-uid') || slotEl.getAttribute('data-cell-slot-uid');
     if (!uid) return;
-    const slot = activeTemplateState.slots.find(s => s.uid === uid);
-    if (!slot) return;
-
-    syncCurrentInputToActiveSlot();
-    activeTemplateState.globalMode = null;
-    activeTemplateState.selectedSlotUid = uid;
-    activeTemplateState.selectedSectionPath = slot.sectionPath;
-    loadSlotIntoEditor(uid);
-    renderTemplateUi();
-
-    rawInput.focus();
-    const len = rawInput.value.length;
-    rawInput.setSelectionRange(len, len);
+    jumpToSlotUid(uid);
   });
 
   async function downloadHwpxFilesAsZip(pkgFiles, binaryEntries, fileName) {
@@ -5149,7 +6453,7 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
       }
     });
 
-    // 3. 양식에 포함된 이미지/바이너리 리소스(BinData/* 등) 원본 그대로 보존
+    // 3. 양식에 포함된 이미지 및 사용자 첨부 이미지(BinData/* 등) 저장
     Object.entries(binaryEntries || {}).forEach(([path, uint8]) => {
       zip.file(path, uint8, { compression: "DEFLATE" });
     });
@@ -5235,14 +6539,18 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
           });
         }
         const applied = applyEditsToHwpxTemplateFiles(activeTemplateState.textFiles, editsList, {
-          sectionPath: activeTemplateState.selectedSectionPath
+          sectionPath: activeTemplateState.selectedSectionPath,
+          attachments: attachedImagesMap,
+          existingBinaryFiles: activeTemplateState.binaryFiles || {}
         }, now);
         pkgFiles = applied.files;
-        binaryEntries = activeTemplateState.binaryFiles || {};
+        binaryEntries = { ...(activeTemplateState.binaryFiles || {}), ...(applied.binaryFiles || {}) };
         const stem = activeTemplateState.name.replace(/\.hwpx$/i, '').replace(/[\\/:*?"<>|]/g, '_');
         basePrefix = `AI_Math_${stem || 'Template'}`;
       } else {
-        pkgFiles = buildHwpxPackageFiles(rawInput.value, now).files;
+        const built = buildHwpxPackageFiles(rawInput.value, now, { attachments: attachedImagesMap });
+        pkgFiles = built.files;
+        binaryEntries = built.binaryFiles || {};
       }
 
       const dateStr = now.getFullYear() + ('0' + (now.getMonth() + 1)).slice(-2) + ('0' + now.getDate()).slice(-2) + '_' + ('0' + now.getHours()).slice(-2) + ('0' + now.getMinutes()).slice(-2);
@@ -5259,6 +6567,173 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
 
   document.getElementById('btnDownloadHwpx').addEventListener('click', exportToHwpx);
 
+  // --- 작업 백업(.json) 내보내기 / 복원 모달 ---
+  const backupModal = document.getElementById('backupModal');
+  const btnOpenBackupModal = document.getElementById('btnOpenBackupModal');
+  const btnCloseBackupModal = document.getElementById('btnCloseBackupModal');
+  const btnExportWorkspaceJson = document.getElementById('btnExportWorkspaceJson');
+  const backupJsonFileInput = document.getElementById('backupJsonFileInput');
+  const btnImportWorkspaceJson = document.getElementById('btnImportWorkspaceJson');
+
+  btnOpenBackupModal.addEventListener('click', () => backupModal.classList.remove('hidden'));
+  btnCloseBackupModal.addEventListener('click', () => backupModal.classList.add('hidden'));
+  backupModal.addEventListener('click', (e) => {
+    if (e.target === backupModal) backupModal.classList.add('hidden');
+  });
+
+  btnExportWorkspaceJson.addEventListener('click', () => {
+    if (activeTemplateState) {
+      syncCurrentInputToActiveSlot();
+      saveTemplateDraft(activeTemplateState);
+    }
+    const drafts = loadTemplateDraftsMap();
+    if (activeTemplateState && activeTemplateState.id) {
+      drafts[activeTemplateState.id] = {
+        selectedSlotUid: activeTemplateState.selectedSlotUid,
+        currentMode: activeTemplateState.currentMode,
+        globalMode: activeTemplateState.globalMode,
+        replaceBodyText: activeTemplateState.replaceBodyText || '',
+        slotEdits: Array.from(activeTemplateState.slotEdits.entries()),
+        updatedAt: Date.now()
+      };
+    }
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      autoSaveEnabled,
+      rawInputValue: rawInput.value,
+      selectedTemplateId: activeTemplateState ? activeTemplateState.id : DEFAULT_TEMPLATE_ID,
+      runtimeTemplates: runtimeTemplates.map(({ id, name, base64, size, addedAt }) => ({ id, name, base64, size, addedAt })),
+      templateDrafts: drafts,
+      attachments: Array.from(attachedImagesMap.values()),
+      customSnippets: loadCustomSnippets()
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const now = new Date();
+    const ds = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    a.download = `AI_Math_Workspace_${ds}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('전체 작업 백업(.json) 파일이 저장되었습니다.');
+  });
+
+  async function restoreWorkspaceFromJsonText(jsonStr) {
+    try {
+      const rawObj = JSON.parse(jsonStr);
+      const checked = validateWorkspaceSnapshotPayload(rawObj);
+      if (!checked.valid) {
+        showToast(checked.reason || '올바른 백업 파일이 아닙니다.');
+        return;
+      }
+      const snap = checked.snapshot;
+      pushUndoSnapshot();
+
+      snap.attachments.forEach(att => {
+        attachedImagesMap.set(att.id, att);
+        if (autoSaveEnabled) idbSaveAttachment(att);
+      });
+      updateAttachedImageBadge();
+
+      if (snap.customSnippets.length > 0) {
+        saveCustomSnippets(snap.customSnippets);
+        renderCustomSnippets();
+      }
+      if (snap.runtimeTemplates.length > 0) {
+        snap.runtimeTemplates.forEach(tpl => {
+          const idx = runtimeTemplates.findIndex(r => r.id === tpl.id || r.name === tpl.name);
+          if (idx >= 0) runtimeTemplates[idx] = { ...tpl, persisted: autoSaveEnabled };
+          else runtimeTemplates.push({ ...tpl, persisted: autoSaveEnabled });
+          if (autoSaveEnabled) idbSaveTemplate(tpl);
+        });
+        if (autoSaveEnabled) persistStoredTemplates();
+      }
+      if (Object.keys(snap.templateDrafts).length > 0) {
+        inMemoryTemplateDrafts = { ...inMemoryTemplateDrafts, ...snap.templateDrafts };
+        if (autoSaveEnabled) {
+          const mergedDrafts = { ...loadTemplateDraftsMap(), ...snap.templateDrafts };
+          try {
+            localStorage.setItem(TEMPLATE_DRAFTS_KEY, JSON.stringify(mergedDrafts));
+          } catch (e) {
+            // Ignore quota errors
+          }
+        }
+      }
+
+      if (snap.selectedTemplateId && snap.selectedTemplateId !== DEFAULT_TEMPLATE_ID) {
+        await activateTemplateById(snap.selectedTemplateId);
+      } else {
+        setActiveTemplateState(null);
+        rawInput.value = snap.rawInputValue || '';
+        renderTemplateUi();
+      }
+      backupModal.classList.add('hidden');
+      showToast(`백업 복원 완료! (양식 ${snap.runtimeTemplates.length}개 · 이미지 ${snap.attachments.length}개)`);
+    } catch (err) {
+      showToast('백업 JSON 파일을 읽을 수 없습니다: ' + escapeHtml(err && err.message ? err.message : String(err)));
+    }
+  }
+
+  btnImportWorkspaceJson.addEventListener('click', () => {
+    backupJsonFileInput.value = '';
+    backupJsonFileInput.click();
+  });
+  backupJsonFileInput.addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) await restoreWorkspaceFromJsonText(await f.text());
+  });
+
+  // --- 전역 드래그 앤 드롭 (외부 파일: .hwpx / 이미지 / .txt·.md / .json 백업) ---
+  let dragDepth = 0;
+  function isExternalFileDrag(e) {
+    if (activeDragPayload) return false;
+    const types = e.dataTransfer ? Array.from(e.dataTransfer.types || []) : [];
+    return types.includes('Files') && !types.includes(MIME_SNIPPET) && !types.includes(MIME_SLOT_UID);
+  }
+  window.addEventListener('dragenter', (e) => {
+    if (isExternalFileDrag(e)) {
+      dragDepth++;
+      dragDropOverlay.classList.remove('hidden');
+    }
+  });
+  window.addEventListener('dragover', (e) => {
+    if (isExternalFileDrag(e)) {
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('dragleave', () => {
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) dragDropOverlay.classList.add('hidden');
+  });
+  window.addEventListener('drop', async (e) => {
+    dragDepth = 0;
+    dragDropOverlay.classList.add('hidden');
+    if (!isExternalFileDrag(e)) return;
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    e.preventDefault();
+    const lower = (file.name || '').toLowerCase();
+    if (lower.endsWith('.hwpx') || lower.endsWith('.hwp')) {
+      await handleHwpxTemplateFile(file);
+    } else if (/^image\/(?:png|jpeg|jpg|gif|webp|bmp)/i.test(file.type || '') || /\.(?:png|jpe?g|gif|webp|bmp)$/i.test(lower)) {
+      await attachImageFileAndInsert(file);
+    } else if (lower.endsWith('.json')) {
+      await restoreWorkspaceFromJsonText(await file.text());
+    } else if (lower.endsWith('.txt') || lower.endsWith('.md') || (file.type || '').startsWith('text/')) {
+      pushUndoSnapshot();
+      rawInput.value = await file.text();
+      lastTypedSnapshotText = rawInput.value;
+      updateAll();
+      showToast(`텍스트 파일 <b>${escapeHtml(file.name)}</b>을(를) 불러왔습니다.`);
+    } else {
+      showToast('지원되지 않는 파일 형식입니다. (.hwpx, 이미지, .txt/.md, .json 지원)');
+    }
+  });
+
   runtimeTemplates = autoSaveEnabled ? loadStoredTemplates() : [];
   renderTemplateUi(false);
   let lastSelectedTplId = DEFAULT_TEMPLATE_ID;
@@ -5273,26 +6748,35 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
     activateTemplateById(lastSelectedTplId);
   }
 
-  (async function bootIndexedDbTemplates() {
+  (async function bootIndexedDbAssets() {
     if (!autoSaveEnabled) return;
-    const idbList = await idbLoadAllTemplates();
-    if (!idbList || idbList.length === 0) return;
-    let changed = false;
-    idbList.forEach(tpl => {
-      if (!runtimeTemplates.some(r => r.id === tpl.id || r.name === tpl.name)) {
-        runtimeTemplates.push({ ...tpl, persisted: true });
-        changed = true;
-      }
-    });
-    if (changed) {
-      renderTemplateUi(false);
-      if (lastSelectedTplId !== DEFAULT_TEMPLATE_ID && !activeTemplateState) {
-        await activateTemplateById(lastSelectedTplId);
+    const [idbTpls, idbAtts] = await Promise.all([idbLoadAllTemplates(), idbLoadAllAttachments()]);
+    if (idbAtts && idbAtts.length > 0) {
+      idbAtts.forEach(att => {
+        if (!attachedImagesMap.has(att.id)) attachedImagesMap.set(att.id, att);
+      });
+      updateAttachedImageBadge();
+      updateAll();
+    }
+    if (idbTpls && idbTpls.length > 0) {
+      let changed = false;
+      idbTpls.forEach(tpl => {
+        if (!runtimeTemplates.some(r => r.id === tpl.id || r.name === tpl.name)) {
+          runtimeTemplates.push({ ...tpl, persisted: true });
+          changed = true;
+        }
+      });
+      if (changed) {
+        renderTemplateUi(false);
+        if (lastSelectedTplId !== DEFAULT_TEMPLATE_ID && !activeTemplateState) {
+          await activateTemplateById(lastSelectedTplId);
+        }
       }
     }
   })();
 
   document.getElementById('btnClear').addEventListener('click', () => {
+    pushUndoSnapshot();
     rawInput.value = '';
     if (activeTemplateState) {
       if (activeTemplateState.globalMode === 'replace_body') {
@@ -5305,12 +6789,28 @@ y = {x + 1} over {x - 1}, \\quad z = root {3} of {x^2 + 1}`;
         });
       }
     }
+    lastTypedSnapshotText = '';
     updateAll();
     if (autoSaveEnabled && localStorage.getItem(STORAGE_KEY)) {
       btnRestoreLast.classList.remove('hidden');
     }
     rawInput.focus();
   });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      backupModal.classList.add('hidden');
+      matrixBuilderBar.classList.add('hidden');
+      snippetManagerBar.classList.add('hidden');
+    }
+  });
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', () => {
+      renderMathVisualCards();
+      updateAll();
+    });
+  }
 
   updateAll();
   rawInput.focus();
